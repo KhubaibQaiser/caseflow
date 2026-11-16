@@ -37,11 +37,11 @@ M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or 
 - `pnpm typecheck`: generate route types, then `tsc --noEmit`
 - `pnpm lint`: ESLint plus the colour-literal check
 - `pnpm test`: unit tests
-- `pnpm test:integration`: integration tests
+- `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
 - `pnpm e2e`: Playwright end-to-end tests
 - `pnpm format`, `pnpm format:check`: Prettier
 - `pnpm seed`: seed the local database (available once the BE track lands)
-- `pnpm db:types`: regenerate Supabase types from the local stack (available once the BE track lands)
+- `pnpm db:types`: regenerate Supabase types from the local stack
 
 ## Project structure
 
@@ -50,8 +50,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/contracts`: Zod schemas and types shared by browser and server (contact, filters, list query, facets, permissions, results)
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
-- `supabase/`: local stack config; migrations arrive with the BE track
-- `tests/`: integration and e2e suites land with the BE and FE tracks (e2e goes in `tests/e2e/`)
+- `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`)
+- `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); e2e lands with the FE track in `tests/e2e/`
 
 ## CI
 
@@ -96,7 +96,6 @@ Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) 
 
 ## Decisions that differ from the spec
 
-- Filters use a flat follow-up range (`followUpFrom`/`followUpTo`) instead of the nested form in section 7.4.
 - Deleting contacts is out of scope for v1: there's no delete UI, and the `deleted_at` column stays unused.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
 - Control borders are darker than the mockups for 3:1 contrast.
