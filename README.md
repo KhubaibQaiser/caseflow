@@ -5,6 +5,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 ## Status
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
+- FE: base UI primitives in `components/ui`, shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
 
@@ -49,6 +50,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/contracts`: Zod schemas and types shared by browser and server (contact, filters, list query, facets, permissions, results)
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
+- `components/ui`: token-styled primitives (button, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
+- `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config; migrations arrive with the BE track
 - `tests/`: integration and e2e suites land with the BE and FE tracks (e2e goes in `tests/e2e/`)
 
@@ -65,5 +68,5 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - Filters use a flat follow-up range (`followUpFrom`/`followUpTo`) instead of the nested form in section 7.4.
 - Soft-deleted contacts are readable through the raw API and the app's queries filter them out; the spec (section 6) wants RLS to hide them.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
-- Control borders are darker than the mockups for 3:1 contrast.
+- Control borders are darker than the mockups (`#7F8D87`) for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.
