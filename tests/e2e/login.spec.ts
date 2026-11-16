@@ -8,14 +8,15 @@ async function expectNoAxeViolations(page: Page) {
   expect(axe.violations).toEqual([]);
 }
 
-test('login renders the form, is axe-clean and focuses the heading', async ({
+test('login renders the form, is axe-clean and focuses the email', async ({
   page,
 }) => {
   await page.goto('/login');
   await expect(page).toHaveTitle('Sign in · Caseflow');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Sign in' }),
-  ).toBeFocused();
+  ).toBeVisible();
+  await expect(page.getByLabel('Email')).toBeFocused();
   await expect(page.getByRole('status')).toHaveCount(0);
   await expectNoAxeViolations(page);
 });

@@ -65,6 +65,14 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
   // '' on the server and during hydration, the browser zone after.
   const tz = useSyncExternalStore(subscribe, browserTimeZone, () => '');
 
+  // Adjust state while rendering (not in an effect): a lock empties the password.
+  const [seen, setSeen] = useState(state);
+  if (state !== seen) {
+    setSeen(state);
+    if (state && !state.ok && state.error.code === 'rate_limited')
+      setPassword('');
+  }
+
   const error = state && !state.ok ? state.error : null;
   const locked =
     error?.code === 'rate_limited' && state !== unlocked && !!error.retryAfter;
@@ -75,11 +83,14 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
   const banner =
     error && error.code !== 'validation' && state !== unlocked ? error : null;
 
+  const retryAfter = error?.retryAfter;
   useEffect(() => {
-    if (!error?.retryAfter) return;
-    const t = setTimeout(() => setUnlocked(state), error.retryAfter! * 1000);
+    if (!retryAfter) return;
+    const t = setTimeout(() => setUnlocked(state), retryAfter * 1000);
     return () => clearTimeout(t);
-  }, [state, error?.retryAfter]);
+  }, [state, retryAfter]);
+
+  useEffect(() => emailRef.current?.focus(), []);
 
   // Put focus where the next action is: the password after a wrong one, the email after a lock.
   useEffect(() => {
@@ -87,8 +98,22 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
     (error.code === 'rate_limited' ? emailRef : passwordRef).current?.focus();
   }, [error]);
 
+  const clearError = (field: string) =>
+    setClientErrors((prev) => {
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+
   function submit(formData: FormData) {
-    const parsed = SignInSchema.safeParse({ email, password });
+    // Read the submitted values: autofill may not fire onChange, so state can lag.
+    const values = {
+      email: String(formData.get('email') ?? ''),
+      password: String(formData.get('password') ?? ''),
+    };
+    setEmail(values.email);
+    setPassword(values.password);
+    const parsed = SignInSchema.safeParse(values);
     if (!parsed.success) {
       const errors = zodFieldErrors(parsed.error);
       setClientErrors(errors);
@@ -103,7 +128,10 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
     <div className="bg-surface border-line rounded-surface shadow-raised flex w-full max-w-[380px] flex-col gap-4 border p-[22px] sm:p-7">
       <BrandMark />
       <div className="-mt-0.5">
-        <PageHeading className="text-ink m-0 text-xl font-semibold tracking-tight">
+        <PageHeading
+          focusOnMount={false}
+          className="text-ink m-0 text-xl font-semibold tracking-tight"
+        >
           Sign in
         </PageHeading>
         <p className="text-ink-2 text-13 m-0 mt-1">
@@ -129,7 +157,10 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
             spellCheck={false}
             placeholder="name@firm.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              clearError('email');
+            }}
           />
         </Field>
         <Field id="password" label="Password" error={fieldErrors.password}>
@@ -141,7 +172,10 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
               autoComplete="current-password"
               className="pr-10"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={(e) => {
+                setPassword(e.target.value);
+                clearError('password');
+              }}
             />
             <button
               type="button"

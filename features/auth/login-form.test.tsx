@@ -15,7 +15,10 @@ const never = (): Promise<Result<null>> => new Promise(() => {});
 
 async function fill(user: ReturnType<typeof userEvent.setup>) {
   await user.type(screen.getByLabelText('Email'), 'Sam@Firm.com');
-  await user.type(screen.getByLabelText('Password'), 'hunter2');
+  await user.type(
+    screen.getByLabelText('Password', { exact: true }),
+    'hunter2',
+  );
 }
 const submit = (user: ReturnType<typeof userEvent.setup>) =>
   user.click(screen.getByRole('button', { name: 'Sign in' }));
@@ -53,7 +56,9 @@ describe('LoginForm', () => {
       'Email or password is incorrect.',
     );
     expect(screen.getByLabelText('Email')).toHaveValue('Sam@Firm.com');
-    expect(screen.getByLabelText('Password')).toHaveValue('hunter2');
+    expect(screen.getByLabelText('Password', { exact: true })).toHaveValue(
+      'hunter2',
+    );
   });
 
   it('shows a server error in an alert', async () => {
@@ -125,6 +130,55 @@ describe('LoginForm', () => {
     ).toBeVisible();
   });
 
+  it('toggles password visibility with aria-pressed', async () => {
+    const user = userEvent.setup();
+    render(<LoginForm action={vi.fn<Action>()} />);
+    const toggle = screen.getByRole('button', { name: 'Show password' });
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByLabelText('Password', { exact: true })).toHaveAttribute(
+      'type',
+      'password',
+    );
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByLabelText('Password', { exact: true })).toHaveAttribute(
+      'type',
+      'text',
+    );
+  });
+
+  it('focuses the email field on load', () => {
+    render(<LoginForm action={vi.fn<Action>()} />);
+    expect(screen.getByLabelText('Email')).toHaveFocus();
+  });
+
+  it('clears a field error once that field changes', async () => {
+    const user = userEvent.setup();
+    render(<LoginForm action={vi.fn<Action>()} />);
+    await submit(user);
+    await user.type(screen.getByLabelText('Email'), 'a');
+    expect(
+      screen.queryByText('Enter a valid email address.'),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Enter your password.')).toBeVisible();
+  });
+
+  it('clears the password on a rate limit but keeps the email', async () => {
+    const action = vi.fn<Action>(async () =>
+      fail('rate_limited', 'Too many attempts. Try again in 5 minutes.', {
+        retryAfter: 300,
+      }),
+    );
+    const user = userEvent.setup();
+    render(<LoginForm action={action} />);
+    await fill(user);
+    await submit(user);
+    await screen.findByRole('alert');
+    expect(screen.getByLabelText('Password', { exact: true })).toHaveValue('');
+    expect(screen.getByLabelText('Email')).toHaveValue('Sam@Firm.com');
+  });
+
+  // Last: their never-resolving actions leave a pending transition that stalls later tests.
   it('is busy while pending', async () => {
     const user = userEvent.setup();
     render(<LoginForm action={vi.fn<Action>(never)} />);
@@ -141,7 +195,10 @@ describe('LoginForm', () => {
     await fill(user);
     await submit(user);
     await user.click(screen.getByRole('button', { name: 'Signing in…' }));
-    await user.type(screen.getByLabelText('Password'), '{Enter}');
+    await user.type(
+      screen.getByLabelText('Password', { exact: true }),
+      '{Enter}',
+    );
     expect(action).toHaveBeenCalledTimes(1);
   });
 
@@ -170,17 +227,18 @@ describe('LoginForm', () => {
     expect(action.mock.calls[0]![1].has('next')).toBe(false);
   });
 
-  it('toggles password visibility with aria-pressed', async () => {
+  it('validates what was submitted, not React state (autofill sets no change event)', async () => {
+    const action = vi.fn<Action>(never);
     const user = userEvent.setup();
-    render(<LoginForm action={vi.fn<Action>()} />);
-    const toggle = screen.getByRole('button', { name: 'Show password' });
-    expect(toggle).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByLabelText('Password')).toHaveAttribute(
-      'type',
-      'password',
-    );
-    await user.click(toggle);
-    expect(toggle).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByLabelText('Password')).toHaveAttribute('type', 'text');
+    render(<LoginForm action={action} />);
+    // Assigning .value directly fires no event, like a password manager fill.
+    (screen.getByLabelText('Email') as HTMLInputElement).value = 'a@firm.com';
+    (
+      screen.getByLabelText('Password', { exact: true }) as HTMLInputElement
+    ).value = 'pw';
+    await submit(user);
+    await waitFor(() => expect(action).toHaveBeenCalled());
+    expect(screen.queryByText('Enter your password.')).not.toBeInTheDocument();
+    expect(action.mock.calls[0]![1].get('password')).toBe('pw');
   });
 });
