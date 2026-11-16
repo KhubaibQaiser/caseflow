@@ -188,6 +188,13 @@ describe('server actions', () => {
       ok: false,
       error: { code: 'unauthorized' },
     });
+    expect(
+      await updateContactAction(
+        '00000000-0000-4000-8000-000000000001',
+        input,
+        '2026-01-01T00:00:00+00:00',
+      ),
+    ).toMatchObject({ ok: false, error: { code: 'unauthorized' } });
     current = (await viewerClient()).client;
     expect(await createContactAction(input)).toMatchObject({
       ok: false,
@@ -249,6 +256,23 @@ describe('server actions', () => {
     expect(await rescheduleAction(c.id, '2000-01-01')).toMatchObject({
       ok: false,
       error: { code: 'validation' },
+    });
+    expect(await rescheduleAction(c.id, '2099-02-31')).toMatchObject({
+      ok: false,
+      error: {
+        code: 'validation',
+        fieldErrors: { followUpOn: 'Use YYYY-MM-DD.' },
+      },
+    });
+    expect(
+      await createContactAction({ ...input, followUpOn: '2099-02-31' }),
+    ).toMatchObject({
+      ok: false,
+      error: { fieldErrors: { followUpOn: 'Use YYYY-MM-DD.' } },
+    });
+    expect(await addNoteAction(c.id, 'x'.repeat(2001))).toMatchObject({
+      ok: false,
+      error: { code: 'validation', fieldErrors: { body: expect.any(String) } },
     });
     expect(await rescheduleAction(c.id, null)).toMatchObject({ ok: true });
     expect(await addNoteAction(c.id, '   ')).toMatchObject({

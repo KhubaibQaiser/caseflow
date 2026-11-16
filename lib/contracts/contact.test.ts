@@ -37,6 +37,18 @@ describe('makeContactInputSchema', () => {
     ).toBe(true);
   });
 
+  it('rejects impossible calendar dates', () => {
+    const schema = makeContactInputSchema({ today: '2026-11-16' });
+    const r = schema.safeParse({ ...valid, followUpOn: '2026-12-32' });
+    expect(r.success).toBe(false);
+    expect(
+      schema.safeParse({ ...valid, followUpOn: '2027-02-29' }).success,
+    ).toBe(false);
+    expect(
+      schema.safeParse({ ...valid, followUpOn: '2028-02-29' }).success,
+    ).toBe(true);
+  });
+
   it('rejects a past follow-up only when it changed', () => {
     expect(
       schema.safeParse({ ...valid, followUpOn: '2026-11-15' }).success,
