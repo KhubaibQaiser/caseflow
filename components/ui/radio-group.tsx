@@ -1,11 +1,16 @@
 import type { ChangeEvent } from 'react';
 
 import { optionMark, optionRow } from './checkbox';
+import { legendClass } from './checkbox-group';
+import { ErrorText, groupErrorProps } from './error-text';
 
 type Option = { value: string; label: string };
 
 type RadioGroupProps = {
+  /** Group id for ErrorSummary links; defaults to `name`. */
+  id?: string;
   legend: string;
+  error?: string;
   name: string;
   options: readonly Option[];
   value?: string;
@@ -15,7 +20,9 @@ type RadioGroupProps = {
 
 /** Native radios in a fieldset: arrow keys and form submission come from the platform. */
 export function RadioGroup({
+  id,
   legend,
+  error,
   name,
   options,
   value,
@@ -25,10 +32,11 @@ export function RadioGroup({
   const onChange = (event: ChangeEvent<HTMLInputElement>) =>
     onValueChange?.(event.target.value);
   return (
-    <fieldset className="m-0 border-0 p-0">
-      <legend className="text-ink-2 mb-1 p-0 text-xs font-semibold">
-        {legend}
-      </legend>
+    <fieldset
+      {...groupErrorProps(id ?? name, error)}
+      className="group m-0 border-0 p-0"
+    >
+      <legend className={legendClass}>{legend}</legend>
       {options.map((option) => (
         <label key={option.value} className={optionRow}>
           <input
@@ -47,6 +55,7 @@ export function RadioGroup({
           {option.label}
         </label>
       ))}
+      {error && <ErrorText id={`${id ?? name}-error`}>{error}</ErrorText>}
     </fieldset>
   );
 }

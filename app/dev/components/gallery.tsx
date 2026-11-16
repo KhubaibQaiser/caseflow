@@ -7,6 +7,7 @@ import Users from 'lucide-react/icons/users';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { CheckboxGroup } from '@/components/ui/checkbox-group';
 import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
@@ -243,17 +244,17 @@ export function Gallery() {
         </div>
       </Section>
 
-      <Section title="Checkbox, radio group and segmented">
+      <Section
+        title="Checkbox, radio group and segmented"
+        note="Second row: invalid. The error marks the group and every unchecked option."
+      >
         <div className="grid gap-6 sm:grid-cols-3">
-          <fieldset className="m-0 border-0 p-0">
-            <legend className="text-ink-2 mb-1 p-0 text-xs font-semibold">
-              Matter type
-            </legend>
+          <CheckboxGroup id="demo-matter" legend="Matter type">
             <Checkbox label="Personal injury" count={412} defaultChecked />
             <Checkbox label="Family" count={398} defaultChecked />
             <Checkbox label="Immigration" count={387} />
             <Checkbox label="Criminal defense" count={0} disabled />
-          </fieldset>
+          </CheckboxGroup>
           <RadioGroup
             legend="Follow-up"
             name="demo-follow-up"
@@ -282,6 +283,31 @@ export function Gallery() {
               Arrow keys move the selection.
             </p>
           </div>
+        </div>
+        <div className="border-line-soft grid gap-6 border-t pt-3 sm:grid-cols-3">
+          <CheckboxGroup
+            id="demo-matter-invalid"
+            legend="Matter type"
+            error="Pick at least one matter type."
+          >
+            <Checkbox label="Personal injury" />
+            <Checkbox label="Family" />
+            <Checkbox label="Immigration" />
+          </CheckboxGroup>
+          <RadioGroup
+            id="demo-follow-up-invalid"
+            legend="Follow-up"
+            name="demo-follow-up-invalid"
+            options={FOLLOW_UP_WINDOWS.slice(1, 4)}
+            error="Choose a follow-up window."
+          />
+          <Segmented
+            id="demo-status-invalid"
+            label="Status"
+            name="demo-status-invalid"
+            options={STATUS_OPTIONS}
+            error="Choose a status."
+          />
         </div>
       </Section>
 

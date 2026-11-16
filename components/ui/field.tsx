@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useRef } from 'react';
 import type { MouseEvent, ReactNode } from 'react';
 import CircleAlert from 'lucide-react/icons/circle-alert';
 
+import { ErrorText } from './error-text';
+
 type FieldState = {
   id: string;
   describedBy?: string;
@@ -61,15 +63,7 @@ export function Field({
       <FieldContext value={{ id, describedBy, invalid: !!error, required }}>
         {children}
       </FieldContext>
-      {error && (
-        <p
-          id={errorId}
-          className="text-13 text-overdue m-0 flex items-start gap-1.5 font-medium"
-        >
-          <CircleAlert aria-hidden className="mt-0.5 size-3.5 shrink-0" />
-          {error}
-        </p>
-      )}
+      {error && errorId && <ErrorText id={errorId}>{error}</ErrorText>}
       {hint && (
         <p id={hintId} className="text-ink-2 m-0 text-xs">
           {hint}
