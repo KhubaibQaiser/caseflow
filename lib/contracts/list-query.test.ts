@@ -92,4 +92,114 @@ describe('list query', () => {
     expect(FiltersSchema.safeParse({ q: 'a'.repeat(101) }).success).toBe(false);
     expect(FiltersSchema.parse({ q: '  ana  ' })).toEqual({ q: 'ana' });
   });
+
+  describe('follow-up and date rules', () => {
+    const ok = (v: unknown) => FiltersSchema.safeParse(v).success;
+
+    it('schema rejects bounds unless followUp is custom', () => {
+      expect(ok({ followUpFrom: '2026-01-01' })).toBe(false);
+      expect(ok({ followUp: 'overdue', followUpTo: '2026-01-01' })).toBe(false);
+      expect(ok({ followUp: 'custom', followUpFrom: '2026-01-01' })).toBe(true);
+    });
+
+    it('schema rejects custom with no bound', () => {
+      expect(ok({ followUp: 'custom' })).toBe(false);
+    });
+
+    it('schema rejects impossible calendar dates', () => {
+      expect(ok({ createdFrom: '2026-02-31' })).toBe(false);
+      expect(ok({ createdTo: '2026-13-01' })).toBe(false);
+      expect(ok({ followUp: 'custom', followUpTo: '2026-02-31' })).toBe(false);
+      expect(ok({ createdFrom: '2026-02-28' })).toBe(true);
+    });
+
+    it('schema rejects from after to, allows equal', () => {
+      expect(ok({ createdFrom: '2026-03-02', createdTo: '2026-03-01' })).toBe(
+        false,
+      );
+      expect(ok({ createdFrom: '2026-03-01', createdTo: '2026-03-01' })).toBe(
+        true,
+      );
+      expect(
+        ok({
+          followUp: 'custom',
+          followUpFrom: '2026-03-02',
+          followUpTo: '2026-03-01',
+        }),
+      ).toBe(false);
+    });
+
+    it('loader drops follow-up dates without custom', () => {
+      const f = toFilters(
+        loadListQuery({ fu: 'overdue', fuFrom: '2026-01-01' }),
+      );
+      expect(f).toEqual({ followUp: 'overdue' });
+      expect(toFilters(loadListQuery({ fuTo: '2026-01-01' }))).toEqual({});
+    });
+
+    it('loader drops custom with no valid bound', () => {
+      expect(toFilters(loadListQuery({ fu: 'custom' }))).toEqual({});
+      expect(
+        toFilters(loadListQuery({ fu: 'custom', fuFrom: '2026-02-31' })),
+      ).toEqual({});
+    });
+
+    it('loader drops impossible dates and keeps the valid bound', () => {
+      expect(
+        toFilters(
+          loadListQuery({
+            fu: 'custom',
+            fuFrom: '2026-13-01',
+            fuTo: '2026-05-01',
+            createdFrom: '2026-02-31',
+          }),
+        ),
+      ).toEqual({ followUp: 'custom', followUpTo: '2026-05-01' });
+    });
+
+    it('loader drops a range whose from is after to', () => {
+      expect(
+        toFilters(
+          loadListQuery({
+            fu: 'custom',
+            fuFrom: '2026-05-02',
+            fuTo: '2026-05-01',
+            createdFrom: '2026-05-02',
+            createdTo: '2026-05-01',
+          }),
+        ),
+      ).toEqual({});
+    });
+
+    it('loader keeps ranges where from equals to', () => {
+      expect(
+        toFilters(
+          loadListQuery({
+            fu: 'custom',
+            fuFrom: '2026-05-01',
+            fuTo: '2026-05-01',
+            createdFrom: '2026-05-01',
+            createdTo: '2026-05-01',
+          }),
+        ),
+      ).toEqual({
+        followUp: 'custom',
+        followUpFrom: '2026-05-01',
+        followUpTo: '2026-05-01',
+        createdFrom: '2026-05-01',
+        createdTo: '2026-05-01',
+      });
+    });
+
+    it('toFilters output always parses, even for hand-built queries', () => {
+      const q = {
+        ...loadListQuery({}),
+        fu: 'overdue' as const,
+        fuFrom: '2026-01-01',
+        createdFrom: '2026-06-01',
+        createdTo: '2026-01-01',
+      };
+      expect(FiltersSchema.safeParse(toFilters(q)).success).toBe(true);
+    });
+  });
 });
