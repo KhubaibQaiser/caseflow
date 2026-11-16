@@ -6,7 +6,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
 - App-level 404, error and crash pages are planned (T12b).
-- FE: base UI primitives in `components/ui`, shown in every state at `/dev/components` (dev only; 404 in production).
+- FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
 
@@ -41,8 +41,14 @@ M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or 
 - `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
 - `pnpm e2e`: Playwright end-to-end tests
 - `pnpm format`, `pnpm format:check`: Prettier
-- `pnpm seed`: seed the local database (available once the BE track lands)
+- `pnpm seed`: create the role accounts and reset the firm data (see Seeding below)
 - `pnpm db:types`: regenerate Supabase types from the local stack
+
+## Seeding
+
+`pnpm seed` needs `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SEED_ADMIN_PASSWORD` and `SEED_VIEWER_PASSWORD` in the environment (names are in `.env.example`; it refuses to run without them and never prints them). It creates two accounts, `admin@caseflow.test` (Alex Morgan, admin) and `viewer@caseflow.test` (Sam Patel, viewer), then runs `seed_firm`, which wipes the contacts, notes and activities and generates 2,500 contacts with their notes and activity history. The data is deterministic and dated relative to today.
+
+Re-running is safe: accounts are updated in place (the passwords are reset to the current env values) and the firm data returns to the same counts. Use it to restore a broken demo. Integration tests wipe the local firm data, so re-run `pnpm seed` afterwards.
 
 ## Project structure
 
@@ -52,6 +58,9 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
 - `components/ui`: token-styled primitives (button, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
+  - Overlays wrap Radix (dialog, sheet, popover, dropdown menu, tooltip); they animate on `data-state` and stand still under reduced motion
+  - `DatePicker` (react-day-picker in a popover, opened by a field or your own button via `trigger`) reads and writes `'YYYY-MM-DD'` via `lib/dates`
+  - `Toaster` (sonner) is mounted in the root layout; call `toast.success('Contact saved')`; `toast.error(msg, { action: { label: 'Retry', onClick } })` stays until acted on or dismissed
 - `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`, query RPCs)
 - `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); e2e lands with the FE track in `tests/e2e/`
@@ -65,6 +74,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `gitleaks`: secret scan of each PR's or push's commits.
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
+
+PRs that add or change a UI component or page include desktop (1440) and mobile (375) screenshots, hosted on the orphan `screenshots` branch under `screenshots/pr-<n>/`.
 
 ## Deploy
 
