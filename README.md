@@ -68,6 +68,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
 
+PRs that add or change a UI component or page include desktop (1440) and mobile (375) screenshots, hosted on the orphan `screenshots` branch under `screenshots/pr-<n>/`.
+
 ## Deploy
 
 Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variable is set to `true` (T23).
