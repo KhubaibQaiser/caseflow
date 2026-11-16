@@ -43,8 +43,8 @@ export function Button({
       {...rest}
       type={type}
       aria-busy={pending || undefined}
-      aria-disabled={disabledReason !== undefined || undefined}
-      title={disabledReason}
+      aria-disabled={disabledReason !== undefined || rest['aria-disabled']}
+      title={disabledReason ?? rest.title}
       onClick={(event) => {
         if (blocked) event.preventDefault();
         else onClick?.(event);
