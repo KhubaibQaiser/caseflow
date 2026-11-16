@@ -238,11 +238,8 @@ function FormDemo() {
 function MoveMenu() {
   const [status, setStatus] = useState<Status>('lead');
   const move = (next: Status) => {
-    const previous = status;
     setStatus(next);
-    toast.success(`Marisol Ortega moved to ${STATUS_LABEL[next]}`, {
-      action: { label: 'Undo', onClick: () => setStatus(previous) },
-    });
+    toast.success(`Marisol Ortega moved to ${STATUS_LABEL[next]}.`);
   };
   return (
     <div className="flex items-center gap-2">
@@ -629,10 +626,20 @@ export function Gallery() {
           <MoveMenu />
         </Row>
         <Row label="Viewer">
-          <Button variant="ghost" size="sm" disabledReason={VIEWER_REASON}>
-            Move to…
-            <ChevronDown aria-hidden className="size-3.5" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" disabledReason={VIEWER_REASON}>
+                Move to…
+                <ChevronDown aria-hidden className="size-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem>Active</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <span className="text-ink-2 text-xs">
+            Same menu trigger, blocked: it never opens.
+          </span>
         </Row>
         <Row label="Tooltip">
           <Tooltip content="Pipeline">
@@ -669,7 +676,7 @@ export function Gallery() {
 
       <Section
         title="Toast"
-        note="Bottom centre, 6s, paused on hover or focus. An error with Retry stays until acted on or dismissed. Alt+T jumps to it."
+        note="Bottom centre, 6s; hover or Alt+T pauses it. An error with Retry stays until acted on or dismissed."
       >
         <Row label="Success">
           <Button
@@ -680,16 +687,9 @@ export function Gallery() {
           </Button>
           <Button
             variant="ghost"
-            onClick={() =>
-              toast.success('Marisol Ortega moved to Active', {
-                action: {
-                  label: 'Undo',
-                  onClick: () => toast('Marisol Ortega moved back to Lead'),
-                },
-              })
-            }
+            onClick={() => toast.success('Marisol Ortega moved to Active.')}
           >
-            Move with Undo
+            Contact moved
           </Button>
         </Row>
         <Row label="Error">
