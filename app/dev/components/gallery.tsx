@@ -2,6 +2,10 @@
 
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import ChevronDown from 'lucide-react/icons/chevron-down';
+import Ellipsis from 'lucide-react/icons/ellipsis';
+import ListFilter from 'lucide-react/icons/list-filter';
+import Plus from 'lucide-react/icons/plus';
 import Search from 'lucide-react/icons/search';
 import Users from 'lucide-react/icons/users';
 
@@ -11,6 +15,7 @@ import { CheckboxGroup } from '@/components/ui/checkbox-group';
 import { Chip } from '@/components/ui/chip';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { ErrorText } from '@/components/ui/error-text';
 import { ErrorSummary, Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
@@ -92,27 +97,51 @@ function PendingDemo() {
   );
 }
 
+function FiltersButton({ initialOpen }: { initialOpen: boolean }) {
+  const [open, setOpen] = useState(initialOpen);
+  return (
+    <Button
+      variant="ghost"
+      aria-expanded={open}
+      onClick={() => setOpen((o) => !o)}
+    >
+      <ListFilter aria-hidden className="size-4" />
+      Filters
+      <span className="tnum bg-accent text-on-accent rounded-pill min-w-[18px] px-1.5 text-center text-xs leading-[18px] forced-colors:forced-color-adjust-auto">
+        2
+      </span>
+      <span className="sr-only"> active</span>
+    </Button>
+  );
+}
+
 function FormDemo() {
   const [attempt, setAttempt] = useState(0);
   const [errors, setErrors] = useState<
     { id: string; label: string; message: string }[]
   >([]);
   const errorFor = (id: string) => errors.find((e) => e.id === id)?.message;
+  const contactError = errorFor('demo-email');
+  // One error covers the Email | Phone pair: both inputs point at it.
+  const contactProps = contactError
+    ? { 'aria-invalid': true, 'aria-describedby': 'demo-contact-error' }
+    : {};
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+    const filled = (key: string) => String(data.get(key) ?? '').trim() !== '';
     const next = [];
-    if (!String(data.get('name')).trim())
+    if (!filled('name'))
       next.push({
         id: 'demo-name',
         label: 'Full name',
         message: 'Enter a full name.',
       });
-    if (!String(data.get('email')).trim())
+    if (!filled('email') && !filled('phone'))
       next.push({
         id: 'demo-email',
-        label: 'Email',
+        label: 'Email or phone',
         message: 'Add an email or a phone number.',
       });
     setErrors(next);
@@ -126,25 +155,58 @@ function FormDemo() {
       className="flex max-w-[720px] flex-col gap-3"
     >
       <ErrorSummary errors={errors} attempt={attempt} />
+      <Field
+        id="demo-name"
+        label="Full name"
+        required
+        error={errorFor('demo-name')}
+      >
+        <Input name="name" placeholder="e.g. Marisol Ortega" />
+      </Field>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field
-          id="demo-name"
-          label="Full name"
-          required
-          error={errorFor('demo-name')}
-        >
-          <Input name="name" placeholder="e.g. Marisol Ortega" />
+        <Field id="demo-email" label="Email">
+          <Input
+            name="email"
+            type="email"
+            placeholder="name@example.com"
+            {...contactProps}
+          />
         </Field>
-        <Field id="demo-email" label="Email" error={errorFor('demo-email')}>
-          <Input name="email" type="email" placeholder="name@example.com" />
+        <Field id="demo-phone" label="Phone">
+          <Input
+            name="phone"
+            type="tel"
+            placeholder="(512) 555-0100"
+            {...contactProps}
+          />
         </Field>
+        {contactError && (
+          <div className="sm:col-span-2">
+            <ErrorText id="demo-contact-error">{contactError}</ErrorText>
+          </div>
+        )}
       </div>
-      <div className="flex gap-2">
+      <Field id="demo-summary-form" label="Matter summary">
+        <Textarea
+          name="summary"
+          maxLength={1000}
+          counterFrom={0}
+          placeholder="What happened, key dates, what they want from the firm."
+        />
+      </Field>
+      <Segmented
+        id="demo-form-status"
+        label="Status"
+        name="status"
+        options={STATUS_OPTIONS}
+        defaultValue="lead"
+      />
+      <div className="flex justify-end gap-2">
+        <Button variant="ghost" type="reset" onClick={() => setErrors([])}>
+          Cancel
+        </Button>
         <Button variant="primary" type="submit">
           Save contact
-        </Button>
-        <Button variant="ghost" type="reset" onClick={() => setErrors([])}>
-          Reset
         </Button>
       </div>
     </form>
@@ -171,7 +233,10 @@ export function Gallery() {
         </p>
       </header>
 
-      <Section title="Button" note="Primary, ghost and link, in md and sm.">
+      <Section
+        title="Button"
+        note="Primary, ghost and link, in md, sm and icon."
+      >
         <Row label="Default">
           <Button variant="primary">New contact</Button>
           <Button variant="ghost">Filters</Button>
@@ -184,6 +249,26 @@ export function Gallery() {
           <Button variant="ghost" size="sm">
             Move to…
           </Button>
+        </Row>
+        <Row label="With icon">
+          <Button variant="primary">
+            <Plus aria-hidden className="size-4" />
+            New contact
+          </Button>
+          <Button variant="ghost">
+            Move to…
+            <ChevronDown aria-hidden className="size-4" />
+          </Button>
+          <Button variant="ghost" size="icon" aria-label="More actions">
+            <Ellipsis aria-hidden className="size-4" />
+          </Button>
+        </Row>
+        <Row label="Open">
+          <FiltersButton initialOpen={false} />
+          <FiltersButton initialOpen />
+          <span className="text-ink-2 text-xs">
+            aria-expanded; click to toggle.
+          </span>
         </Row>
         <Row label="Pending">
           <Button variant="primary" pending pendingLabel="Signing in…">
@@ -216,17 +301,11 @@ export function Gallery() {
       >
         <FormDemo />
         <div className="grid max-w-[720px] gap-3 sm:grid-cols-2">
-          <Field id="demo-phone" label="Phone" hint="Any format works.">
+          <Field id="demo-phone-hint" label="Phone" hint="Any format works.">
             <Input type="tel" defaultValue="(512) 555-0100" />
           </Field>
           <Field id="demo-locked" label="Workspace">
             <Input disabled defaultValue="Intake team" />
-          </Field>
-          <Field id="demo-summary-empty" label="Matter summary">
-            <Textarea
-              maxLength={1000}
-              placeholder="What happened, key dates, what they want from the firm."
-            />
           </Field>
           <Field
             id="demo-summary"
