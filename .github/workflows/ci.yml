@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  integration-e2e:
+    runs-on: ubuntu-latest
+    env:
+      # CI-only values for the throwaway local database; not real credentials.
+      SEED_ADMIN_PASSWORD: ci-only-admin-password-not-a-secret
+      SEED_VIEWER_PASSWORD: ci-only-viewer-password-not-a-secret
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+      - run: supabase start
+      - run: supabase db reset
+      - name: Export local Supabase environment
+        run: |
+          supabase status -o env > "$RUNNER_TEMP/supabase.env"
+          # newer CLIs print PUBLISHABLE_KEY/SECRET_KEY, older ones ANON_KEY/SERVICE_ROLE_KEY
+          get() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" "$RUNNER_TEMP/supabase.env" | head -n1; }
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(get API_URL)"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$(get PUBLISHABLE_KEY)$(get ANON_KEY)"
+            echo "SUPABASE_SECRET_KEY=$(get SECRET_KEY)$(get SERVICE_ROLE_KEY)"
+          } >> "$GITHUB_ENV"
+          # local-only keys, but keep them out of the log anyway
+          sed -n 's/^[A-Z_]*_KEY="\(.*\)"$/::add-mask::\1/p' "$RUNNER_TEMP/supabase.env"
+      # T22 removes the seed guard and --pass-with-no-tests once scripts/seed.ts and the e2e suites exist.
+      - run: if [ -f scripts/seed.ts ]; then pnpm seed; fi
+      - run: pnpm test:integration
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm e2e --pass-with-no-tests
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
