@@ -1,6 +1,6 @@
 -- Deterministic firm seed. Truncates firm data and regenerates n contacts, notes and activities.
 -- Not built on seed_insert_contact: that is a one-row test entry point; this is set-based and
--- must also backdate created_at, which contacts_before_write otherwise resets to now().
+-- passes created_at/updated_at, which contacts_before_write keeps while caseflow.seeding is on.
 create function public.seed_firm(n int default 2500, actor uuid default null)
 returns void
 language plpgsql security definer set search_path = public
@@ -62,9 +62,6 @@ begin
 
   truncate public.contacts, public.notes, public.activities;
 
-  -- created_at must be backdated; the stamping trigger would reset it. Both ALTERs roll back with the transaction.
-  alter table public.contacts disable trigger contacts_before_write;
-
   insert into public.contacts
     (full_name, email, phone, matter_type, referral_source, status, follow_up_on, summary, created_by, created_at, updated_at)
   select
@@ -125,7 +122,6 @@ begin
     cross join lateral generate_series(1, c.k);
   end if;
 
-  alter table public.contacts enable trigger contacts_before_write;
 end;
 $$;
 

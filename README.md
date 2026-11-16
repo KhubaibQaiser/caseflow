@@ -45,7 +45,7 @@ M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or 
 
 ## Seeding
 
-`pnpm seed` needs `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SEED_ADMIN_PASSWORD` and `SEED_VIEWER_PASSWORD` in the environment (names are in `.env.example`; it refuses to run without them and never prints them). It creates two accounts, `admin@caseflow.test` (Alex Morgan, admin) and `viewer@caseflow.test` (Sam Patel, viewer), then runs `seed_firm`, which wipes the contacts, notes and activities and generates 2,500 contacts with their notes and activity history. The data is deterministic and dated relative to today.
+`pnpm seed` needs `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SEED_ADMIN_PASSWORD` and `SEED_VIEWER_PASSWORD` in the environment (names are in `.env.example`; it refuses to run without them and never prints them). It creates two accounts, `admin@caseflow.test` (Alex Morgan, admin) and `viewer@caseflow.test` (Sam Patel, viewer), then runs `seed_firm`, which wipes the contacts, notes and activities and generates 2,500 contacts with their notes and activity history. The data is deterministic and dated relative to today.
 
 Re-running is safe: accounts are updated in place (the passwords are reset to the current env values) and the firm data returns to the same counts. Use it to restore a broken demo.
 

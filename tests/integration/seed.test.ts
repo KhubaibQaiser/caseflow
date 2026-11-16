@@ -16,7 +16,7 @@ function runSeed(env: Record<string, string | undefined>) {
     stdio: ['ignore', 'pipe', 'pipe'],
     env: {
       ...process.env,
-      NEXT_PUBLIC_SUPABASE_URL: c.url,
+      SUPABASE_URL: c.url,
       SUPABASE_SECRET_KEY: c.secret,
       SEED_ADMIN_PASSWORD: ADMIN_PW,
       SEED_VIEWER_PASSWORD: VIEWER_PW,
@@ -107,6 +107,24 @@ describe('seed', () => {
     expect(await n(head('contacts').eq('follow_up_on', today))).toBeGreaterThan(
       0,
     );
+  });
+
+  it('gives realistic timestamps and no soft-deleted contacts', async () => {
+    const { data, error } = await serviceClient()
+      .from('contacts')
+      .select('created_at, updated_at, deleted_at')
+      .limit(2500);
+    expect(error).toBeNull();
+    const rows = data ?? [];
+    const now = Date.now();
+    for (const r of rows) {
+      expect(Date.parse(r.updated_at)).toBeGreaterThanOrEqual(
+        Date.parse(r.created_at),
+      );
+      expect(Date.parse(r.updated_at)).toBeLessThanOrEqual(now);
+      expect(r.deleted_at).toBeNull();
+    }
+    expect(new Set(rows.map((r) => r.updated_at)).size).toBeGreaterThan(900);
   });
 
   it('seeds 0-3 notes per contact', async () => {

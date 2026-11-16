@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
 
 const Env = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.url(),
+  SUPABASE_URL: z.url(),
   SUPABASE_SECRET_KEY: z.string().min(1),
   SEED_ADMIN_PASSWORD: z.string().min(8),
   SEED_VIEWER_PASSWORD: z.string().min(8),
@@ -17,7 +17,7 @@ if (!parsed.success) {
 }
 const env = parsed.data;
 
-const db = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY, {
+const db = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, {
   auth: { persistSession: false, autoRefreshToken: false },
 });
 
