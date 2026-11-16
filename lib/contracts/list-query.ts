@@ -7,15 +7,12 @@ import {
   parseAsString,
   parseAsStringLiteral,
 } from 'nuqs/server';
+import { z } from 'zod';
 import {
   FOLLOW_UP_FILTERS,
   MATTER_TYPES,
   REFERRAL_SOURCES,
   STATUSES,
-  type FollowUpFilter,
-  type MatterType,
-  type ReferralSource,
-  type Status,
 } from './enums';
 
 export const PAGE_SIZES = [25, 50, 100, 250, 500] as const;
@@ -28,17 +25,21 @@ export const SORT_KEYS = [
   'status',
 ] as const;
 
-export type Filters = {
-  q?: string;
-  status?: Status[];
-  matterType?: MatterType[];
-  referralSource?: ReferralSource[];
-  followUp?: FollowUpFilter | 'custom';
-  followUpFrom?: string;
-  followUpTo?: string;
-  createdFrom?: string;
-  createdTo?: string;
-};
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const FOLLOW_UP_VALUES = [...FOLLOW_UP_FILTERS, 'custom'] as const;
+
+export const FiltersSchema = z.object({
+  q: z.string().trim().max(100).optional(),
+  status: z.array(z.enum(STATUSES)).optional(),
+  matterType: z.array(z.enum(MATTER_TYPES)).optional(),
+  referralSource: z.array(z.enum(REFERRAL_SOURCES)).optional(),
+  followUp: z.enum(FOLLOW_UP_VALUES).optional(),
+  followUpFrom: z.string().regex(DATE).optional(),
+  followUpTo: z.string().regex(DATE).optional(),
+  createdFrom: z.string().regex(DATE).optional(),
+  createdTo: z.string().regex(DATE).optional(),
+});
+export type Filters = z.infer<typeof FiltersSchema>;
 
 // nuqs's array parser yields [] for all-invalid input; treat that as "not set".
 const literalList = <const T extends readonly string[]>(values: T) => {
@@ -53,7 +54,7 @@ const literalList = <const T extends readonly string[]>(values: T) => {
 };
 
 const isoDate = createParser<string>({
-  parse: (v) => (/^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null),
+  parse: (v) => (DATE.test(v) ? v : null),
   serialize: (v) => v,
 });
 
@@ -70,7 +71,7 @@ export const listQueryParsers = {
   status: literalList(STATUSES),
   matter: literalList(MATTER_TYPES),
   source: literalList(REFERRAL_SOURCES),
-  fu: parseAsStringLiteral([...FOLLOW_UP_FILTERS, 'custom'] as const),
+  fu: parseAsStringLiteral(FOLLOW_UP_VALUES),
   fuFrom: isoDate,
   fuTo: isoDate,
   createdFrom: isoDate,
@@ -86,7 +87,8 @@ export type ListQuery = inferParserType<typeof listQueryParsers>;
 
 export function toFilters(q: ListQuery): Filters {
   const f: Filters = {};
-  if (q.q) f.q = q.q.slice(0, 100);
+  const text = q.q?.trim().slice(0, 100).trim();
+  if (text) f.q = text;
   if (q.status) f.status = q.status;
   if (q.matter) f.matterType = q.matter;
   if (q.source) f.referralSource = q.source;

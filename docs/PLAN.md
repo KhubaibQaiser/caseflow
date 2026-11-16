@@ -24,7 +24,7 @@
 - Terminology: "contact", "matter", "follow-up", "Lead / Active / Closed". Never "deal" or "customer". The voice is crisp power-tool (PRODUCT.md).
 - Dates move between browser and server only as `'YYYY-MM-DD'` strings. Never use `toISOString()` for date-only values (§8.7).
 - Page sizes are `[25, 50, 100, 250, 500]`, default `250`. Pipeline columns load `50` per request.
-- The urgency order is overdue → due today → soonest follow-up → no follow-up, with ties broken by `updated_at desc`. **Only Lead and Active can be overdue or due today.**
+- The urgency order is overdue → due today → soonest follow-up → no follow-up, with ties broken by `updated_at desc`. Closed dated rows sort after open dated rows. **Only Lead and Active can be overdue or due today.**
 - Accessibility: WCAG 2.2 AA. Contrast is at least 4.5:1, targets at least 24px, focus is always visible, nothing relies on colour alone, and there's a menu alternative to dragging.
 - Performance: Lighthouse Performance ≥ 90 and Accessibility ≥ 95 on `/contacts` (mobile preset). CLS < 0.05. `/contacts` route JS < 180kB gzipped. Icons are imported one at a time.
 - Before writing route, proxy, caching, `forbidden` or error-boundary code, read `node_modules/next/dist/docs/` (Next 16 renamed `middleware` to `proxy`).
@@ -85,7 +85,7 @@ components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbid
 supabase/config.toml, supabase/migrations/2026111601_rbac.sql … 2026111605_queries.sql
 scripts/seed.ts
 tests/integration/{setup.ts,rbac.test.ts,triggers.test.ts,seed.test.ts,queries.test.ts,mutations.test.ts}
-e2e/{auth,contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts
+tests/e2e/{auth,contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts
 .github/workflows/{ci,deploy,seed,keep-alive}.yml, .github/{dependabot.yml,pull_request_template.md,CODEOWNERS}
 AGENTS.md, CLAUDE.md (@AGENTS.md), DESIGN.md, README.md
 vitest.config.mts (projects: unit = jsdom, integration = node), playwright.config.ts
@@ -415,7 +415,8 @@ it('rejects contact with neither email nor phone', async () => { /* check violat
 ```sql
 order by case when c.status in ('lead','active') and c.follow_up_on < today then 0
               when c.status in ('lead','active') and c.follow_up_on = today then 1
-              when c.follow_up_on is not null then 2 else 3 end,
+              when c.status in ('lead','active') and c.follow_up_on is not null then 2
+              when c.follow_up_on is not null then 3 else 4 end,
          c.follow_up_on asc nulls last, c.updated_at desc
 -- dir='desc' reverses only the first two keys; other sorts: name→full_name, waiting→created_at, updated→updated_at, status→status
 ```
@@ -824,7 +825,7 @@ it('viewer sees no New contact button', () => {})
 **Interfaces (produces):**
 - **GitHub secrets:** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `SEED_ADMIN_PASSWORD`, `SEED_VIEWER_PASSWORD`.
 - **Vercel production environment:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`.
-- **`deploy.yml`:** on push to `main`, with `needs` on the CI jobs (via `workflow_run`, or by re-running `checks`). Then `supabase link --project-ref`, `supabase db push`, `vercel pull --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`, and a smoke test that runs `pnpm exec playwright test e2e/smoke.spec.ts` against the deployed URL.
+- **`deploy.yml`:** on push to `main`, with `needs` on the CI jobs (via `workflow_run`, or by re-running `checks`). Then `supabase link --project-ref`, `supabase db push`, `vercel pull --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`, and a smoke test that runs `pnpm exec playwright test tests/e2e/smoke.spec.ts` against the deployed URL.
 - **`seed.yml`:** `workflow_dispatch`. Runs `pnpm seed` against production.
 - **`keep-alive.yml`:** a daily cron (`17 6 * * *`). Uses `curl` against `${SUPABASE_URL}/rest/v1/role_permissions?select=role&limit=1` with the publishable key, calls `${SUPABASE_URL}/rest/v1/rpc/ping` (T8) with the publishable key. It fails the job on a non-200 response.
 
@@ -843,7 +844,7 @@ it('viewer sees no New contact button', () => {})
 **Files:**
 - Modify: `lib/data/index.ts` (re-export from `./supabase`); the pages and layouts that pass the T10 actions as props; `app/(app)/layout.tsx` (`getViewer()` instead of the fake viewer)
 - Delete: `lib/data/fake.ts` (keep `fixtures.ts` only for component tests)
-- Create: `e2e/{auth,contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts`, `e2e/helpers.ts` (`signInAs(page, 'admin'|'viewer')`)
+- Create: `tests/e2e/{auth,contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts`, `tests/e2e/helpers.ts` (`signInAs(page, 'admin'|'viewer')`)
 
 - [ ] **Step 1: Write the failing e2e specs** (local Supabase, seeded):
   - **`auth.spec.ts`:**

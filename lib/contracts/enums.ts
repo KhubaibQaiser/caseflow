@@ -28,6 +28,17 @@ export const FOLLOW_UP_FILTERS = [
 ] as const;
 export type FollowUpFilter = (typeof FOLLOW_UP_FILTERS)[number];
 
+export const ACTIVITY_TYPES = [
+  'created',
+  'updated',
+  'status_changed',
+  'follow_up_changed',
+  'note_added',
+  'deleted',
+  'restored',
+] as const;
+export type ActivityType = (typeof ACTIVITY_TYPES)[number];
+
 export const STATUS_LABEL: Record<Status, string> = {
   lead: 'Lead',
   active: 'Active',

@@ -22,20 +22,24 @@ const FIXTURE_COUNT = 1200;
 const cache = new Map<string, ContactRow[]>();
 
 // "Today" in the request time zone. No catch: cookies() signals dynamic rendering to Next.
-async function today(): Promise<string> {
-  return todayIn(await getRequestTimeZone());
-}
-
-async function load(): Promise<{ rows: ContactRow[]; today: string }> {
-  const t = await today();
+async function load(): Promise<{
+  rows: ContactRow[];
+  today: string;
+  tz: string;
+}> {
+  const tz = await getRequestTimeZone();
+  const t = todayIn(tz);
   let rows = cache.get(t);
   if (!rows) {
     cache.clear();
     rows = makeFixtureRows(FIXTURE_COUNT, t);
     cache.set(t, rows);
   }
-  return { rows, today: t };
+  return { rows, today: t, tz };
 }
+
+// The fake has no stored summary; getContact returns this one.
+const summaryOf = (r: ContactRow) => `Intake for ${r.fullName}.`;
 
 type Group =
   'status' | 'matterType' | 'referralSource' | 'followUp' | 'created';
@@ -55,7 +59,7 @@ function followUpBucket(
     case 'dueToday':
       return open && d === t;
     case 'next7Days':
-      return d !== null && d >= t && d <= addDaysDateOnly(t, 7);
+      return d !== null && d >= t && d < addDaysDateOnly(t, 7);
     case 'none':
       return d === null;
     case 'custom':
@@ -65,13 +69,22 @@ function followUpBucket(
 }
 
 // Does the row pass every group except those in `skip`? `q` always applies.
-function matches(r: ContactRow, f: Filters, t: string, skip?: Group): boolean {
+function matches(
+  r: ContactRow,
+  f: Filters,
+  t: string,
+  tz: string,
+  skip?: Group,
+): boolean {
   if (f.q) {
     const q = f.q.toLowerCase();
-    if (
-      ![r.fullName, r.email, r.phone].some((v) => v?.toLowerCase().includes(q))
-    )
-      return false;
+    const digits = q.replace(/\D/g, '');
+    const text = [r.fullName, r.email, summaryOf(r)].some((v) =>
+      v?.toLowerCase().includes(q),
+    );
+    const phone =
+      digits.length >= 3 && !!r.phone?.replace(/\D/g, '').includes(digits);
+    if (!text && !phone) return false;
   }
   if (skip !== 'status' && f.status?.length && !f.status.includes(r.status))
     return false;
@@ -97,21 +110,24 @@ function matches(r: ContactRow, f: Filters, t: string, skip?: Group): boolean {
       return false;
   }
   if (skip !== 'created') {
-    const c = r.createdAt.slice(0, 10);
+    const c = todayIn(tz, new Date(r.createdAt));
     if (f.createdFrom && c < f.createdFrom) return false;
     if (f.createdTo && c > f.createdTo) return false;
   }
   return true;
 }
 
+// Overdue, due today, open dated, closed dated, then no follow-up.
 const urgencyRank = (r: ContactRow) =>
   r.urgency === 'overdue'
     ? 0
     : r.urgency === 'today'
       ? 1
-      : r.followUpOn
-        ? 2
-        : 3;
+      : r.followUpOn === null
+        ? 4
+        : r.status === 'closed'
+          ? 3
+          : 2;
 
 function compare(sort: ListQuery['sort'], dir: ListQuery['dir']) {
   const sign = dir === 'desc' ? -1 : 1;
@@ -151,9 +167,11 @@ function compare(sort: ListQuery['sort'], dir: ListQuery['dir']) {
 export async function searchContacts(
   q: ListQuery,
 ): Promise<{ rows: ContactRow[]; total: number; matching: number }> {
-  const { rows, today: t } = await load();
+  const { rows, today: t, tz } = await load();
   const f = toFilters(q);
-  const hit = rows.filter((r) => matches(r, f, t)).sort(compare(q.sort, q.dir));
+  const hit = rows
+    .filter((r) => matches(r, f, t, tz))
+    .sort(compare(q.sort, q.dir));
   const page = clampPage(q.page, hit.length, q.size);
   return {
     rows: hit.slice((page - 1) * q.size, page * q.size),
@@ -166,7 +184,7 @@ const zero = <K extends string>(keys: readonly K[]) =>
   Object.fromEntries(keys.map((k) => [k, 0])) as Record<K, number>;
 
 export async function getContactFacets(f: Filters): Promise<ContactFacets> {
-  const { rows, today: t } = await load();
+  const { rows, today: t, tz } = await load();
   const out: ContactFacets = {
     total: rows.length,
     matching: 0,
@@ -179,17 +197,18 @@ export async function getContactFacets(f: Filters): Promise<ContactFacets> {
     },
   };
   for (const r of rows) {
-    if (matches(r, f, t)) out.matching++;
-    if (matches(r, f, t, 'status')) out.facets.status[r.status]++;
-    if (matches(r, f, t, 'matterType')) out.facets.matterType[r.matterType]++;
-    if (matches(r, f, t, 'referralSource') && r.referralSource)
+    if (matches(r, f, t, tz)) out.matching++;
+    if (matches(r, f, t, tz, 'status')) out.facets.status[r.status]++;
+    if (matches(r, f, t, tz, 'matterType'))
+      out.facets.matterType[r.matterType]++;
+    if (matches(r, f, t, tz, 'referralSource') && r.referralSource)
       out.facets.referralSource[r.referralSource]++;
-    if (matches(r, f, t, 'followUp')) {
+    if (matches(r, f, t, tz, 'followUp')) {
       for (const k of FOLLOW_UP_FILTERS)
         if (followUpBucket(r, k, t)) out.facets.followUp[k]++;
     }
     // Quick views count against the other filters (not follow-up), like the follow-up facet.
-    if (matches(r, f, t, 'followUp')) {
+    if (matches(r, f, t, tz, 'followUp')) {
       out.quickViews.all++;
       if (followUpBucket(r, 'overdue', t)) out.quickViews.overdue++;
       if (followUpBucket(r, 'dueToday', t)) out.quickViews.dueToday++;
@@ -204,9 +223,9 @@ export async function getPipelineColumn(
   offset: number,
   limit = 50,
 ): Promise<{ rows: ContactRow[]; matching: number }> {
-  const { rows, today: t } = await load();
+  const { rows, today: t, tz } = await load();
   const hit = rows
-    .filter((r) => r.status === status && matches(r, f, t, 'status'))
+    .filter((r) => r.status === status && matches(r, f, t, tz, 'status'))
     .sort(compare('follow_up', 'asc'));
   return { rows: hit.slice(offset, offset + limit), matching: hit.length };
 }
@@ -217,7 +236,7 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
   if (!r) return null;
   return {
     ...r,
-    summary: `Intake for ${r.fullName}.`,
+    summary: summaryOf(r),
     notes: [],
     activities: [
       {
