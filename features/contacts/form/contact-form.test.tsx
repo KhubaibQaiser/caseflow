@@ -2,7 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ContactDetail, ContactRow } from '@/lib/contracts/contact';
+import type { ContactDetail } from '@/lib/contracts/contact';
 import { fail, ok, type Result } from '@/lib/contracts/result';
 
 const push = vi.fn();
@@ -36,8 +36,6 @@ const initial: ContactDetail = {
   notes: [],
   activities: [],
 };
-const saved = (r: Partial<ContactRow> = {}): Result<ContactRow> =>
-  ok({ ...initial, ...r });
 
 type Submit = (
   input: unknown,
@@ -80,8 +78,8 @@ describe('ContactForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
 
     expect(screen.getAllByText('Add an email or a phone number.')).toHaveLength(
-      2, // the summary link and the inline line
-    );
+      1,
+    ); // one inline line; the summary link carries its label too
     expect(screen.getByRole('textbox', { name: 'Email' })).toBeInvalid();
     expect(screen.getByRole('textbox', { name: 'Phone' })).toBeInvalid();
     expect(
@@ -131,7 +129,9 @@ describe('ContactForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
 
     await waitFor(() => expect(push).toHaveBeenCalledWith('/contacts/c1'));
-    expect(onSubmit.mock.calls[0][1]).toBe('2026-11-10T10:00:00.123456+00:00');
+    expect(onSubmit.mock.calls[0]?.[1]).toBe(
+      '2026-11-10T10:00:00.123456+00:00',
+    );
     expect(success).toHaveBeenCalledWith('Contact saved');
   });
 
@@ -244,8 +244,10 @@ describe('ContactForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Overwrite' }));
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
-    expect(onSubmit.mock.calls[1][1]).toBe('2026-11-17T09:00:00.000001+00:00');
-    expect((onSubmit.mock.calls[1][0] as { fullName: string }).fullName).toBe(
+    expect(onSubmit.mock.calls[1]?.[1]).toBe(
+      '2026-11-17T09:00:00.000001+00:00',
+    );
+    expect((onSubmit.mock.calls[1]?.[0] as { fullName: string }).fullName).toBe(
       'My edit',
     );
   });
