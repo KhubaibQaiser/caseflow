@@ -57,7 +57,7 @@ None. All data is generated seed data; no real clients, testimonials or metrics 
 ## Product Principles
 
 1. Urgency first: what needs a call today is always the most visible thing.
-2. Never lose work: failed saves keep the user's input; destructive actions offer Undo.
+2. Never lose work: failed saves keep the user's input; v1 has no destructive actions.
 3. Honest state: every screen tells the truth about loading, emptiness and failure.
 4. Fast at volume: thousands of rows stay snappy; filters compensate for virtualization.
 5. Plain over clever: known patterns, precise details.
