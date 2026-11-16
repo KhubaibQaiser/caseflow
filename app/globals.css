@@ -26,7 +26,13 @@
   --error-ring: #f8d7d1;
   --skeleton: #ecf0ed;
   --skeleton-hi: #f5f7f5;
+  --accent-on-ink: #9fd3bc;
+  --scrim: rgb(30 42 38 / 0.38);
   --raised: 0 1px 2px rgb(30 42 38 / 0.12);
+  --float: 0 10px 24px rgb(30 42 38 / 0.16);
+  --float-ink: 0 10px 24px rgb(30 42 38 / 0.25);
+  --tip: 0 6px 16px rgb(30 42 38 / 0.25);
+  --sheet: -8px 0 24px rgb(30 42 38 / 0.18);
   --r-ctl: 6px;
   --r-surface: 10px;
   --r-pill: 999px;
@@ -59,7 +65,13 @@
   --color-error-ring: var(--error-ring);
   --color-skeleton: var(--skeleton);
   --color-skeleton-hi: var(--skeleton-hi);
+  --color-accent-on-ink: var(--accent-on-ink);
+  --color-scrim: var(--scrim);
   --shadow-raised: var(--raised);
+  --shadow-float: var(--float);
+  --shadow-float-ink: var(--float-ink);
+  --shadow-tip: var(--tip);
+  --shadow-sheet: var(--sheet);
   --radius-ctl: var(--r-ctl);
   --radius-surface: var(--r-surface);
   --radius-pill: var(--r-pill);
@@ -70,6 +82,60 @@
   --text-base: 16px;
   --text-xl: 20px;
   --text-2xl: 24px;
+}
+
+@theme {
+  /* Overlay motion, keyed off Radix data-state. Not inline, so the reduced-motion override below reaches every caller. */
+  --animate-pop-in: pop-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-pop-out: pop-out 150ms ease-out;
+  --animate-fade-in: fade-in 160ms ease-out;
+  --animate-fade-out: fade-out 150ms ease-out;
+  --animate-sheet-in: sheet-in 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-sheet-out: sheet-out 150ms ease-out;
+
+  @keyframes pop-in {
+    from {
+      opacity: 0;
+      transform: scale(0.97) translateY(-2px);
+    }
+  }
+  @keyframes pop-out {
+    to {
+      opacity: 0;
+      transform: scale(0.97);
+    }
+  }
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes fade-out {
+    to {
+      opacity: 0;
+    }
+  }
+  @keyframes sheet-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes sheet-out {
+    to {
+      transform: translateX(100%);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animate-pop-in: none;
+    --animate-pop-out: none;
+    --animate-fade-in: none;
+    --animate-fade-out: none;
+    --animate-sheet-in: none;
+    --animate-sheet-out: none;
+  }
 }
 
 /* Layered so Tailwind utilities can override these. */
