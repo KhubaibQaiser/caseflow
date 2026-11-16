@@ -5,6 +5,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 ## Status
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
+- App-level 404, error and crash pages are planned (T12b).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
 

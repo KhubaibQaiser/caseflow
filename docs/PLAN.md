@@ -47,7 +47,7 @@
 M0 (sequential): T1 → T2 → T3 → T4
 then in parallel worktrees:
   BE:  T5 → T6 → T7 → T8 → T9 → T10
-  FE:  T11 → T12 → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
+  FE:  T11 → T12 → T12b → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
   OPS: T20 → T21
 then: T22 (integration and e2e) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission)
 stretch: S1 dark mode · S2 Attorney role + staging previews
@@ -573,6 +573,28 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 - [ ] **Step 3: Implement** the wrappers. Install the Radix packages, `react-day-picker@9`, `sonner` and `lucide-react`.
 - [ ] **Step 4: Run.** Expected: PASS.
 - [ ] **Step 5: Commit** `"Add Radix-based overlays, date picker and toaster"`.
+
+### Task 12b: App-level error and status pages
+
+**Files:**
+- Create: `app/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx`
+- Test: `app/error.test.tsx`, `tests/e2e/not-found.spec.ts`
+- `app/forbidden.tsx` stays in T13 (it needs `experimental.authInterrupts`; see `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/forbidden.md`).
+
+**Interfaces (produces):**
+- **`not-found.tsx`:** "Page not found.", the requested path, a primary "Go to contacts" and a secondary "Pipeline" link. It renders inside the app shell when signed in.
+- **`error.tsx`** (client boundary under the root layout): "Something broke on our side.", a short reason class (network, server or unknown), the error digest, and a "Go to contacts" link. Retry runs `startTransition(() => { router.refresh(); reset() })` (SPEC §8.8). It never shows a stack trace in production.
+- **`global-error.tsx`:** catches root-layout crashes. It has its own `<html>` and `<body>`, Figtree, inline token values (`globals.css` isn't loaded there), a React `<title>` (not metadata) and a plain Reload button.
+- All three reuse `EmptyState`, `ErrorState` and `Button` (T11), work on mobile, focus the heading on mount, are `noindex`, and use `role="alert"` on the error pages only.
+- Deliberately skipped: `app/unauthorized.tsx` (the proxy redirects to `/login?reason=expired`) and a root `app/loading.tsx` (routes have their own skeletons).
+
+- [ ] **Step 1: Write the failing tests.**
+  - Unit: clicking Retry in `error.tsx` calls `router.refresh` and `reset`.
+  - e2e: a bad URL returns 404 and shows "Page not found." with the path.
+- [ ] **Step 2: Run.** Expected: FAIL.
+- [ ] **Step 3: Implement** everything above.
+- [ ] **Step 4: Run.** Expected: PASS.
+- [ ] **Step 5: Commit** `"Add app-level not-found, error and global-error pages"`. This is its own small PR, after T12.
 
 ### Task 13: App shell, permissions context and forbidden state
 
