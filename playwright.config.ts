@@ -1,0 +1,26 @@
+import { defineConfig, devices } from '@playwright/test';
+
+export default defineConfig({
+  testDir: './tests/e2e',
+  forbidOnly: !!process.env.CI,
+  webServer: {
+    command: 'pnpm build && pnpm start',
+    url: 'http://localhost:3000',
+    reuseExistingServer: !process.env.CI,
+    timeout: 180_000,
+  },
+  use: { baseURL: 'http://localhost:3000' },
+  projects: [
+    {
+      name: 'desktop',
+      use: { viewport: { width: 1440, height: 900 } },
+      grepInvert: /@mobile/,
+    },
+    {
+      name: 'mobile',
+      // iPhone 13 viewport and UA on Chromium, so CI installs one browser.
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      grep: /@mobile/,
+    },
+  ],
+});
