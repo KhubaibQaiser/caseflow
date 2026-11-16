@@ -49,10 +49,12 @@ describe('group errors', () => {
         error="Choose a status."
       />,
     );
-    expectInvalidGroup(
-      screen.getByRole('radiogroup', { name: 'Status' }),
-      'status',
-      'Choose a status.',
+    const group = screen.getByRole('radiogroup', { name: 'Status' });
+    expectInvalidGroup(group, 'status', 'Choose a status.');
+    // The halo is a box-shadow, which forced colours drop; keep an outline there.
+    expect(group).toHaveClass(
+      'forced-colors:aria-invalid:outline-2',
+      'forced-colors:aria-invalid:outline-solid',
     );
   });
 
