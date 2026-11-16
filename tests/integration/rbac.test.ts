@@ -68,7 +68,7 @@ describe('RBAC and RLS', () => {
     expect(error).toBeNull();
     const grouped: Record<string, string[]> = {};
     for (const r of data ?? []) (grouped[r.role] ??= []).push(r.permission);
-    for (const k of Object.keys(grouped)) grouped[k].sort();
+    for (const list of Object.values(grouped)) list.sort();
     const expected = Object.fromEntries(
       Object.entries(ROLE_PERMISSIONS).map(([k, p]) => [k, [...p].sort()]),
     );

@@ -24,7 +24,7 @@ function config(): Cfg {
   const kv: Record<string, string> = {};
   for (const line of out.split('\n')) {
     const m = /^([A-Z_]+)="?(.*?)"?$/.exec(line.trim());
-    if (m) kv[m[1]] = m[2];
+    if (m?.[1] && m[2] !== undefined) kv[m[1]] = m[2];
   }
   const url = kv.API_URL;
   const anon = kv.PUBLISHABLE_KEY ?? kv.ANON_KEY;
