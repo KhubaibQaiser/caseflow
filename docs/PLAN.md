@@ -400,8 +400,8 @@ it('rejects contact with neither email nor phone', async () => { /* check violat
 
 **Interfaces (produces):**
 - **`safe_tz(tz text) returns text`:** returns `tz` if it's in `pg_timezone_names`, otherwise `'UTC'`.
-- **`contact_matches(c contacts, f jsonb, today date, skip text default null) returns boolean`** (`stable`). Every filter in `Filters` applies, except the group named by `skip`:
-  - `q` is `ilike '%'||q||'%'` on `full_name`, `email` and `summary`, plus `phone_digits like '%'||digits(q)||'%'` when `q` has 3 or more digits
+- **`contact_flags(nf jsonb, today date, tz text) returns table(...)`** (`stable`, one row per non-deleted contact; `nf` comes from `norm_filters`, array filters are parsed by `filter_set`). It returns one match flag per filter group (`q`, status, matter, source, follow-up, created) plus the four follow-up bucket flags; `search_contacts` and `contact_facets` combine them, leaving out a group for its own facet:
+  - `q` is a case-insensitive substring on `full_name`, `email` and `summary`, plus `phone_digits` when `q` has 3 or more digits
   - the array filters
   - `followUp` uses the urgency rules (only lead and active count for overdue and today; `next7Days` is `today <= d < today+7`; `none` is `follow_up_on is null`; custom uses `followUpFrom`/`followUpTo`; the jsonb keys are exactly the `Filters` field names)
   - the created range
@@ -422,7 +422,7 @@ order by case when c.status in ('lead','active') and c.follow_up_on < today then
 ```
 
 - **`ping() returns int`:** `security definer`, returns 1, `grant execute to anon`. The keep-alive job (T21) calls it.
-- **`contact_facets(f jsonb, tz text) returns jsonb`** has the spec §7.3 shape. It makes one pass over `contacts where deleted_at is null`, with `count(*) filter (where contact_matches(c, f, today, '<group>') and <option predicate>)` for each option.
+- **`contact_facets(f jsonb, tz text) returns jsonb`** has the spec §7.3 shape. It makes one pass through `contact_flags`, with a count per option over the flags of every group except its own.
   - `quickViews.overdue` and `quickViews.dueToday` apply every filter except `followUp`.
   - `matching` applies everything.
   - `total` counts every non-deleted row.
