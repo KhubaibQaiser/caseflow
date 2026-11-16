@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { ROLE_PERMISSIONS } from '@/lib/contracts/permissions';
+import { PERMISSIONS, ROLE_PERMISSIONS } from '@/lib/contracts/permissions';
 import {
   adminClient,
+  anonClient,
+  anonSignedIn,
+  PASSWORD,
+  serviceClient,
   assertLocalUrl,
   resetData,
   seedContact,
@@ -129,5 +133,73 @@ describe('RBAC and RLS', () => {
     const a = await adminClient();
     const r = await seedContact(a.client, { full_name: 'No Contact' });
     expect(r.error?.code).toBe('23514');
+  });
+
+  it('rejects blank email/phone and untrimmed names', async () => {
+    const a = await adminClient();
+    for (const blank of [{ email: '' }, { email: '  ', phone: '\t' }]) {
+      const r = await seedContact(a.client, {
+        full_name: 'Blank One',
+        ...blank,
+      });
+      expect(r.error?.code).toBe('23514');
+    }
+    const n = await seedContact(a.client, {
+      full_name: '\tName\n',
+      email: 'n@example.com',
+    });
+    expect(n.error?.code).toBe('23514');
+  });
+
+  it('user cannot grant themselves a role', async () => {
+    const v = await viewerClient();
+    const ins = await v.client
+      .from('profiles')
+      .insert({ user_id: v.userId, display_name: 'x', role: 'admin' });
+    expect(ins.error).not.toBeNull();
+  });
+
+  it('has_permission is right per role and false without a profile', async () => {
+    const a = await adminClient();
+    const v = await viewerClient();
+    const ask = async (c: typeof a.client, p: string) =>
+      (await c.rpc('has_permission', { p })).data;
+    for (const p of PERMISSIONS) {
+      expect(await ask(a.client, p)).toBe(true);
+      expect(await ask(v.client, p)).toBe(p === 'contacts.read');
+    }
+    const svc = serviceClient();
+    const email = 'it-noprofile@caseflow.test';
+    const created = await svc.auth.admin.createUser({
+      email,
+      password: PASSWORD,
+      email_confirm: true,
+    });
+    const id = created.data.user?.id;
+    if (!id) {
+      // already exists from a previous run
+      const list = await svc.auth.admin.listUsers({ perPage: 1000 });
+      expect(list.data.users.some((u) => u.email === email)).toBe(true);
+    }
+    const np = await anonSignedIn(email);
+    expect(await ask(np, 'contacts.read')).toBe(false);
+  });
+
+  it('anon has no access to tables or has_permission', async () => {
+    const anon = anonClient();
+    for (const t of [
+      'profiles',
+      'role_permissions',
+      'contacts',
+      'notes',
+      'activities',
+    ]) {
+      const r = await anon.from(t).select('*');
+      expect(r.error !== null || (r.data ?? []).length === 0).toBe(true);
+      expect(r.error).not.toBeNull();
+    }
+    expect(
+      (await anon.rpc('has_permission', { p: 'contacts.read' })).error,
+    ).not.toBeNull();
   });
 });

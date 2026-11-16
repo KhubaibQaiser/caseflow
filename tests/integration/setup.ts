@@ -47,13 +47,28 @@ function config(): Cfg {
 }
 
 const opts = { auth: { persistSession: false, autoRefreshToken: false } };
-const PASSWORD = 'it-Passw0rd!local';
+export const PASSWORD = 'it-Passw0rd!local';
 
 export type TestClient = { client: SupabaseClient; userId: string };
 
 export function serviceClient(): SupabaseClient {
   const c = config();
   return createClient(c.url, c.secret, opts);
+}
+
+export function anonClient(): SupabaseClient {
+  const c = config();
+  return createClient(c.url, c.anon, opts);
+}
+
+export async function anonSignedIn(email: string): Promise<SupabaseClient> {
+  const client = anonClient();
+  const { error } = await client.auth.signInWithPassword({
+    email,
+    password: PASSWORD,
+  });
+  if (error) throw new Error(error.message);
+  return client;
 }
 
 async function signedIn(
