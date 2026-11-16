@@ -37,7 +37,11 @@ const form = (o: Record<string, string>) => {
   for (const [k, v] of Object.entries(o)) f.set(k, v);
   return f;
 };
-const good = { email: ' Ana@Firm.test ', password: 'pw', tz: 'America/Chicago' };
+const good = {
+  email: ' Ana@Firm.test ',
+  password: 'pw',
+  tz: 'America/Chicago',
+};
 const authError = (status: number, code: string) =>
   Object.assign(new Error(code), { name: 'AuthApiError', status, code });
 
@@ -141,9 +145,9 @@ describe('signInAction', () => {
         data: { session: { access_token: 'a', refresh_token: 'r' } },
         error: null,
       });
-      await expect(
-        signInAction(null, form({ ...good, next })),
-      ).rejects.toThrow('REDIRECT /contacts');
+      await expect(signInAction(null, form({ ...good, next }))).rejects.toThrow(
+        'REDIRECT /contacts',
+      );
     },
   );
 

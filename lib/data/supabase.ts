@@ -17,6 +17,7 @@ import {
   type ListQuery,
 } from '@/lib/contracts/list-query';
 import { todayIn } from '@/lib/dates/date-only';
+import { urgencyOf } from '@/lib/dates/urgency';
 import { getRequestTimeZone } from '@/lib/dates/server';
 import { createServerSupabase } from '@/lib/supabase/server';
 import { z } from 'zod';
@@ -160,9 +161,6 @@ const DetailRaw = z.object({
   ),
 });
 
-const DAY_MS = 86_400_000;
-const utcDay = (s: string) => Date.parse(`${s}T00:00:00Z`);
-
 export async function getContact(id: string): Promise<ContactDetail | null> {
   const [db, tz] = await Promise.all([
     createServerSupabase(),
@@ -192,24 +190,15 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
   if (!p.success) return fail('getContact response', p.error.issues);
   const c = p.data;
 
-  const today = todayIn(tz);
-  const open = c.status !== 'closed';
-  const fu = c.follow_up_on;
-  const urgency =
-    open && fu && fu < today
-      ? 'overdue'
-      : open && fu === today
-        ? 'today'
-        : fu
-          ? 'later'
-          : 'none';
+  const { urgency, daysOverdue } = urgencyOf(
+    c.status as Status,
+    c.follow_up_on,
+    todayIn(tz),
+  );
   const parsed = ContactDetailSchema.safeParse({
     ...mapContactRowFields(c),
     urgency,
-    daysOverdue:
-      urgency === 'overdue' && fu
-        ? (utcDay(today) - utcDay(fu)) / DAY_MS
-        : null,
+    daysOverdue,
     summary: c.summary,
     notes: c.notes.map((n) => ({
       id: n.id,

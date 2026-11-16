@@ -64,7 +64,7 @@ beforeEach(async () => {
 describe('mutations', () => {
   it('insertContact returns the new id', async () => {
     const a = await adminClient();
-    const r = await insertContact(db(a.client), input, TODAY);
+    const r = await insertContact(db(a.client), input);
     expect(r.ok && r.data.id).toMatch(/^[0-9a-f-]{36}$/);
   });
 
@@ -115,7 +115,7 @@ describe('mutations', () => {
     expect(
       await updateContact(db(v.client), c.id, input, c.updated_at, TODAY),
     ).toMatchObject({ ok: false, error: { code: 'forbidden' } });
-    expect(await insertContact(db(v.client), input, TODAY)).toMatchObject({
+    expect(await insertContact(db(v.client), input)).toMatchObject({
       ok: false,
       error: { code: 'forbidden' },
     });
@@ -143,14 +143,21 @@ describe('mutations', () => {
   it('insertNote rejects an empty body as validation and returns the note otherwise', async () => {
     const a = await adminClient();
     const c = await fresh(a);
-    const author = { id: a.userId, displayName: 'IT Admin', role: 'admin' as const };
+    const author = {
+      id: a.userId,
+      displayName: 'IT Admin',
+      role: 'admin' as const,
+    };
     expect(await insertNote(db(a.client), c.id, '', author)).toMatchObject({
       ok: false,
       error: { code: 'validation' },
     });
-    expect(await insertNote(db(a.client), c.id, 'Called', author)).toMatchObject(
-      { ok: true, data: { body: 'Called', author: { name: 'IT Admin' } } },
-    );
+    expect(
+      await insertNote(db(a.client), c.id, 'Called', author),
+    ).toMatchObject({
+      ok: true,
+      data: { body: 'Called', author: { name: 'IT Admin' } },
+    });
   });
 });
 
@@ -206,12 +213,13 @@ describe('server actions', () => {
     });
     const c = data as { id: string; updated_at: string };
     const edit = { ...input, followUpOn: '2020-01-01' };
-    expect(
-      await updateContactAction(c.id, edit, c.updated_at),
-    ).toMatchObject({ ok: true });
-    expect(
-      await updateContactAction(c.id, edit, c.updated_at),
-    ).toMatchObject({ ok: false, error: { code: 'conflict' } });
+    expect(await updateContactAction(c.id, edit, c.updated_at)).toMatchObject({
+      ok: true,
+    });
+    expect(await updateContactAction(c.id, edit, c.updated_at)).toMatchObject({
+      ok: false,
+      error: { code: 'conflict' },
+    });
     expect(
       await updateContactAction(
         c.id,
