@@ -120,3 +120,16 @@ describe('Sidebar rail', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Sign out');
   });
 });
+
+describe('Account sheet Sign out', () => {
+  it('has no tooltip: the label is already visible there', async () => {
+    pathname = '/contacts';
+    inShell(<TabBar signOut={signOut} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: 'Account' }));
+    await screen.findByRole('dialog', { name: 'Account' });
+    screen.getByRole('button', { name: 'Sign out' }).focus();
+    await new Promise((r) => setTimeout(r, 400));
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  });
+});

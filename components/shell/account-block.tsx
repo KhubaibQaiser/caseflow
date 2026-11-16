@@ -52,6 +52,10 @@ export function AccountIdentity({ rail = false }: { rail?: boolean }) {
   );
 }
 
+/**
+ * `rail`: the sidebar's quiet text link (icon only on the tablet rail, tooltip there).
+ * Otherwise the bordered button for the mobile Account sheet, whose label is already visible.
+ */
 export function SignOutForm({
   signOut,
   rail = false,
@@ -61,18 +65,28 @@ export function SignOutForm({
   rail?: boolean;
   className?: string;
 }) {
-  return (
-    <form action={signOut} className={className}>
-      <LazyTooltip content="Sign out" contentClassName="lg:hidden">
-        <Button
-          variant="ghost"
-          size="sm"
-          type="submit"
-          className={cn(rail && 'max-lg:w-[30px] max-lg:px-0', 'w-full')}
-        >
+  if (!rail)
+    return (
+      <form action={signOut} className={className}>
+        <Button variant="ghost" size="sm" type="submit" className="w-full">
           <LogOut aria-hidden className="size-4" />
-          <span className={cn(rail && 'max-lg:sr-only')}>Sign out</span>
+          Sign out
         </Button>
+      </form>
+    );
+  return (
+    <form
+      action={signOut}
+      className={cn(className, 'max-lg:flex max-lg:justify-center')}
+    >
+      <LazyTooltip content="Sign out" side="right" contentClassName="lg:hidden">
+        <button
+          type="submit"
+          className="text-ink-2 hover:text-ink rounded-ctl text-13 inline-flex min-h-6 cursor-pointer items-center justify-center gap-0 border-0 bg-transparent font-medium max-lg:size-[30px] lg:-ml-1 lg:px-1"
+        >
+          <LogOut aria-hidden className="size-4 lg:hidden" />
+          <span className="max-lg:sr-only">Sign out</span>
+        </button>
       </LazyTooltip>
     </form>
   );
@@ -81,7 +95,7 @@ export function SignOutForm({
 /** Sidebar footer: who you are, what you may do, and the way out. */
 export function AccountBlock({ signOut }: { signOut: SignOut }) {
   return (
-    <div className="border-line mt-auto flex flex-col gap-3 border-t pt-3">
+    <div className="border-line mt-auto flex flex-col gap-1 border-t pt-3 lg:px-2.5">
       <AccountIdentity rail />
       <SignOutForm signOut={signOut} rail />
     </div>

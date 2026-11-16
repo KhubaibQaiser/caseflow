@@ -10,6 +10,7 @@ export type TooltipProps = {
   /** One focusable element; it becomes the trigger. */
   children: ReactElement;
   open?: boolean;
+  side?: 'top' | 'right';
   /** Hide the tip where the label is already visible. */
   contentClassName?: string;
   onOpenChange?(open: boolean): void;
@@ -20,6 +21,7 @@ export function Tooltip({
   content,
   children,
   open,
+  side = 'top',
   contentClassName,
   onOpenChange,
 }: TooltipProps) {
@@ -29,7 +31,7 @@ export function Tooltip({
         <RadixTooltip.Trigger asChild>{children}</RadixTooltip.Trigger>
         <RadixTooltip.Portal>
           <RadixTooltip.Content
-            side="top"
+            side={side}
             sideOffset={6}
             collisionPadding={8}
             className={cn(

@@ -1,8 +1,8 @@
 import Columns3 from 'lucide-react/icons/columns-3';
-import Users from 'lucide-react/icons/users';
+import User from 'lucide-react/icons/user';
 
 export const NAV = [
-  { href: '/contacts', label: 'Contacts', icon: Users },
+  { href: '/contacts', label: 'Contacts', icon: User },
   { href: '/pipeline', label: 'Pipeline', icon: Columns3 },
 ] as const;
 
