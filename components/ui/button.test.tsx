@@ -98,4 +98,37 @@ describe('Button', () => {
     await user.click(screen.getByRole('button'));
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it('keeps the disabled reason even if callers pass aria props', () => {
+    render(
+      <Button
+        variant="ghost"
+        disabledReason="Viewers can't edit contacts. Ask an admin."
+        aria-disabled={false}
+        aria-describedby="edit-hint"
+        title="Edit"
+      >
+        Edit
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Edit' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    // The tooltip replaces the native title; the reason stays in the description.
+    expect(button).not.toHaveAttribute('title');
+    expect(button).toHaveAccessibleDescription(
+      "Viewers can't edit contacts. Ask an admin.",
+    );
+    expect(button.getAttribute('aria-describedby')).toContain('edit-hint');
+  });
+
+  it("keeps the caller's title and aria-disabled without a disabled reason", () => {
+    render(
+      <Button variant="ghost" title="Edit contact" aria-disabled="true">
+        Edit
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Edit' });
+    expect(button).toHaveAttribute('title', 'Edit contact');
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+  });
 });

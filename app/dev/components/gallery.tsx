@@ -61,7 +61,7 @@ const FOLLOW_UP_WINDOWS = [
   { value: 'overdue', label: 'Overdue' },
   { value: 'dueToday', label: 'Due today' },
   { value: 'next7Days', label: 'Due this week' },
-  { value: 'none', label: 'No follow-up set' },
+  { value: 'none', label: 'No follow-up set', disabled: true },
 ];
 
 const STATUS_OPTIONS = STATUSES.map((value) => ({
@@ -116,6 +116,7 @@ function PendingDemo() {
 }
 
 function FormDemo() {
+  const [attempt, setAttempt] = useState(0);
   const [errors, setErrors] = useState<
     { id: string; label: string; message: string }[]
   >([]);
@@ -138,6 +139,7 @@ function FormDemo() {
         message: 'Add an email or a phone number.',
       });
     setErrors(next);
+    setAttempt((n) => n + 1);
   };
 
   return (
@@ -146,7 +148,7 @@ function FormDemo() {
       onSubmit={onSubmit}
       className="flex max-w-[720px] flex-col gap-3"
     >
-      <ErrorSummary errors={errors} />
+      <ErrorSummary errors={errors} attempt={attempt} />
       <div className="grid gap-3 sm:grid-cols-2">
         <Field
           id="demo-name"
@@ -464,12 +466,17 @@ export function Gallery() {
               options={[
                 { value: 'lead', label: 'Lead', count: 642 },
                 { value: 'active', label: 'Active', count: 642 },
-                { value: 'closed', label: 'Closed', count: 1153 },
+                {
+                  value: 'closed',
+                  label: 'Closed',
+                  count: 1153,
+                  disabled: true,
+                },
               ]}
               defaultValue="active"
             />
             <p className="text-ink-2 m-0 text-xs">
-              Arrow keys move the selection.
+              Arrow keys move the selection and skip disabled options.
             </p>
           </div>
         </div>

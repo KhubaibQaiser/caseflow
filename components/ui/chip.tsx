@@ -4,7 +4,10 @@ import X from 'lucide-react/icons/x';
 
 type ChipProps = { label: string; value: string; onRemove(): void };
 
-/** An active filter. The remove button is a 24px target. */
+/**
+ * An active filter. The remove button is a 24px target.
+ * The chip unmounts on removal, so the consumer must move focus (to the next chip, or the Filters button).
+ */
 export function Chip({ label, value, onRemove }: ChipProps) {
   return (
     <span className="rounded-pill border-line bg-surface text-13 text-ink inline-flex h-7 items-center gap-0.5 border pr-0.5 pl-2.5">

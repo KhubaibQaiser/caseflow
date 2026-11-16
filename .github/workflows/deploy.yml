@@ -1,0 +1,119 @@
+name: Deploy
+
+# Runs only after CI succeeds on a main push (ADR-0008): migrate, deploy, smoke test.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Never cancel an in-flight production deploy; later ones queue.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  # Skip stale runs: only the current tip of main may deploy (queued older runs would roll prod back).
+  guard:
+    # DEPLOY_ENABLED is a repository variable; T23 sets it.
+    if: vars.DEPLOY_ENABLED == 'true' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      current: ${{ steps.tip.outputs.current }}
+    steps:
+      - id: tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$tip" = "${{ github.event.workflow_run.head_sha }}" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::${{ github.event.workflow_run.head_sha }} is no longer the tip of main; skipping deploy"
+          fi
+
+  deploy:
+    needs: guard
+    if: needs.guard.outputs.current == 'true'
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      VERCEL_CLI: vercel@65.16.0
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.2.0
+
+      - name: Migrate production database
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_YES: 'true'
+        run: |
+          supabase link --project-ref "$SUPABASE_PROJECT_REF"
+          supabase db push
+
+      - name: Sync Vercel production env from GitHub secrets
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          set_env() { printf %s "$2" | pnpm dlx "$VERCEL_CLI" env add "$1" --environment production --force --yes "${@:3}"; }
+          set_env NEXT_PUBLIC_SUPABASE_URL "$SUPABASE_URL"
+          set_env NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
+          set_env SUPABASE_SECRET_KEY "$SUPABASE_SECRET_KEY" --sensitive
+
+      - run: pnpm dlx "$VERCEL_CLI" pull --yes --environment=production
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - run: pnpm dlx "$VERCEL_CLI" build --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      - id: deploy
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: |
+          # stdout is the URL; stderr (CLI logs) stays out of the capture
+          url=$(pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod)
+          case "$url" in
+            ""|*[[:space:]]*) echo "::error::deploy did not return a single URL"; exit 1 ;;
+            https://?*) ;;
+            *) echo "::error::deploy did not return an https URL"; exit 1 ;;
+          esac
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # tests/e2e/smoke.spec.ts lands in T22/T23; skip until it exists.
+      - name: Smoke test
+        env:
+          BASE_URL: ${{ steps.deploy.outputs.url }}
+          SEED_VIEWER_PASSWORD: ${{ secrets.SEED_VIEWER_PASSWORD }}
+        run: |
+          if [ -f tests/e2e/smoke.spec.ts ]; then
+            pnpm exec playwright install --with-deps chromium
+            pnpm exec playwright test tests/e2e/smoke.spec.ts
+          else
+            echo "::notice::tests/e2e/smoke.spec.ts not found; smoke test skipped"
+          fi
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore

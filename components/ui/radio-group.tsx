@@ -1,10 +1,12 @@
-import type { ChangeEvent } from 'react';
+'use client';
+
+import type { ChangeEvent, FocusEvent } from 'react';
 
 import { optionMark, optionRow } from './checkbox';
 import { legendClass } from './checkbox-group';
 import { ErrorText, groupErrorProps } from './error-text';
 
-type Option = { value: string; label: string };
+type Option = { value: string; label: string; disabled?: boolean };
 
 type RadioGroupProps = {
   /** Group id for ErrorSummary links; defaults to `name`. */
@@ -16,6 +18,7 @@ type RadioGroupProps = {
   value?: string;
   defaultValue?: string;
   onValueChange?(value: string): void;
+  onBlur?(event: FocusEvent<HTMLInputElement>): void;
 };
 
 /** Native radios in a fieldset: arrow keys and form submission come from the platform. */
@@ -28,6 +31,7 @@ export function RadioGroup({
   value,
   defaultValue,
   onValueChange,
+  onBlur,
 }: RadioGroupProps) {
   const onChange = (event: ChangeEvent<HTMLInputElement>) =>
     onValueChange?.(event.target.value);
@@ -49,7 +53,9 @@ export function RadioGroup({
                 ? undefined
                 : defaultValue === option.value
             }
+            disabled={option.disabled}
             onChange={onChange}
+            onBlur={onBlur}
             className={`${optionMark} size-4 rounded-full checked:border-[5px]`}
           />
           {option.label}

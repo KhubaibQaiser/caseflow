@@ -1,6 +1,8 @@
 import type { ComponentProps } from 'react';
 import Check from 'lucide-react/icons/check';
 
+import { cn } from '@/utils/cn';
+
 type CheckboxProps = Omit<ComponentProps<'input'>, 'type'> & {
   label: string;
   count?: number;
@@ -19,7 +21,11 @@ export function Checkbox({ label, count, className, ...props }: CheckboxProps) {
       <span className="relative grid size-4 shrink-0 place-items-center">
         <input
           type="checkbox"
-          className={`${optionMark} peer checked:bg-accent size-4 rounded-[4px] forced-colors:checked:border-[Highlight] forced-colors:checked:bg-[Highlight] forced-colors:checked:forced-color-adjust-none ${className ?? ''}`}
+          className={cn(
+            optionMark,
+            'peer checked:bg-accent size-4 rounded-[4px] forced-colors:checked:border-[Highlight] forced-colors:checked:bg-[Highlight] forced-colors:checked:forced-color-adjust-none',
+            className,
+          )}
           {...props}
         />
         <Check
