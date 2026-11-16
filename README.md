@@ -86,7 +86,6 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 
 ## Decisions that differ from the spec
 
-- Filters use a flat follow-up range (`followUpFrom`/`followUpTo`) instead of the nested form in section 7.4.
 - Soft-deleted contacts are readable through the raw API and the app's queries filter them out; the spec (section 6) wants RLS to hide them.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
 - Control borders are darker than the mockups for 3:1 contrast.
