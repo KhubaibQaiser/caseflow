@@ -1,6 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROLE_PERMISSIONS } from '@/lib/contracts/permissions';
-import { adminClient, assertLocalUrl, resetData, seedContact, viewerClient } from './setup';
+import {
+  adminClient,
+  assertLocalUrl,
+  resetData,
+  seedContact,
+  viewerClient,
+} from './setup';
 
 beforeEach(resetData);
 
@@ -19,16 +25,30 @@ describe('RBAC and RLS', () => {
       matter_type: 'family',
     });
     expect(error).toBeNull();
-    expect((await v.client.from('contacts').select('id').eq('id', c.id)).data).toHaveLength(1);
     expect(
-      (await v.client
-        .from('contacts')
-        .insert({ full_name: 'X Y', phone: '5125550102', matter_type: 'family' })).error,
+      (await v.client.from('contacts').select('id').eq('id', c.id)).data,
+    ).toHaveLength(1);
+    expect(
+      (
+        await v.client.from('contacts').insert({
+          full_name: 'X Y',
+          phone: '5125550102',
+          matter_type: 'family',
+        })
+      ).error,
     ).not.toBeNull();
-    const upd = await v.client.from('contacts').update({ full_name: 'Hacked' }).eq('id', c.id).select();
+    const upd = await v.client
+      .from('contacts')
+      .update({ full_name: 'Hacked' })
+      .eq('id', c.id)
+      .select();
     expect(upd.data ?? []).toHaveLength(0);
     expect(
-      (await v.client.from('notes').insert({ contact_id: c.id, body: 'x', author_id: v.userId })).error,
+      (
+        await v.client
+          .from('notes')
+          .insert({ contact_id: c.id, body: 'x', author_id: v.userId })
+      ).error,
     ).not.toBeNull();
   });
 
@@ -39,19 +59,32 @@ describe('RBAC and RLS', () => {
       email: 'ben@example.com',
     });
     expect(error).toBeNull();
-    const upd = await a.client.from('contacts').update({ full_name: 'Ben Coleman' }).eq('id', c.id).select();
+    const upd = await a.client
+      .from('contacts')
+      .update({ full_name: 'Ben Coleman' })
+      .eq('id', c.id)
+      .select();
     expect(upd.error).toBeNull();
     expect(upd.data).toHaveLength(1);
-    const note = await a.client.from('notes').insert({ contact_id: c.id, body: 'Called', author_id: a.userId });
+    const note = await a.client
+      .from('notes')
+      .insert({ contact_id: c.id, body: 'Called', author_id: a.userId });
     expect(note.error).toBeNull();
   });
 
   it('admin cannot forge note author or hard-delete', async () => {
     const a = await adminClient();
     const v = await viewerClient();
-    const { data: c } = await seedContact(a.client, { full_name: 'Cy Dunn', email: 'cy@example.com' });
+    const { data: c } = await seedContact(a.client, {
+      full_name: 'Cy Dunn',
+      email: 'cy@example.com',
+    });
     expect(
-      (await a.client.from('notes').insert({ contact_id: c.id, body: 'x', author_id: v.userId })).error,
+      (
+        await a.client
+          .from('notes')
+          .insert({ contact_id: c.id, body: 'x', author_id: v.userId })
+      ).error,
     ).not.toBeNull();
     await a.client.from('contacts').delete().eq('id', c.id);
     const still = await a.client.from('contacts').select('id').eq('id', c.id);
@@ -61,10 +94,22 @@ describe('RBAC and RLS', () => {
   it('clients cannot write profiles, role_permissions or activities', async () => {
     const v = await viewerClient();
     const a = await adminClient();
-    const p = await v.client.from('profiles').update({ role: 'admin' }).eq('user_id', v.userId).select();
+    const p = await v.client
+      .from('profiles')
+      .update({ role: 'admin' })
+      .eq('user_id', v.userId)
+      .select();
     expect(p.data ?? []).toHaveLength(0);
-    expect((await a.client.from('role_permissions').insert({ role: 'viewer', permission: 'contacts.write' })).error).not.toBeNull();
-    expect((await a.client.from('activities').insert({ type: 'created' })).error).not.toBeNull();
+    expect(
+      (
+        await a.client
+          .from('role_permissions')
+          .insert({ role: 'viewer', permission: 'contacts.write' })
+      ).error,
+    ).not.toBeNull();
+    expect(
+      (await a.client.from('activities').insert({ type: 'created' })).error,
+    ).not.toBeNull();
   });
 
   it('role_permissions matches ROLE_PERMISSIONS', async () => {
