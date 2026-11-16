@@ -38,7 +38,7 @@ export function Segmented({
         {...groupErrorProps(id ?? name, error)}
         role="radiogroup"
         aria-label={label}
-        className="bg-track inline-flex gap-0.5 self-start rounded-lg p-[3px] aria-invalid:shadow-[0_0_0_1px_var(--overdue),0_0_0_4px_var(--error-ring)]"
+        className="bg-track inline-flex gap-0.5 self-start rounded-lg p-[3px] aria-invalid:shadow-[0_0_0_1px_var(--overdue),0_0_0_4px_var(--error-ring)] forced-colors:aria-invalid:outline-2 forced-colors:aria-invalid:outline-solid"
       >
         {options.map((option) => (
           <label
