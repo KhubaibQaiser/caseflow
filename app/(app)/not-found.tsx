@@ -22,7 +22,7 @@ export default function NotFound() {
         description={
           <>
             No page at{' '}
-            <span className="text-ink font-medium break-all">
+            <span className="text-ink font-medium wrap-anywhere">
               <RequestedPath />
             </span>
           </>
