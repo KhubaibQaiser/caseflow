@@ -17,6 +17,8 @@ it('renders its own document with a title, the alert and Reload', () => {
   expect(html).toContain('<title>Something broke · Caseflow</title>');
   expect(html).toContain('role="alert"');
   expect(html).toContain('Something broke on our side.');
-  expect(html).toMatch(/<button[^>]*>Reload<\/button>/);
+  expect(html).toMatch(
+    /<button[^>]*>(?:(?!<\/button>).)*Reload(?:(?!<\/button>).)*<\/button>/,
+  );
   expect(html).not.toContain('root layout crash');
 });
