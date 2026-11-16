@@ -35,7 +35,7 @@ export function DialogContent({
       <DialogScrim />
       <RadixDialog.Content
         {...(description === undefined && { 'aria-describedby': undefined })}
-        className="rounded-surface border-line bg-surface shadow-float data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out fixed top-1/2 left-1/2 z-50 flex w-[min(400px,calc(100vw-32px))] -translate-1/2 flex-col gap-2 border p-5"
+        className="rounded-surface border-line bg-surface shadow-raised data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out fixed top-1/2 left-1/2 z-50 flex w-[min(400px,calc(100vw-32px))] -translate-1/2 flex-col gap-2 border p-5"
       >
         <DialogTitle className="text-ink m-0 text-base font-semibold">
           {title}

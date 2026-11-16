@@ -40,7 +40,7 @@ Figtree 400/500/600/700 via `next/font/google`. Scale 12 / 13 / 14 / 16 / 20 / 2
 
 ## Radii, shadow, spacing
 
-Radii: 6 (`--r-ctl`, controls), 10 (`--r-surface`, surfaces), 999 (pills); menus, popovers and toasts use 8 as in the mockups. Shadows only on floating layers: `--float` (menus, popovers, dialog), `--float-ink` (toast), `--tip` (tooltip), `--sheet` (sheet), plus `--raised` for the checked segment. 4px spacing base.
+Radii: 6 (`--r-ctl`, controls), 10 (`--r-surface`, surfaces and overlays: menus, popovers, dialogs, toasts), 999 (pills). One shadow, `--raised`, used only on floating layers and the checked segment. 4px spacing base.
 
 Motion: overlays animate on Radix `data-state` (pop, fade, sheet slide; 150–200ms ease-out). Under `prefers-reduced-motion` the `--animate-*` tokens are `none`.
 

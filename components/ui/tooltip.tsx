@@ -27,7 +27,7 @@ export function Tooltip({
             side="top"
             sideOffset={6}
             collisionPadding={8}
-            className="rounded-ctl bg-ink text-surface shadow-tip data-[state=closed]:animate-fade-out data-[state=delayed-open]:animate-pop-in data-[state=instant-open]:animate-pop-in z-50 max-w-[min(280px,calc(100vw-16px))] origin-(--radix-tooltip-content-transform-origin) border border-transparent px-2 py-1.5 text-xs leading-snug font-medium"
+            className="rounded-ctl bg-ink text-surface shadow-raised data-[state=closed]:animate-fade-out data-[state=delayed-open]:animate-pop-in data-[state=instant-open]:animate-pop-in z-50 max-w-[min(280px,calc(100vw-16px))] origin-(--radix-tooltip-content-transform-origin) border border-transparent px-2 py-1.5 text-xs leading-snug font-medium"
           >
             {content}
           </RadixTooltip.Content>
