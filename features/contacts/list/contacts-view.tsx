@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 
 import type { ContactFacets } from '@/lib/contracts/facets';
+import { serializeListQuery } from '@/lib/contracts/list-query';
 
 import { ListTransition, useListQuery } from '../url-state';
 import { nextSort } from './columns';
@@ -92,6 +93,7 @@ function Results({
               sort={query.sort}
               dir={query.dir}
               onSort={(key) => setQuery(nextSort(query, key))}
+              scrollKey={serializeListQuery({ ...query, page: null })}
             />
             <ContactCards
               className="md:hidden"

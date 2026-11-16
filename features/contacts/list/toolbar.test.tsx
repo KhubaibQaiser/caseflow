@@ -56,6 +56,19 @@ describe('Toolbar search', () => {
     await waitFor(() => expect(box).toHaveValue(''));
     await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
   });
+
+  it('keeps a whitespace-only search out of the URL', async () => {
+    const user = userEvent.setup();
+    const onUrlUpdate = vi.fn();
+    renderToolbar({ searchParams: '?q=a&page=2', onUrlUpdate });
+    const box = screen.getByRole('searchbox');
+    await user.clear(box);
+    await user.type(box, '   ');
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
+    // The box mirrors the URL, so whitespace alone simply doesn't take.
+    expect(box).toHaveValue('');
+  });
 });
 
 describe('Toolbar filters', () => {

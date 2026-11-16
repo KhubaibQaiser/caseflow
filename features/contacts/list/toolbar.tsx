@@ -28,7 +28,8 @@ export function Toolbar({
   facets,
   isPending,
 }: {
-  facets: ContactFacets;
+  /** Omitted on the error screen, where the counts are unknown. */
+  facets?: ContactFacets;
   isPending: boolean;
 }) {
   const [query, setQuery] = useListQuery();
@@ -58,7 +59,8 @@ export function Toolbar({
           // The box updates at once; the URL (and the server) follow 250ms after the last key.
           onChange={(e) =>
             setQuery(
-              { q: e.target.value || null },
+              // Whitespace alone searches nothing, so it stays out of the URL.
+              { q: e.target.value.trim() ? e.target.value : null },
               { history: 'replace', limitUrlUpdates: debounce(250) },
             )
           }
@@ -106,7 +108,7 @@ export function Toolbar({
         </Suspense>
       </div>
       <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
-        <QuickViews counts={facets.quickViews} />
+        <QuickViews counts={facets?.quickViews} />
       </div>
       <FilterChips fallbackFocus={filtersButton} />
     </div>
