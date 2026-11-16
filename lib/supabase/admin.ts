@@ -1,5 +1,6 @@
 import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { secretKey, supabaseEnv } from '@/lib/env';
 import type { Database } from './database.types';
 
 const make = (headers?: Record<string, string>): SupabaseClient<Database> =>

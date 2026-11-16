@@ -106,7 +106,12 @@ export async function getPipelineColumn(
   offset: number,
   limit = 50,
 ): Promise<{ rows: ContactRow[]; matching: number }> {
-  if (!(PAGE_SIZES as readonly number[]).includes(limit) || offset % limit)
+  if (
+    !(PAGE_SIZES as readonly number[]).includes(limit) ||
+    !Number.isInteger(offset) ||
+    offset < 0 ||
+    offset % limit
+  )
     fail('getPipelineColumn paging');
   const r = await search(
     { ...f, status: [status] },

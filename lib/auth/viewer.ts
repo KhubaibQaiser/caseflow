@@ -16,6 +16,13 @@ export class ForbiddenError extends Error {
   override name = 'ForbiddenError';
 }
 
+// Signed in, but no profiles row. The (app) layer renders the No access state
+// ("No access." / "Your account isn't set up yet. Ask an admin." plus Sign out).
+// Never redirect to /login for this: the proxy would bounce the user back.
+export class NoProfileError extends Error {
+  override name = 'NoProfileError';
+}
+
 const Profile = z.object({ display_name: z.string(), role: z.enum(ROLES) });
 
 // getClaims verifies the JWT signature; the role is read live from profiles.
@@ -24,13 +31,17 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   const { data } = await db.auth.getClaims();
   const id = data?.claims.sub;
   if (!id) return null;
-  const { data: row } = await db
+  const { data: row, error } = await db
     .from('profiles')
     .select('display_name, role')
     .eq('user_id', id)
     .maybeSingle();
+  // A failed query is a server fault (error boundary), never "signed out".
+  if (error)
+    throw new Error('Could not load the profile', { cause: error.code });
+  if (!row) throw new NoProfileError();
   const p = Profile.safeParse(row);
-  if (!p.success) return null;
+  if (!p.success) throw new Error('Invalid profile row');
   return {
     id,
     email: data.claims.email ?? '',
@@ -40,15 +51,30 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   };
 });
 
-export async function requirePermission(p: Permission): Promise<Viewer> {
+// `next` is the path to return to after signing in again.
+export async function requirePermission(
+  p: Permission,
+  next?: string,
+): Promise<Viewer> {
   const v = await getViewer();
-  if (!v) redirect('/login?reason=expired');
+  if (!v) {
+    const qs = new URLSearchParams(next ? { next } : {});
+    qs.set('reason', 'expired');
+    redirect(`/login?${qs}`);
+  }
   if (!v.permissions.includes(p)) throw new ForbiddenError(p);
   return v;
 }
 
 export async function assertPermission(p: Permission): Promise<Result<Viewer>> {
-  const v = await getViewer();
+  let v: Viewer | null;
+  try {
+    v = await getViewer();
+  } catch (e) {
+    if (e instanceof NoProfileError)
+      return fail('forbidden', "Your account isn't set up yet. Ask an admin.");
+    throw e;
+  }
   if (!v) return fail('unauthorized', 'Sign in again to continue.');
   if (!v.permissions.includes(p))
     return fail('forbidden', 'You do not have permission to do that.');

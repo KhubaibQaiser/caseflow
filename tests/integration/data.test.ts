@@ -17,6 +17,7 @@ vi.mock('next/navigation', () => ({
 import {
   assertPermission,
   getViewer,
+  NoProfileError,
   requirePermission,
 } from '@/lib/auth/viewer';
 import { ContactRowSchema } from '@/lib/contracts/contact';

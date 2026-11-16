@@ -134,3 +134,8 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - `getViewer()` verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and throws `ForbiddenError` otherwise (`forbidden()` is still experimental). `assertPermission` returns a `Result` for actions.
 - `proxy.ts` only checks sign-in: refreshes the session, sends anonymous requests to `/login?next=…` (plus `reason=expired` if an `sb-` cookie exists), and sends signed-in users from `/login` to `/contacts`. `/dev/*` is a 404 when `VERCEL_ENV=production`.
 - There is no browser Supabase client. Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (all server-only).
+- Signed in without a `profiles` row: `getViewer` throws `NoProfileError` (and `requirePermission` rethrows it; `assertPermission` returns `forbidden`). It never redirects to `/login`, which would loop. The `(app)` layer (T13/T22) must catch it and render the No access state: "No access." / "Your account isn't set up yet. Ask an admin." with Sign out. A failed `profiles` query throws a plain `Error` (error boundary).
+- `requirePermission(p, next?)` redirects to `/login?next=…&reason=expired`.
+- Revocation lag: `getClaims()` checks the JWT signature, not the user record, so a banned or deleted user keeps access until the access token expires (up to 1 hour). Roles are read live from `profiles`, and RLS applies on every query.
+- The proxy only URL-encodes `next`. T10's `safeNext` must reject values starting with `//` or `/\`.
+- Auth responses carry `Cache-Control: private, no-store` from `@supabase/ssr` (proxy and redirects).
