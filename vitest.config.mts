@@ -33,6 +33,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'integration',
+          fileParallelism: false, // files share one database and resetData()
           environment: 'node',
           include: ['tests/integration/**/*.test.{ts,tsx}'],
         },
