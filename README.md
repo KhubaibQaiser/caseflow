@@ -163,7 +163,8 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 220 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
 - Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
-- Conflict: the banner triggers `router.refresh()`. Reload latest resets to the refreshed values; Overwrite resubmits the typed values with the refreshed `updatedAt`. Both wait for the refresh.
+- Conflict: the banner triggers `router.refresh()`; Reload latest resets the form to the refreshed record (the user re-applies their edits). There is no Overwrite.
 - `unauthorized` pushes `/login?reason=expired&next=<page>`; `push` keeps the form's history entry.
-- The unsaved guard is `beforeunload` plus the Cancel dialog. In-app links (sidebar) are not intercepted; Next has no hook for that.
+- The unsaved guard: `beforeunload` for reload and close, plus a capture-phase click handler that turns same-origin link clicks (sidebar, breadcrumb, any `Link`) into the "Discard changes?" dialog while dirty. Cancel keeps the input. Programmatic pushes and the Back button can't be intercepted.
+- Matter type has no default ("Choose a matter type"); an empty submit reports it with the name and the email-or-phone rule.
 - `/dev/contact-form?outcome=conflict|slow|fail` is a dev fixture with a scripted save (404 in production).
