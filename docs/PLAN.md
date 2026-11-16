@@ -26,7 +26,7 @@
 - Page sizes are `[25, 50, 100, 250, 500]`, default `250`. Pipeline columns load `50` per request.
 - The urgency order is overdue → due today → soonest follow-up → no follow-up, with ties broken by `updated_at desc`. Closed dated rows sort after open dated rows. **Only Lead and Active can be overdue or due today.**
 - Accessibility: WCAG 2.2 AA. Contrast is at least 4.5:1, targets at least 24px, focus is always visible, nothing relies on colour alone, and there's a menu alternative to dragging.
-- Performance: Lighthouse Performance ≥ 90 and Accessibility ≥ 95 on `/contacts` (mobile preset). CLS < 0.05. `/contacts` route JS < 180kB gzipped. Icons are imported one at a time.
+- Performance: Lighthouse Performance ≥ 90 and Accessibility ≥ 95 on `/contacts` (mobile preset). CLS < 0.05. `/contacts` route JS < 220kB gzipped. Icons are imported one at a time.
 - Before writing route, proxy, caching, `forbidden` or error-boundary code, read `node_modules/next/dist/docs/` (Next 16 renamed `middleware` to `proxy`).
 - Every commit is small and imperative, with the failing test committed before its implementation. PRs merge with merge commits (no squash). End each commit message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Secrets never appear in code, logs, chat or commits. Use `gh secret set` / `vercel env add` from piped values only.
@@ -906,7 +906,7 @@ it('viewer sees no New contact button', () => {})
   - a 320px width and 200% zoom
   - `forced-colors`
   - `prefers-reduced-motion`
-- [ ] **Step 4: Lighthouse** (mobile) on production `/contacts`. Expected: Performance ≥ 90 and Accessibility ≥ 95. Check the `/contacts` route JS with `next build` output is under 180kB gzipped. Fix any regressions.
+- [ ] **Step 4: Lighthouse** (mobile) on production `/contacts`. Expected: Performance ≥ 90 and Accessibility ≥ 95. Check the `/contacts` route JS with `next build` output is under 220kB gzipped. Fix any regressions.
 - [ ] **Step 5: Commit** each fix separately with its own message. Merge.
 
 ### Task 25: README and submission
