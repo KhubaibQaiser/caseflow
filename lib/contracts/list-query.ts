@@ -1,6 +1,7 @@
 import {
   createLoader,
   createParser,
+  createSerializer,
   type LoaderInput,
   type inferParserType,
   parseAsArrayOf,
@@ -98,6 +99,8 @@ export const listQueryParsers = {
 };
 
 const load = createLoader(listQueryParsers);
+// Defaults drop out of the URL, so /contacts is the default list.
+export const serializeListQuery = createSerializer(listQueryParsers);
 export type ListQuery = inferParserType<typeof listQueryParsers>;
 
 // Invalid combinations fall back like any other bad param: dates without
