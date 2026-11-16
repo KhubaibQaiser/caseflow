@@ -39,6 +39,7 @@ beforeEach(() => {
   claims = null;
   refresh = false;
   vi.unstubAllEnvs();
+  vi.stubEnv('AUTH_ENFORCED', 'true');
   vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:54321');
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'test-key');
 });
@@ -109,5 +110,29 @@ describe('proxy', () => {
   it('only encodes next, even for //evil.com (T10 safeNext must reject it)', async () => {
     const r = await proxy(req('//evil.com'));
     expect(loc(r)).toBe('http://localhost:3000/login?next=%2F%2Fevil.com');
+  });
+});
+
+describe('proxy with AUTH_ENFORCED off (until T22)', () => {
+  beforeEach(() => {
+    vi.stubEnv('AUTH_ENFORCED', '');
+    vi.stubEnv('SUPABASE_URL', '');
+    vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', '');
+  });
+
+  it('passes anonymous requests through, even without Supabase env', async () => {
+    const r = await proxy(req('/contacts'));
+    expect(r.status).toBe(200);
+    expect(loc(r)).toBeNull();
+  });
+
+  it('does not bounce a signed-in user away from /login', async () => {
+    claims = { sub: 'u1' };
+    expect(loc(await proxy(req('/login')))).toBeNull();
+  });
+
+  it('still 404s /dev/* in production', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    expect((await proxy(req('/dev/components'))).status).toBe(404);
   });
 });

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { secretKey, supabaseEnv } from './env';
+import { authEnforced, secretKey, supabaseEnv } from './env';
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -19,5 +19,14 @@ describe('env', () => {
   it('requires the secret key by name', () => {
     vi.stubEnv('SUPABASE_SECRET_KEY', '');
     expect(() => secretKey()).toThrow(/SUPABASE_SECRET_KEY/);
+  });
+
+  it('reads AUTH_ENFORCED as a boolean that defaults to false', () => {
+    vi.stubEnv('AUTH_ENFORCED', '');
+    expect(authEnforced()).toBe(false);
+    vi.stubEnv('AUTH_ENFORCED', 'true');
+    expect(authEnforced()).toBe(true);
+    vi.stubEnv('AUTH_ENFORCED', 'false');
+    expect(authEnforced()).toBe(false);
   });
 });
