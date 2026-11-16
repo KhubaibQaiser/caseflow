@@ -112,10 +112,48 @@ describe('contact triggers', () => {
     expect(await activities(id)).toHaveLength(0);
   });
 
-  it('clients cannot call the trigger functions', async () => {
+  it('delete guard rejects a caller without contacts.delete', async () => {
+    const { c } = await newContact();
+    // service role has no auth.uid(), so has_permission is false and RLS is bypassed
+    const r = await serviceClient()
+      .from('contacts')
+      .update({ deleted_at: new Date().toISOString() })
+      .eq('id', c.id);
+    expect(r.error?.message).toBe('forbidden: contacts.delete');
+    expect(r.error?.code).toBe('42501');
+  });
+
+  it('authenticated clients cannot call seed_insert_contact', async () => {
     const a = await adminClient();
-    for (const fn of ['contacts_after_write', 'notes_after_insert', 'contacts_before_write']) {
-      expect((await a.client.rpc(fn)).error).not.toBeNull();
-    }
+    const r = await a.client.rpc('seed_insert_contact', {
+      c: { full_name: 'Sneaky Seed', phone: '5125550198', matter_type: 'family' },
+    });
+    expect(r.error?.code).toBe('42501');
+  });
+
+  it('a signed-in client cannot suppress logging', async () => {
+    const { a, c } = await newContact();
+    await a.client.from('notes').insert({ contact_id: c.id, body: 'x', author_id: a.userId });
+    expect((await activities(c.id)).map((r) => r.type)).toEqual(['created', 'note_added']);
+  });
+
+  it('forged audit fields on update are overridden', async () => {
+    const { a, c } = await newContact();
+    const { data } = await a.client
+      .from('contacts')
+      .update({
+        summary: 's',
+        created_by: (await viewerClient()).userId,
+        created_at: '2001-01-01T00:00:00Z',
+        updated_by: null,
+        updated_at: '2001-01-01T00:00:00Z',
+      })
+      .eq('id', c.id)
+      .select()
+      .single();
+    expect(data.created_by).toBe(a.userId);
+    expect(new Date(data.created_at).getFullYear()).toBeGreaterThan(2020);
+    expect(data.updated_by).toBe(a.userId);
+    expect(new Date(data.updated_at).getFullYear()).toBeGreaterThan(2020);
   });
 });
