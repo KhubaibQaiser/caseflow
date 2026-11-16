@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
-import { supabaseEnv } from '@/lib/env';
+import { authEnforced, supabaseEnv } from '@/lib/env';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Logged in or not, nothing more. Authorization lives in getViewer and Postgres RLS.
@@ -12,6 +12,9 @@ export async function proxy(request: NextRequest) {
     process.env.VERCEL_ENV === 'production'
   )
     return NextResponse.rewrite(here('/__not-found'), { status: 404 });
+
+  // Until T22 nothing in the app signs in, so enforcing would lock everyone out.
+  if (!authEnforced()) return NextResponse.next();
 
   let response = NextResponse.next({ request });
   let authHeaders: Record<string, string> = {};
