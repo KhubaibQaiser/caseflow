@@ -5,7 +5,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 ## Status
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
-- App-level 404, error and crash pages are planned (T12b).
+- App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
@@ -57,13 +57,15 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/contracts`: Zod schemas and types shared by browser and server (contact, filters, list query, facets, permissions, results)
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
-- `components/ui`: token-styled primitives (button, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
+- `components/ui`: token-styled primitives (button, button link, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
+  - `EmptyState` and `ErrorState` take `page` to become a whole page: the title is an h1 that takes focus on mount (`PageHeading`)
   - Overlays wrap Radix (dialog, sheet, popover, dropdown menu, tooltip); they animate on `data-state` and stand still under reduced motion
   - `DatePicker` (react-day-picker in a popover, opened by a field or your own button via `trigger`) reads and writes `'YYYY-MM-DD'` via `lib/dates`
   - `Toaster` (sonner) is mounted in the root layout; call `toast.success('Contact saved')`; `toast.error(msg, { action: { label: 'Retry', onClick } })` stays until acted on or dismissed
 - `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`, query RPCs)
-- `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); e2e lands with the FE track in `tests/e2e/`
+- `app/(app)/[...missing]`: catches unknown URLs and calls `notFound()`, so the 404 renders in the `(app)` segment (inside the app shell once it exists); `app/not-found.tsx` is the standalone fallback
+- `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); `e2e/` holds Playwright specs, run against `pnpm build && pnpm start`
 
 ## CI
 
