@@ -76,21 +76,25 @@ export function Button({
         if (disabledReason !== undefined) setReasonOpen(true);
       }}
       className={cn(
-        'rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 enabled:not-aria-disabled:not-aria-busy:active:translate-y-px',
-        'disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:opacity-45',
+        'group rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 enabled:not-aria-disabled:not-aria-busy:active:translate-y-px',
+        // aria-disabled dims the content, not the button, so the focus outline and ring keep full strength.
+        'disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed',
+        variant === 'primary' && 'aria-disabled:bg-accent/45',
         'aria-busy:cursor-progress',
         VARIANT[variant],
         variant !== 'link' && SIZE[size],
         className,
       )}
     >
-      {pending && (
-        <LoaderCircle
-          aria-hidden
-          className="size-4 animate-spin motion-reduce:animate-none"
-        />
-      )}
-      {pending && pendingLabel ? pendingLabel : children}
+      <span className="inline-flex items-center justify-center gap-1.5 group-aria-disabled:opacity-45">
+        {pending && (
+          <LoaderCircle
+            aria-hidden
+            className="size-4 animate-spin motion-reduce:animate-none"
+          />
+        )}
+        {pending && pendingLabel ? pendingLabel : children}
+      </span>
       {disabledReason !== undefined && (
         <span id={reasonId} hidden>
           {disabledReason}
