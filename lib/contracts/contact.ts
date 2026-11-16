@@ -1,0 +1,120 @@
+import { z } from 'zod';
+import { MATTER_TYPES, REFERRAL_SOURCES, STATUSES } from './enums';
+import { ROLES } from './permissions';
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Blank or missing form values become null; strings are trimmed.
+const blankToNull = (v: unknown) => {
+  if (v == null) return null;
+  if (typeof v !== 'string') return v;
+  const t = v.trim();
+  return t === '' ? null : t;
+};
+
+export function makeContactInputSchema(opts: {
+  today: string;
+  previousFollowUpOn?: string | null;
+}) {
+  return z
+    .object({
+      fullName: z
+        .string('Enter a name.')
+        .trim()
+        .min(2, 'Name must be at least 2 characters.')
+        .max(120, 'Name must be 120 characters or fewer.'),
+      email: z.preprocess(
+        blankToNull,
+        z.email('Enter a valid email address.').nullable(),
+      ),
+      phone: z.preprocess(
+        blankToNull,
+        z
+          .string()
+          .max(20, 'Phone must be 20 characters or fewer.')
+          .refine(
+            (p) => p.replace(/\D/g, '').length >= 7,
+            'Enter at least 7 digits.',
+          )
+          .nullable(),
+      ),
+      matterType: z.enum(MATTER_TYPES, 'Choose a matter type.'),
+      referralSource: z.preprocess(
+        blankToNull,
+        z.enum(REFERRAL_SOURCES).nullable(),
+      ),
+      status: z.enum(STATUSES).default('lead'),
+      followUpOn: z.preprocess(
+        blankToNull,
+        z.string().regex(DATE, 'Use YYYY-MM-DD.').nullable(),
+      ),
+      summary: z.preprocess(
+        blankToNull,
+        z
+          .string()
+          .max(1000, 'Summary must be 1000 characters or fewer.')
+          .nullable(),
+      ),
+    })
+    .superRefine((v, ctx) => {
+      if (v.email === null && v.phone === null) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['contactMethod'],
+          message: 'Add an email or a phone number.',
+        });
+      }
+      if (
+        v.followUpOn !== null &&
+        v.followUpOn !== (opts.previousFollowUpOn ?? null) &&
+        v.followUpOn < opts.today
+      ) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['followUpOn'],
+          message: 'Follow-up date cannot be in the past.',
+        });
+      }
+    });
+}
+export type ContactInput = z.infer<ReturnType<typeof makeContactInputSchema>>;
+
+export const ContactRowSchema = z.object({
+  id: z.string(),
+  fullName: z.string(),
+  email: z.string().nullable(),
+  phone: z.string().nullable(),
+  matterType: z.enum(MATTER_TYPES),
+  referralSource: z.enum(REFERRAL_SOURCES).nullable(),
+  status: z.enum(STATUSES),
+  followUpOn: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  urgency: z.enum(['overdue', 'today', 'later', 'none']),
+  daysOverdue: z.number().nullable(),
+});
+export type ContactRow = z.infer<typeof ContactRowSchema>;
+
+export const NoteSchema = z.object({
+  id: z.string(),
+  body: z.string(),
+  createdAt: z.string(),
+  author: z.object({ name: z.string(), role: z.enum(ROLES) }),
+});
+export type Note = z.infer<typeof NoteSchema>;
+
+export const ActivitySchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  payload: z.record(z.string(), z.unknown()),
+  createdAt: z.string(),
+  actor: z.object({ name: z.string() }),
+});
+export type Activity = z.infer<typeof ActivitySchema>;
+
+export const ContactDetailSchema = ContactRowSchema.extend({
+  summary: z.string().nullable(),
+  notes: z.array(NoteSchema),
+  activities: z.array(ActivitySchema),
+});
+export type ContactDetail = z.infer<typeof ContactDetailSchema>;
