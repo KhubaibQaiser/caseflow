@@ -68,6 +68,24 @@ describe('Button', () => {
     expect(button).toHaveAccessibleDescription(reason);
   });
 
+  it('dims only the content of a blocked button, so its focus ring keeps full strength', () => {
+    render(
+      <Button
+        variant="ghost"
+        disabledReason="Viewers can't edit contacts. Ask an admin."
+      >
+        Move to…
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Move to…' });
+
+    // Opacity on the button would fade its outline and ring below 3:1.
+    expect(button.className).not.toMatch(/aria-disabled:opacity/);
+    expect(screen.getByText('Move to…')).toHaveClass(
+      'group-aria-disabled:opacity-45',
+    );
+  });
+
   it('shows the disabled reason on tap', async () => {
     const user = userEvent.setup();
     const reason = "Viewers can't edit contacts. Ask an admin.";
