@@ -5,9 +5,9 @@ import { todayIn } from '@/lib/dates/date-only';
 import { ACTIVITY_TYPES, MATTER_TYPES, STATUSES } from '@/lib/contracts/enums';
 import { localConfig, resetData, serviceClient } from './setup';
 
-// Throwaway local-only passwords for the seed under test.
-const ADMIN_PW = 'it-seed-Admin-1!';
-const VIEWER_PW = 'it-seed-Viewer-1!';
+// Env passwords keep local logins stable after a run; the constants are throwaway fallbacks.
+const ADMIN_PW = process.env.SEED_ADMIN_PASSWORD || 'it-seed-Admin-1!';
+const VIEWER_PW = process.env.SEED_VIEWER_PASSWORD || 'it-seed-Viewer-1!';
 
 function runSeed(env: Record<string, string | undefined>) {
   const c = localConfig();
