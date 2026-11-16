@@ -232,6 +232,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      seed_insert_contact: {
+        Args: {
+          c: Json
+        }
+        Returns: string
+      }
     }
     Enums: {
       activity_type:
