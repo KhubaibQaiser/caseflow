@@ -230,9 +230,52 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      contact_facets: { Args: { f: Json; tz?: string }; Returns: Json };
+      contact_matches: {
+        Args: {
+          c: Omit<
+            Database['public']['Tables']['contacts']['Row'],
+            Database['public']['Tables']['contacts']['ComputedFields']
+          >;
+          f: Json;
+          skip?: string;
+          today: string;
+          tz: string;
+        };
+        Returns: boolean;
+      };
+      follow_up_hit: {
+        Args: {
+          c: Omit<
+            Database['public']['Tables']['contacts']['Row'],
+            Database['public']['Tables']['contacts']['ComputedFields']
+          >;
+          hi: string;
+          k: string;
+          lo: string;
+          today: string;
+        };
+        Returns: boolean;
+      };
       has_permission: {
         Args: { p: Database['public']['Enums']['app_permission'] };
         Returns: boolean;
+      };
+      in_set: { Args: { arr: Json; v: string }; Returns: boolean };
+      norm_filters: { Args: { f: Json }; Returns: Json };
+      ping: { Args: Record<PropertyKey, never>; Returns: boolean };
+      safe_date: { Args: { s: string }; Returns: string };
+      safe_tz: { Args: { tz: string }; Returns: string };
+      search_contacts: {
+        Args: {
+          dir?: string;
+          f: Json;
+          page?: number;
+          page_size?: number;
+          sort?: string;
+          tz?: string;
+        };
+        Returns: Json;
       };
       seed_firm: { Args: { actor?: string; n?: number }; Returns: undefined };
       seed_insert_contact: { Args: { c: Json }; Returns: string };
