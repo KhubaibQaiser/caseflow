@@ -1,0 +1,96 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm format:check
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+
+  integration-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      # CI-only values for the throwaway local database; not real credentials.
+      SEED_ADMIN_PASSWORD: ci-only-admin-password-not-a-secret
+      SEED_VIEWER_PASSWORD: ci-only-viewer-password-not-a-secret
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - uses: supabase/setup-cli@689adcfb80d947100a1eab127289b97d1fb07b13 # v3.2.0
+        with:
+          version: 3.2.0
+      - run: supabase start
+      - run: supabase db reset
+      - name: Export local Supabase environment
+        run: |
+          supabase status -o env > "$RUNNER_TEMP/supabase.env"
+          # These are the CLI's shared local default keys, not secrets.
+          # newer CLIs print PUBLISHABLE_KEY/SECRET_KEY, older ones ANON_KEY/SERVICE_ROLE_KEY
+          get() { sed -n "s/^$1=\"\(.*\)\"$/\1/p" "$RUNNER_TEMP/supabase.env" | head -n1; }
+          pub=$(get PUBLISHABLE_KEY); pub=${pub:-$(get ANON_KEY)}
+          sec=$(get SECRET_KEY); sec=${sec:-$(get SERVICE_ROLE_KEY)}
+          : "${pub:?publishable key missing}" "${sec:?secret key missing}"
+          {
+            echo "NEXT_PUBLIC_SUPABASE_URL=$(get API_URL)"
+            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$pub"
+            echo "SUPABASE_SECRET_KEY=$sec"
+          } >> "$GITHUB_ENV"
+      # T22 removes the seed and e2e guards and `--passWithNoTests` (package.json test:integration).
+      - run: if [ -f scripts/seed.ts ]; then pnpm seed; else echo "::warning::scripts/seed.ts missing, seed skipped"; fi
+      - run: pnpm test:integration
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: if [ -d tests/e2e ]; then pnpm e2e; else echo "::warning::tests/e2e missing, e2e skipped"; fi
+      - if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: warn
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

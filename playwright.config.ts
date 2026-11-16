@@ -2,12 +2,15 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  reporter: process.env.CI ? [['html', { open: 'never' }], ['list']] : 'list',
   forbidOnly: !!process.env.CI,
   webServer: {
     command: 'pnpm build && pnpm start',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
   use: { baseURL: 'http://localhost:3000' },
   projects: [
