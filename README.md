@@ -52,6 +52,16 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `supabase/`: local stack config; migrations arrive with the BE track
 - `tests/`: integration and e2e suites land with the BE and FE tracks (e2e goes in `tests/e2e/`)
 
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and push to `main`:
+
+- `checks`: format check, typecheck, lint (including the colour-literal check), unit tests, build.
+- `integration-e2e`: local Supabase (CLI 3.2), `db reset`, seed when `scripts/seed.ts` exists, integration tests, and e2e when `tests/e2e` exists.
+- `gitleaks`: secret scan over full history.
+
+Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
+
 ## Docs
 
 - `docs/SPEC.md`: the binding spec
