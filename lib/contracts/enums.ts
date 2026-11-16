@@ -61,3 +61,10 @@ export const REFERRAL_SOURCE_LABEL: Record<ReferralSource, string> = {
   bar_referral: 'Bar referral',
   website_form: 'Website form',
 };
+
+export const FOLLOW_UP_LABEL: Record<FollowUpFilter, string> = {
+  overdue: 'Overdue',
+  dueToday: 'Due today',
+  next7Days: 'Next 7 days',
+  none: 'No follow-up',
+};
