@@ -24,6 +24,8 @@
 }
 
 @theme inline {
+  /* Drop Tailwind's default palette so only token colours exist. */
+  --color-*: initial;
   --color-canvas: var(--canvas);
   --color-surface: var(--surface);
   --color-panel: var(--panel);
@@ -52,32 +54,35 @@
   --text-2xl: 24px;
 }
 
-html {
-  color-scheme: light;
-  scrollbar-color: var(--lead-border) var(--canvas);
-  scrollbar-width: thin;
-}
+/* Layered so Tailwind utilities can override these. */
+@layer base {
+  html {
+    color-scheme: light;
+    scrollbar-color: var(--lead-border) var(--canvas);
+    scrollbar-width: thin;
+  }
 
-body {
-  background: var(--canvas);
-  color: var(--ink);
-  caret-color: var(--accent);
-  font-family: var(--font-sans);
-}
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    caret-color: var(--accent);
+    font-family: var(--font-sans);
+  }
 
-::selection {
-  background: var(--accent-soft);
-  color: var(--ink);
-}
+  ::selection {
+    background: var(--accent-soft);
+    color: var(--ink);
+  }
 
-a {
-  text-underline-offset: 3px;
-}
+  a {
+    text-underline-offset: 3px;
+  }
 
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 3px var(--ring);
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px var(--ring);
+  }
 }
 
 .tnum {
