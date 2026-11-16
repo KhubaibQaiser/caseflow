@@ -16,66 +16,74 @@ export function makeContactInputSchema(opts: {
   today: string;
   previousFollowUpOn?: string | null;
 }) {
-  return z
-    .object({
-      fullName: z
-        .string('Enter a name.')
-        .trim()
-        .min(2, 'Name must be at least 2 characters.')
-        .max(120, 'Name must be 120 characters or fewer.'),
-      email: z.preprocess(
-        blankToNull,
-        z.email('Enter a valid email address.').nullable(),
-      ),
-      phone: z.preprocess(
-        blankToNull,
-        z
-          .string()
-          .max(20, 'Phone must be 20 characters or fewer.')
-          .refine(
-            (p) => p.replace(/\D/g, '').length >= 7,
-            'Enter at least 7 digits.',
-          )
-          .nullable(),
-      ),
-      matterType: z.enum(MATTER_TYPES, 'Choose a matter type.'),
-      referralSource: z.preprocess(
-        blankToNull,
-        z.enum(REFERRAL_SOURCES).nullable(),
-      ),
-      status: z.enum(STATUSES).default('lead'),
-      followUpOn: z.preprocess(
-        blankToNull,
-        z.string().regex(DATE, 'Use YYYY-MM-DD.').nullable(),
-      ),
-      summary: z.preprocess(
-        blankToNull,
-        z
-          .string()
-          .max(1000, 'Summary must be 1000 characters or fewer.')
-          .nullable(),
-      ),
-    })
-    .superRefine((v, ctx) => {
-      if (v.email === null && v.phone === null) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['contactMethod'],
-          message: 'Add an email or a phone number.',
-        });
-      }
-      if (
-        v.followUpOn !== null &&
-        v.followUpOn !== (opts.previousFollowUpOn ?? null) &&
-        v.followUpOn < opts.today
-      ) {
-        ctx.addIssue({
-          code: 'custom',
-          path: ['followUpOn'],
-          message: 'Follow-up date cannot be in the past.',
-        });
-      }
-    });
+  return (
+    z
+      .object({
+        fullName: z
+          .string('Enter a name.')
+          .trim()
+          .min(2, 'Name must be at least 2 characters.')
+          .max(120, 'Name must be 120 characters or fewer.'),
+        email: z.preprocess(
+          blankToNull,
+          z.email('Enter a valid email address.').nullable(),
+        ),
+        phone: z.preprocess(
+          blankToNull,
+          z
+            .string()
+            .max(20, 'Phone must be 20 characters or fewer.')
+            .refine(
+              (p) => p.replace(/\D/g, '').length >= 7,
+              'Enter at least 7 digits.',
+            )
+            .nullable(),
+        ),
+        matterType: z.enum(MATTER_TYPES, 'Choose a matter type.'),
+        referralSource: z.preprocess(
+          blankToNull,
+          z.enum(REFERRAL_SOURCES).nullable(),
+        ),
+        status: z.enum(STATUSES).default('lead'),
+        followUpOn: z.preprocess(
+          blankToNull,
+          z.string().regex(DATE, 'Use YYYY-MM-DD.').nullable(),
+        ),
+        summary: z.preprocess(
+          blankToNull,
+          z
+            .string()
+            .max(1000, 'Summary must be 1000 characters or fewer.')
+            .nullable(),
+        ),
+      })
+      // Runs even when a field failed, so the form shows every error at once (spec 8.5).
+      // A failed field keeps its raw input here, so each rule checks the shape it needs.
+      .superRefine(
+        (v, ctx) => {
+          if (v.email == null && v.phone == null) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['contactMethod'],
+              message: 'Add an email or a phone number.',
+            });
+          }
+          if (
+            typeof v.followUpOn === 'string' &&
+            DATE.test(v.followUpOn) &&
+            v.followUpOn !== (opts.previousFollowUpOn ?? null) &&
+            v.followUpOn < opts.today
+          ) {
+            ctx.addIssue({
+              code: 'custom',
+              path: ['followUpOn'],
+              message: 'Follow-up date cannot be in the past.',
+            });
+          }
+        },
+        { when: (p) => typeof p.value === 'object' && p.value !== null },
+      )
+  );
 }
 export type ContactInput = z.infer<ReturnType<typeof makeContactInputSchema>>;
 
