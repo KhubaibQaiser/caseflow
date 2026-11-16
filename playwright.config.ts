@@ -8,6 +8,8 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
+    stdout: 'pipe',
+    stderr: 'pipe',
   },
   use: { baseURL: 'http://localhost:3000' },
   projects: [
