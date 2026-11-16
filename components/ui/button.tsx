@@ -44,6 +44,8 @@ export function Button({
   pendingLabel,
   disabledReason,
   onClick,
+  onPointerDown,
+  onKeyDown,
   className,
   children,
   type = 'button',
@@ -69,6 +71,10 @@ export function Button({
       // The tooltip carries the reason; a native title on top would show it twice.
       title={disabledReason === undefined ? rest.title : undefined}
       aria-describedby={describedBy || undefined}
+      // A wrapping menu trigger opens on pointerdown and keydown, ignoring aria-disabled; drop them while blocked.
+      // The tooltip attaches its own handlers outside these, so tap and focus still show the reason.
+      onPointerDown={blocked ? undefined : onPointerDown}
+      onKeyDown={blocked ? undefined : onKeyDown}
       onClick={(event) => {
         // preventDefault also stops the tooltip closing itself on click, so a tap shows the reason.
         if (blocked) event.preventDefault();
