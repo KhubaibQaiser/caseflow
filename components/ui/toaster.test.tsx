@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,16 +9,11 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-function setupTimed() {
-  vi.useFakeTimers();
-  return userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-}
-
 const wait = (ms: number) => act(() => vi.advanceTimersByTime(ms));
 
 describe('Toaster', () => {
   it('dismisses a success toast after 6s', async () => {
-    setupTimed();
+    vi.useFakeTimers();
     render(<Toaster />);
     act(() => {
       toast.success('Contact saved');
@@ -33,7 +28,7 @@ describe('Toaster', () => {
   });
 
   it('keeps an error toast with an action until it is dismissed', async () => {
-    const user = setupTimed();
+    vi.useFakeTimers();
     render(<Toaster />);
     act(() => {
       toast.error("Move didn't save.", {
@@ -46,7 +41,8 @@ describe('Toaster', () => {
     await wait(60_000);
     expect(screen.getByText("Move didn't save.")).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: 'Dismiss' }));
+    // user-event stalls under sonner with fake timers; a plain click is enough here.
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }));
     await wait(500);
     expect(screen.queryByText("Move didn't save.")).not.toBeInTheDocument();
   });
