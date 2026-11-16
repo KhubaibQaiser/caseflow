@@ -275,14 +275,26 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
   return (
     <>
       {!hideStatus && (
-        <Group title="Status" defaultOpen={initial.status}>
+        <Group
+          title="Status"
+          selected={d.draft.status?.length}
+          defaultOpen={initial.status}
+        >
           {checks('status', STATUSES, STATUS_LABEL, facets.facets.status)}
         </Group>
       )}
-      <Group title="Follow-up" defaultOpen={initial.fu}>
+      <Group
+        title="Follow-up"
+        selected={d.draft.fu ? 1 : 0}
+        defaultOpen={initial.fu}
+      >
         <FollowUp draft={d} counts={facets.facets.followUp} />
       </Group>
-      <Group title="Matter type" defaultOpen={initial.matter}>
+      <Group
+        title="Matter type"
+        selected={d.draft.matter?.length}
+        defaultOpen={initial.matter}
+      >
         {checks(
           'matter',
           MATTER_TYPES,
@@ -290,7 +302,11 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
           facets.facets.matterType,
         )}
       </Group>
-      <Group title="Referral source" defaultOpen={initial.source}>
+      <Group
+        title="Referral source"
+        selected={d.draft.source?.length}
+        defaultOpen={initial.source}
+      >
         {checks(
           'source',
           REFERRAL_SOURCES,
@@ -298,7 +314,11 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
           facets.facets.referralSource,
         )}
       </Group>
-      <Group title="Created date" defaultOpen={initial.created}>
+      <Group
+        title="Created date"
+        selected={d.draft.createdFrom || d.draft.createdTo ? 1 : 0}
+        defaultOpen={initial.created}
+      >
         <DateRange
           idPrefix="filters-created"
           from={d.draft.createdFrom}
@@ -315,10 +335,13 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
 let groupSeq = 0;
 function Group({
   title,
+  selected = 0,
   defaultOpen,
   children,
 }: {
   title: string;
+  /** Shown beside the title, so a collapsed group still says it holds a selection. */
+  selected?: number;
   defaultOpen: boolean;
   children: ReactNode;
 }) {
@@ -332,7 +355,9 @@ function Group({
         id={id}
         className="text-ink-2 hover:text-ink rounded-ctl mb-1 flex min-h-7 cursor-pointer list-none items-center justify-between text-xs font-semibold [&::-webkit-details-marker]:hidden"
       >
-        {title}
+        <span className="tnum">
+          {selected > 0 ? `${title} · ${selected}` : title}
+        </span>
         <ChevronDown
           aria-hidden
           className="size-4 transition-transform duration-150 group-open:rotate-180 motion-reduce:transition-none"

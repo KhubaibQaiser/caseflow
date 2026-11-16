@@ -161,7 +161,7 @@ describe('FiltersPanel groups and facets', () => {
     expect(
       within(status).getByRole('checkbox', { name: 'Lead 480' }),
     ).toBeInTheDocument();
-    const followUp = screen.getByRole('group', { name: 'Follow-up' });
+    const followUp = screen.getByRole('group', { name: /^Follow-up/ });
     expect(
       within(followUp).getByRole('radio', { name: 'Overdue 38' }),
     ).toBeInTheDocument();
@@ -201,7 +201,7 @@ describe('FiltersPanel groups and facets', () => {
   it('hideStatus drops the Status group', () => {
     setup({ hideStatus: true });
     expect(screen.queryByRole('group', { name: 'Status' })).toBeNull();
-    expect(screen.getByRole('group', { name: 'Follow-up' })).toBeVisible();
+    expect(screen.getByRole('group', { name: /^Follow-up/ })).toBeVisible();
   });
 
   it('opens groups that hold a selection, even the usually collapsed one', () => {
@@ -213,13 +213,37 @@ describe('FiltersPanel groups and facets', () => {
   });
 });
 
+describe('FiltersPanel group counts', () => {
+  it('names how many are selected in each group, from the draft', async () => {
+    const user = userEvent.setup();
+    setup({ searchParams: '?matter=family,immigration&fu=overdue' });
+    expect(
+      screen.getByRole('group', { name: 'Matter type · 2' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('group', { name: 'Follow-up · 1' }),
+    ).toBeInTheDocument();
+    // Untouched groups stay plain.
+    expect(screen.getByRole('group', { name: 'Status' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: /^Lead/ }));
+    expect(
+      screen.getByRole('group', { name: 'Status · 1' }),
+    ).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Clear all' }));
+    expect(
+      screen.getByRole('group', { name: 'Matter type' }),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('FiltersPanel follow-up and date rules', () => {
   it('Custom range reveals From and To; presets hide them and drop the dates', async () => {
     const user = userEvent.setup();
     const { onUrlUpdate } = setup({
       searchParams: '?fu=custom&fuFrom=2026-11-03',
     });
-    const followUp = screen.getByRole('group', { name: 'Follow-up' });
+    const followUp = screen.getByRole('group', { name: /^Follow-up/ });
     expect(
       within(followUp).getByRole('button', { name: /^From: / }),
     ).toBeVisible();
@@ -282,7 +306,7 @@ describe('FiltersPanel follow-up and date rules', () => {
     const { onOpenChange } = setup({
       searchParams: '?fu=custom&fuFrom=2026-11-03',
     });
-    const followUp = screen.getByRole('group', { name: 'Follow-up' });
+    const followUp = screen.getByRole('group', { name: /^Follow-up/ });
     await user.click(within(followUp).getByRole('button', { name: /^From: / }));
     expect(screen.getByRole('dialog', { name: 'From' })).toBeVisible();
     await user.keyboard('{Escape}');
