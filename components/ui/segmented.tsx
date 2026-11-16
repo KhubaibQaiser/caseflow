@@ -34,7 +34,7 @@ export function Segmented({
       {options.map((option) => (
         <label
           key={option.value}
-          className="text-13 text-ink-2 hover:text-ink has-checked:bg-surface has-checked:text-ink has-checked:shadow-raised has-focus-visible:outline-accent flex min-h-7 cursor-pointer items-center gap-1.5 rounded-[5px] px-3.5 font-medium transition-colors duration-150 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-disabled:cursor-not-allowed has-disabled:opacity-45"
+          className="text-13 text-ink-2 hover:text-ink has-checked:border-ink-2 has-checked:bg-surface has-checked:text-ink has-checked:shadow-raised has-focus-visible:outline-accent flex min-h-7 cursor-pointer items-center gap-1.5 rounded-[5px] border border-transparent px-3.5 font-medium transition-colors duration-150 has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-disabled:cursor-not-allowed has-disabled:opacity-45 forced-colors:has-checked:border-[Highlight] forced-colors:has-checked:bg-[Highlight] forced-colors:has-checked:text-[HighlightText] forced-colors:has-checked:forced-color-adjust-none"
         >
           <input
             type="radio"
