@@ -119,11 +119,11 @@ export function makeFixtureRows(n: number, today: string): ContactRow[] {
       createdAt: `${created}T${hh}:${mm}:00.000Z`,
       updatedAt: `${upd}T${mm}:${hh}:00.000Z`,
       urgency:
-        !open || followUpOn === null
+        followUpOn === null
           ? 'none'
           : overdue
             ? 'overdue'
-            : followUpOn === today
+            : open && followUpOn === today
               ? 'today'
               : 'later',
       daysOverdue:

@@ -35,4 +35,4 @@ Radii: 6 (`--r-ctl`, controls), 10 (`--r-surface`, surfaces), 999 (pills). Shado
 
 ## States
 
-Every component: default, hover, focus-visible, active, disabled, loading, error. Focus-visible is the 3px `--ring`. Selection, caret, scrollbar and underline offset are themed from tokens.
+Every component: default, hover, focus-visible, active, disabled, loading, error. Focus-visible is a 2px `--accent` outline (2px offset, 3:1 contrast, survives forced-colours) plus a 3px `--ring` halo. Selection, caret, scrollbar and underline offset are themed from tokens.

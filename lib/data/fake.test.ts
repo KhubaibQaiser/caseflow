@@ -1,4 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// Tests supply the time zone explicitly instead of relying on a request.
+vi.mock('@/lib/dates/server', () => ({
+  getRequestTimeZone: async () => 'UTC',
+}));
 import { loadListQuery, type ListQuery } from '@/lib/contracts/list-query';
 import { ContactFacetsSchema } from '@/lib/contracts/facets';
 import {
@@ -58,5 +63,29 @@ describe('fake data layer', () => {
       q({ status: ['lead'], page: 9999, size: 25 }),
     );
     expect(r.rows.length).toBeGreaterThan(0);
+  });
+
+  it('closed rows are never overdue/today: dated is later, undated is none', async () => {
+    const r = await searchContacts(q({ status: ['closed'], size: 500 }));
+    const dated = r.rows.filter((x) => x.followUpOn);
+    expect(dated.length).toBeGreaterThan(0);
+    expect(dated.every((x) => x.urgency === 'later')).toBe(true);
+    expect(
+      r.rows.filter((x) => !x.followUpOn).every((x) => x.urgency === 'none'),
+    ).toBe(true);
+  });
+
+  it('follow_up sort: overdue, today, soonest, none', async () => {
+    const r = await searchContacts(q({ size: 500 }));
+    const rank = (x: (typeof r.rows)[number]) =>
+      x.urgency === 'overdue'
+        ? 0
+        : x.urgency === 'today'
+          ? 1
+          : x.followUpOn
+            ? 2
+            : 3;
+    const ranks = r.rows.map(rank);
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
   });
 });

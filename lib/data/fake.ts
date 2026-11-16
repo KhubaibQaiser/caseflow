@@ -21,13 +21,9 @@ import { makeFixtureRows } from './fixtures';
 const FIXTURE_COUNT = 1200;
 const cache = new Map<string, ContactRow[]>();
 
-// "Today" comes from the request time zone; outside a request (unit tests) it falls back to UTC.
+// "Today" in the request time zone. No catch: cookies() signals dynamic rendering to Next.
 async function today(): Promise<string> {
-  try {
-    return todayIn(await getRequestTimeZone());
-  } catch {
-    return todayIn('UTC');
-  }
+  return todayIn(await getRequestTimeZone());
 }
 
 async function load(): Promise<{ rows: ContactRow[]; today: string }> {
