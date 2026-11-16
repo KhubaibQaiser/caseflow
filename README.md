@@ -64,8 +64,11 @@ Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patc
 
 ## Deploy
 
+Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variable is set to `true` (T23).
+
 `.github/workflows/deploy.yml` runs only after CI passes on a push to `main`:
 
+- A stale-run guard skips any run whose commit is no longer the tip of `main`.
 - `supabase db push` applies migrations to the production project.
 - The Vercel production env is synced from GitHub secrets; the secret key is stored as sensitive.
 - A prebuilt production deploy follows (`vercel build --prod`, then `vercel deploy --prebuilt --prod`). Vercel's Git auto-deploy is off.
