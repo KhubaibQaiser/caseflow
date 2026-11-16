@@ -68,10 +68,11 @@ jobs:
             echo "SUPABASE_PUBLISHABLE_KEY=$pub"
             echo "SUPABASE_SECRET_KEY=$sec"
           } >> "$GITHUB_ENV"
-      # T22 removes the seed and e2e guards and `--passWithNoTests` (package.json test:integration).
-      - run: if [ -f scripts/seed.ts ]; then pnpm seed; else echo "::warning::scripts/seed.ts missing, seed skipped"; fi
+      # T22 removes the e2e guard and `--passWithNoTests` (package.json test:integration).
       - run: pnpm test:integration
       - run: pnpm exec playwright install --with-deps chromium
+      # Integration tests wipe firm data, so seed right before e2e.
+      - run: pnpm seed
       - run: if [ -d tests/e2e ]; then pnpm e2e; else echo "::warning::tests/e2e missing, e2e skipped"; fi
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

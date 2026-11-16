@@ -41,8 +41,14 @@ M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or 
 - `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
 - `pnpm e2e`: Playwright end-to-end tests
 - `pnpm format`, `pnpm format:check`: Prettier
-- `pnpm seed`: seed the local database (available once the BE track lands)
+- `pnpm seed`: create the role accounts and reset the firm data (see Seeding below)
 - `pnpm db:types`: regenerate Supabase types from the local stack
+
+## Seeding
+
+`pnpm seed` needs `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `SEED_ADMIN_PASSWORD` and `SEED_VIEWER_PASSWORD` in the environment (names are in `.env.example`; it refuses to run without them and never prints them). It creates two accounts, `admin@caseflow.test` (Alex Morgan, admin) and `viewer@caseflow.test` (Sam Patel, viewer), then runs `seed_firm`, which wipes the contacts, notes and activities and generates 2,500 contacts with their notes and activity history. The data is deterministic and dated relative to today.
+
+Re-running is safe: accounts are updated in place (the passwords are reset to the current env values) and the firm data returns to the same counts. Use it to restore a broken demo. Integration tests wipe the local firm data, so re-run `pnpm seed` afterwards.
 
 ## Project structure
 

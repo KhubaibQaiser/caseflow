@@ -277,6 +277,7 @@ export type Database = {
         };
         Returns: Json;
       };
+      seed_firm: { Args: { actor?: string; n?: number }; Returns: undefined };
       seed_insert_contact: { Args: { c: Json }; Returns: string };
     };
     Enums: {
