@@ -61,6 +61,7 @@ describe('Button', () => {
     );
     const button = screen.getByRole('button', { name: 'Edit' });
     expect(button).not.toHaveAttribute('title');
+    expect(button).toHaveAccessibleDescription(reason);
 
     await user.tab();
     expect(await screen.findByRole('tooltip')).toHaveTextContent(reason);

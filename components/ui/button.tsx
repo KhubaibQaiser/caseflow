@@ -1,9 +1,12 @@
 'use client';
 
+import { useId, useState } from 'react';
 import type { ComponentProps } from 'react';
 import LoaderCircle from 'lucide-react/icons/loader-circle';
 
 import { cn } from '@/utils/cn';
+
+import { Tooltip } from './tooltip';
 
 type ButtonProps = ComponentProps<'button'> & {
   variant: 'primary' | 'ghost' | 'link';
@@ -36,17 +39,27 @@ export function Button({
   type = 'button',
   ...rest
 }: ButtonProps) {
+  const reasonId = useId();
+  const [reasonOpen, setReasonOpen] = useState(false);
   // aria-disabled (not disabled) keeps the button focusable so the reason can be read.
   const blocked = pending || disabledReason !== undefined;
-  return (
+  // The open tooltip describes the button itself; the hidden copy covers it while closed.
+  const describedBy = [
+    disabledReason !== undefined && !reasonOpen && reasonId,
+    rest['aria-describedby'],
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const button = (
     <button
       type={type}
       aria-busy={pending || undefined}
       aria-disabled={disabledReason !== undefined || undefined}
-      title={disabledReason}
       onClick={(event) => {
+        // preventDefault also stops the tooltip closing itself on click, so a tap shows the reason.
         if (blocked) event.preventDefault();
         else onClick?.(event);
+        if (disabledReason !== undefined) setReasonOpen(true);
       }}
       className={cn(
         'rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 enabled:not-aria-disabled:active:translate-y-px',
@@ -57,6 +70,7 @@ export function Button({
         className,
       )}
       {...rest}
+      aria-describedby={describedBy || undefined}
     >
       {pending && (
         <LoaderCircle
@@ -65,6 +79,21 @@ export function Button({
         />
       )}
       {pending && pendingLabel ? pendingLabel : children}
+      {disabledReason !== undefined && (
+        <span id={reasonId} hidden>
+          {disabledReason}
+        </span>
+      )}
     </button>
+  );
+  if (disabledReason === undefined) return button;
+  return (
+    <Tooltip
+      content={disabledReason}
+      open={reasonOpen}
+      onOpenChange={setReasonOpen}
+    >
+      {button}
+    </Tooltip>
   );
 }
