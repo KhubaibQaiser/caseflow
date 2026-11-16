@@ -6,7 +6,7 @@ export function Skeleton({ className }: { className?: string }) {
     <span
       aria-hidden
       className={cn(
-        'from-skeleton via-skeleton-hi to-skeleton block h-2.5 animate-pulse rounded-[5px] bg-linear-to-r motion-reduce:animate-none',
+        'from-skeleton via-skeleton-hi to-skeleton block h-2.5 animate-pulse rounded-[5px] bg-linear-to-r motion-reduce:animate-none forced-colors:border forced-colors:border-[GrayText]',
         className,
       )}
     />

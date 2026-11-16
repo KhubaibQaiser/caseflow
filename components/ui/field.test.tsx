@@ -139,6 +139,20 @@ describe('Textarea', () => {
   });
 });
 
+describe('Textarea counterFrom', () => {
+  it('shows the counter from the given length, here always', () => {
+    render(
+      <Field id="summary" label="Matter summary">
+        <Textarea maxLength={1000} counterFrom={0} />
+      </Field>,
+    );
+    expect(screen.getByText('0 / 1,000')).toBeInTheDocument();
+    expect(
+      screen.getByRole('textbox', { name: 'Matter summary' }),
+    ).toHaveAccessibleDescription('0 / 1,000');
+  });
+});
+
 describe('controlled Textarea', () => {
   it('counts the controlled value, including after a reset', async () => {
     const user = userEvent.setup();
