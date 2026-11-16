@@ -171,6 +171,26 @@ describe('list query', () => {
       ).toEqual({});
     });
 
+    it('loader keeps ranges where from equals to', () => {
+      expect(
+        toFilters(
+          loadListQuery({
+            fu: 'custom',
+            fuFrom: '2026-05-01',
+            fuTo: '2026-05-01',
+            createdFrom: '2026-05-01',
+            createdTo: '2026-05-01',
+          }),
+        ),
+      ).toEqual({
+        followUp: 'custom',
+        followUpFrom: '2026-05-01',
+        followUpTo: '2026-05-01',
+        createdFrom: '2026-05-01',
+        createdTo: '2026-05-01',
+      });
+    });
+
     it('toFilters output always parses, even for hand-built queries', () => {
       const q = {
         ...loadListQuery({}),
