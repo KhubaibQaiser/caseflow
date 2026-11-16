@@ -34,10 +34,6 @@ Use Node 24 and pnpm 10.
 - `pnpm format`, `pnpm format:check`
 - `pnpm seed`, `pnpm db:types`
 
-<!-- BEGIN:nextjs-agent-rules -->
-
 ## This is NOT the Next.js you know
 
 This version has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-
-<!-- END:nextjs-agent-rules -->
