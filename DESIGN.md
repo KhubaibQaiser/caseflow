@@ -29,6 +29,8 @@ Source of truth for values: `app/globals.css` (spec 8.13). Light mode only in v1
 | `--track`                      | `#E9EEEA`             | Segmented track, icon hover                            |
 | `--error-ring`                 | `#F8D7D1`             | Invalid control halo                                   |
 | `--skeleton` / `--skeleton-hi` | `#ECF0ED` / `#F5F7F5` | Loading placeholders                                   |
+| `--accent-on-ink`              | `#9FD3BC`             | Toast action on the ink toast                          |
+| `--scrim`                      | ink at 38%            | Behind dialogs and sheets                              |
 
 Status pills are neutral: Lead is an outline, Active is `accent-soft`, Closed is `closed-bg`.
 
@@ -38,7 +40,9 @@ Figtree 400/500/600/700 via `next/font/google`. Scale 12 / 13 / 14 / 16 / 20 / 2
 
 ## Radii, shadow, spacing
 
-Radii: 6 (`--r-ctl`, controls), 10 (`--r-surface`, surfaces), 999 (pills). Shadows only on floating layers (menus, panel, toast). 4px spacing base.
+Radii: 6 (`--r-ctl`, controls), 10 (`--r-surface`, surfaces), 999 (pills); menus, popovers and toasts use 8 as in the mockups. Shadows only on floating layers: `--float` (menus, popovers, dialog), `--float-ink` (toast), `--tip` (tooltip), `--sheet` (sheet), plus `--raised` for the checked segment. 4px spacing base.
+
+Motion: overlays animate on Radix `data-state` (pop, fade, sheet slide; 150–200ms ease-out). Under `prefers-reduced-motion` the `--animate-*` tokens are `none`.
 
 ## States
 
