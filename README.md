@@ -62,6 +62,20 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
 
+## Deploy
+
+Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variable is set to `true` (T23).
+
+`.github/workflows/deploy.yml` runs only after CI passes on a push to `main`:
+
+- A stale-run guard skips any run whose commit is no longer the tip of `main`.
+- `supabase db push` applies migrations to the production project.
+- The Vercel production env is synced from GitHub secrets; the secret key is stored as sensitive.
+- A prebuilt production deploy follows (`vercel build --prod`, then `vercel deploy --prebuilt --prod`). Vercel's Git auto-deploy is off.
+- The smoke test (`tests/e2e/smoke.spec.ts`) runs against the deployed URL once that file exists.
+
+`seed.yml` is a manual workflow (`workflow_dispatch`) that only runs on `main`; it restores the demo accounts and data. `keep-alive.yml` pings Supabase daily so the project does not pause. There are no PR previews.
+
 ## Docs
 
 - `docs/SPEC.md`: the binding spec
