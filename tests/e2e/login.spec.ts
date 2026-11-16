@@ -61,9 +61,10 @@ test('wrong credentials show one message and keep the email', async ({
   await page.getByLabel('Email').fill('admin@caseflow.test');
   await page.getByLabel('Password', { exact: true }).fill('definitely-wrong');
   await page.getByRole('button', { name: 'Sign in' }).click();
-  await expect(page.getByRole('alert')).toHaveText(
-    'Email or password is incorrect.',
-  );
+  // Next's route announcer is also role=alert, so scope to the banner text.
+  await expect(
+    page.getByRole('alert').filter({ hasText: 'Email or password' }),
+  ).toHaveText('Email or password is incorrect.');
   await expect(page.getByLabel('Email')).toHaveValue('admin@caseflow.test');
   await expect(page.getByLabel('Password', { exact: true })).toBeFocused();
 });
