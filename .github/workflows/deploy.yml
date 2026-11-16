@@ -62,13 +62,19 @@ jobs:
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - run: pnpm dlx "$VERCEL_CLI" build --prod
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       - id: deploy
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           # stdout is the URL; stderr (CLI logs) stays out of the capture
           url=$(pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod)
-          case "$url" in https://*[!\ ]) ;; *) echo "::error::unexpected deploy output"; exit 1 ;; esac
+          case "$url" in
+            ""|*[[:space:]]*) echo "::error::deploy did not return a single URL"; exit 1 ;;
+            https://*) ;;
+            *) echo "::error::deploy did not return an https URL"; exit 1 ;;
+          esac
           echo "url=$url" >> "$GITHUB_OUTPUT"
 
       # tests/e2e/smoke.spec.ts lands in T22/T23; skip until it exists.
