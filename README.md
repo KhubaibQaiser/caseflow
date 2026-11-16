@@ -6,6 +6,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
 - App-level 404, error and crash pages are planned (T12b).
+- FE: base UI primitives in `components/ui`, shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
 
@@ -50,6 +51,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/contracts`: Zod schemas and types shared by browser and server (contact, filters, list query, facets, permissions, results)
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
+- `components/ui`: token-styled primitives (button, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
+- `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`)
 - `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); e2e lands with the FE track in `tests/e2e/`
 
@@ -98,5 +101,9 @@ Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) 
 
 - Deleting contacts is out of scope for v1: there's no delete UI, and the `deleted_at` column stays unused.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
-- Control borders are darker than the mockups for 3:1 contrast.
+- Control borders are darker than the mockups (`#7F8D87`) for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.
+
+## Audit and activity (database triggers)
+
+Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at`, so clients cannot forge them. Soft delete needs `contacts.delete`, enforced in the database. Every contact change and every note writes an activity row. Seeding skips logging only when there is no signed-in user, through the service-role `seed_insert_contact`.

@@ -1,7 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // AGENTS.md is hand-written; stop `next dev` from injecting its managed block.
+  agentRules: false,
   turbopack: {
     rules: {
       '*.css': {

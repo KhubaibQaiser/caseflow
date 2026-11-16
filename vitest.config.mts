@@ -19,6 +19,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'jsdom',
+          setupFiles: ['tests/setup-dom.ts'],
           include: ['**/*.test.{ts,tsx}'],
           exclude: [
             '**/node_modules/**',
@@ -33,6 +34,7 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'integration',
+          fileParallelism: false, // files share one database and resetData()
           environment: 'node',
           include: ['tests/integration/**/*.test.{ts,tsx}'],
         },
