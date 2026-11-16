@@ -457,7 +457,7 @@ it('viewer can call both RPCs', async () => {})
 - Test: `lib/data/supabase.test.ts` (mapper unit tests), and add to `tests/integration/queries.test.ts`
 
 **Interfaces (produces):**
-- **`lib/supabase/server.ts`:** `createServerSupabase(): Promise<SupabaseClient<Database>>`, built with `@supabase/ssr` `createServerClient` and Next `cookies()`, using `SUPABASE_PUBLISHABLE_KEY`. There is no browser Supabase client, so the key has no `NEXT_PUBLIC_` prefix and stays out of client bundles.
+- **`lib/supabase/server.ts`:** `createServerSupabase(): Promise<SupabaseClient<Database>>`, built with `@supabase/ssr` `createServerClient` and Next `cookies()`, using `SUPABASE_PUBLISHABLE_KEY`. There is no browser Supabase client, so `SUPABASE_URL` and the key have no `NEXT_PUBLIC_` prefix and stay out of client bundles.
 - **`lib/supabase/admin.ts`:**
   - `createSignInClient(clientIp: string|null)`: secret key, `auth:{persistSession:false}`, and `global.headers['Sb-Forwarded-For'] = clientIp` when present.
   - `createServiceClient()`: used only by scripts and tests.
@@ -824,7 +824,7 @@ it('viewer sees no New contact button', () => {})
 
 **Interfaces (produces):**
 - **GitHub secrets:** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `SEED_ADMIN_PASSWORD`, `SEED_VIEWER_PASSWORD`.
-- **Vercel production environment:** `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`.
+- **Vercel production environment:** `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`.
 - **`deploy.yml`:** on push to `main`, with `needs` on the CI jobs (via `workflow_run`, or by re-running `checks`). Then `supabase link --project-ref`, `supabase db push`, `vercel pull --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`, and a smoke test that runs `pnpm exec playwright test tests/e2e/smoke.spec.ts` against the deployed URL.
 - **`seed.yml`:** `workflow_dispatch`. Runs `pnpm seed` against production.
 - **`keep-alive.yml`:** a daily cron (`17 6 * * *`). Uses `curl` against `${SUPABASE_URL}/rest/v1/role_permissions?select=role&limit=1` with the publishable key, calls `${SUPABASE_URL}/rest/v1/rpc/ping` (T8) with the publishable key. It fails the job on a non-200 response.
