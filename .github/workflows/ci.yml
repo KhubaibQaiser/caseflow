@@ -62,11 +62,11 @@ jobs:
           } >> "$GITHUB_ENV"
           # local-only keys, but keep them out of the log anyway
           sed -n 's/^[A-Z_]*_KEY="\(.*\)"$/::add-mask::\1/p' "$RUNNER_TEMP/supabase.env"
-      # T22 removes the seed guard and --pass-with-no-tests once scripts/seed.ts and the e2e suites exist.
+      # T22 removes the seed and e2e guards once scripts/seed.ts and the e2e suites exist.
       - run: if [ -f scripts/seed.ts ]; then pnpm seed; fi
       - run: pnpm test:integration
       - run: pnpm exec playwright install --with-deps chromium
-      - run: pnpm e2e --pass-with-no-tests
+      - run: if [ -d tests/e2e ]; then pnpm e2e; fi
       - if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
