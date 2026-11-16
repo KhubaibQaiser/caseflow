@@ -72,7 +72,7 @@ jobs:
           url=$(pnpm dlx "$VERCEL_CLI" deploy --prebuilt --prod)
           case "$url" in
             ""|*[[:space:]]*) echo "::error::deploy did not return a single URL"; exit 1 ;;
-            https://*) ;;
+            https://?*) ;;
             *) echo "::error::deploy did not return an https URL"; exit 1 ;;
           esac
           echo "url=$url" >> "$GITHUB_OUTPUT"
