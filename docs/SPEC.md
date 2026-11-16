@@ -31,7 +31,9 @@ Deadline: 24h from receipt of the brief. Functional deliverables come before pol
 
 **Non-goals (documented in the README as future work)**
 - Drag and drop on the pipeline. It can be added later on top of the menu, which WCAG 2.5.7 requires anyway.
-- Global search (an icon in the header that opens a modal searching every object) and keyboard shortcuts (a command palette, j/k to move through rows, quick status changes). Keyboard shortcuts come after the BRIEF requirements are fully met. Undo for pipeline moves (for later review).
+- Global search (an icon in the header that opens a modal searching every object) and keyboard shortcuts (a command palette, j/k to move through rows, quick status changes).
+- Keyboard shortcuts (after the BRIEF requirements are fully met).
+- Undo for pipeline moves (for later review).
 - More roles (coordinator, attorney). The permission model already supports them, and each would be one seed change.
 - Self sign-up, password reset, account management. A nightly data reset. PR preview deploys: a staging Supabase project and preview workflow are future work, and the README lists this as known.
 - Live facet counts that follow the draft filters, with an "Apply · N contacts" preview.
@@ -132,7 +134,7 @@ GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-aliv
 - `created_at timestamptz`, `updated_at timestamptz` (maintained by a trigger, which also sets `updated_by = auth.uid()`)
 - `deleted_at timestamptz null`: soft delete, so Undo is possible *(Claude's call)*. **Out of scope for v1:** nothing deletes or restores contacts, so the column stays unused.
 - **RLS:**
-  - select needs `contacts.read` (and `deleted_at is null`, except through the restore path)
+  - select needs `contacts.read` (and `deleted_at is null`; `deleted_at` is unused in v1)
   - insert and update need `contacts.write`
   - a BEFORE UPDATE trigger rejects changes to `deleted_at` unless the caller has `contacts.delete`
   - no hard deletes from clients
@@ -156,7 +158,7 @@ GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-aliv
 - **Where it runs:** locally through `supabase db reset` plus `pnpm seed`; in CI before integration and e2e tests; in production through the manually triggered `seed` workflow.
 
 **Follow-up validation rule**
-- "Not in the past" applies **only when the follow-up date is set or changed**, compared with the stored value. Overdue contacts can still be edited, moved, deleted, restored and undone without being rescheduled first.
+- "Not in the past" applies **only when the follow-up date is set or changed**, compared with the stored value. Overdue contacts can still be edited and moved without being rescheduled first.
 
 **Urgency rules**
 - Only `lead` and `active` contacts can be overdue or due today. A closed contact's follow-up is shown muted and never flagged.
@@ -206,10 +208,10 @@ Quick views are presets that write `followUp`. The pipeline uses the same filter
 - ~~`deleteContact(id)` (soft) and `restoreContact(id)`, which backs Undo.~~ Out of scope for v1.
 - `addNote(contactId, body)`.
 
-Each one calls `requirePermission(...)` first (contacts.write, contacts.delete or notes.write; Postgres enforces the same rules again), re-validates with the same Zod schema, check the follow-up date against the user's time zone, and call `revalidatePath` on the affected routes.
+Each one calls `requirePermission(...)` first (contacts.write or notes.write; Postgres enforces the same rules again), re-validates with the same Zod schema, check the follow-up date against the user's time zone, and call `revalidatePath` on the affected routes.
 
 ### 7.6 Contact read for the detail page
-`getContact(id)` returns the contact, its notes (newest first, with the author's display name and role) and its activities (newest first, limit 100, with the actor's name). A missing or soft-deleted contact gives `notFound()`.
+`getContact(id)` returns the contact, its notes (newest first, with the author's display name and role) and its activities (newest first, limit 100, with the actor's name). A missing contact gives `notFound()` (`deleted_at` is unused in v1).
 
 ### 7.7 RBAC enforcement (four layers; only Postgres is trusted)
 1. **`proxy.ts`: logged in or not, nothing more.** It refreshes the session and redirects anyone without one to `/login?next=…`. It isn't relied on for authorization, because Next's docs warn against it and CVE-2025-29927 showed a middleware bypass.
