@@ -11,7 +11,8 @@ export default defineConfig({
     ? undefined
     : {
         command: 'pnpm build && pnpm start',
-        url: baseURL,
+        // `/` redirects to a screen that may 404 (it stalls readiness); a static file is always 200.
+        url: `${baseURL}/favicon.ico`,
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
         stdout: 'pipe',
