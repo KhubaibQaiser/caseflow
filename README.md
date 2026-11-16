@@ -84,10 +84,14 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 - `DESIGN.md`: design system
 - `AGENTS.md`: rules for agents and contributors
 
+## Why no drag and drop
+
+Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) and exclude keyboard and many assistive-technology users. The "Move to…" menu works for everyone with a single pointer or the keyboard. Cards are ordered by urgency, so there's no manual order to drag.
+
 ## Decisions that differ from the spec
 
 - Filters use a flat follow-up range (`followUpFrom`/`followUpTo`) instead of the nested form in section 7.4.
-- Soft-deleted contacts are readable through the raw API and the app's queries filter them out; the spec (section 6) wants RLS to hide them.
+- Deleting contacts is out of scope for v1: there's no delete UI, and the `deleted_at` column stays unused.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
 - Control borders are darker than the mockups for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.

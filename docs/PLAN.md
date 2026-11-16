@@ -462,7 +462,7 @@ it('viewer can call both RPCs', async () => {})
   - `createSignInClient(clientIp: string|null)`: secret key, `auth:{persistSession:false}`, and `global.headers['Sb-Forwarded-For'] = clientIp` when present.
   - `createServiceClient()`: used only by scripts and tests.
 - **`lib/data/supabase.ts`:** implements the four signatures from Task 4. Each calls the RPCs with `tz` from `getRequestTimeZone()` and parses the responses with the contract schemas.
-  - `getContact` joins notes with the author profile and activities with the actor profile (limit 100), and returns `null` when the contact is missing or deleted.
+  - `getContact` joins notes with the author profile and activities with the actor profile (limit 100), and returns `null` when the contact is missing.
   - Mappers: `mapContactRow(raw): ContactRow` (snake to camel).
 - **`lib/auth/viewer.ts`:**
   - `getViewer = cache(async (): Promise<Viewer|null>)`, using `Viewer` from `lib/contracts/permissions` (T2). It uses `supabase.auth.getClaims()` to verify the session, then reads `profiles`.
@@ -490,7 +490,6 @@ it('viewer can call both RPCs', async () => {})
   - `updateContact(db, id, input, expectedUpdatedAt: string): Result<ContactRow>`. It runs `update … where id=$1 and updated_at=$2`. With 0 rows: if the row exists, return `conflict` ("This contact was changed since you opened it."), otherwise `not_found`.
   - `setStatus(db, id, status): Result<ContactRow>`
   - `setFollowUp(db, id, followUpOn: string|null): Result<ContactRow>`
-  - `softDelete(db, id): Result<null>` and `restore(db, id): Result<null>`
   - `insertNote(db, contactId, body): Result<Note>`
   - PostgREST and RLS errors map to codes: `42501` or an empty update under RLS becomes `forbidden`, and `23514` becomes `validation`.
 - **`features/contacts/actions.ts`** (`'use server'`):
@@ -498,7 +497,6 @@ it('viewer can call both RPCs', async () => {})
   - `updateContactAction(id: string, raw: unknown, expectedUpdatedAt: string)`
   - `moveContactAction(id: string, status: Status)`
   - `rescheduleAction(id: string, followUpOn: string|null)`
-  - `deleteContactAction(id: string)` and `restoreContactAction(id: string)`
   - `addNoteAction(contactId: string, body: string)`
   - Order in each: `assertPermission` → `makeContactInputSchema({today: todayIn(tz), previousFollowUpOn})` validation (Zod issues become `fieldErrors` keyed by field, with `contactMethod` for the cross-field rule) → mutation → `revalidatePath('/contacts')`, `revalidatePath('/pipeline')`, `revalidatePath('/contacts/'+id)`.
 - **`features/auth/actions.ts`:**
@@ -512,7 +510,7 @@ it('viewer can call both RPCs', async () => {})
 
 - [ ] **Step 1: Write the failing tests.**
   - Integration: `updateContact` with a stale `expectedUpdatedAt` returns `{ok:false,error:{code:'conflict'}}`.
-  - Viewer `setStatus` returns `forbidden`. Viewer `softDelete` returns `forbidden`. Admin `softDelete` then `restore` both succeed.
+  - Viewer `setStatus` returns `forbidden`.
   - `insertNote` with an empty body returns `validation`.
   - Unit (with the Supabase client and `next/headers` mocked):
     - a 429 maps to `rate_limited` with `retryAfter`
@@ -677,14 +675,14 @@ it('viewer sees no New contact button', () => {})
 - [ ] **Step 4: Run.** Expected: PASS.
 - [ ] **Step 5: Commit** `"Add filters panel with draft, Apply and Cancel"`.
 
-### Task 16: Contact detail (header, follow-up, details, notes, timeline, move, delete)
+### Task 16: Contact detail (header, follow-up, details, notes, timeline, move)
 
 **Files:**
 - Create: `features/contacts/detail/{contact-header,follow-up-card,details-list,notes,timeline,move-menu}.tsx`, `app/(app)/contacts/[id]/{page,loading,error,not-found}.tsx`
 - Test: `features/contacts/detail/notes.test.tsx`, `features/contacts/detail/move-menu.test.tsx`
 
 **Interfaces:**
-- **Consumes:** `getContact` (T4), the action signatures from T10 (passed as props: `onMove`, `onReschedule`, `onDelete`, `onRestore`, `onAddNote`), `<Can>` and `usePermission` (T13).
+- **Consumes:** `getContact` (T4), the action signatures from T10 (passed as props: `onMove`, `onReschedule`, `onAddNote`), `<Can>` and `usePermission` (T13).
 - **Produces:**
   - `MoveMenu` `{current: Status; onMove(s): Promise<Result<ContactRow>>; disabledReason?: string}`. It's a DropdownMenu listing the other two statuses as pills. Reused by the pipeline.
   - `Notes` `{notes: Note[]; onAdd(body): Promise<Result<Note>>}`:
@@ -693,7 +691,6 @@ it('viewer sees no New contact button', () => {})
     - For viewers, the composer is replaced with "Viewers can read notes but can't add them."
   - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}" / "deleted" / "restored". Each uses a `<time dateTime>` with the full timestamp in a title.
   - `FollowUpCard`: an urgency pill, the date, and **Reschedule** (a DatePicker in a Popover, saving on select).
-  - **Delete** (in the overflow menu, admin only, otherwise disabled with a reason): calls `onDelete`, navigates to `/contacts`, and shows the toast "Contact deleted" with Undo, which calls `onRestore`.
   - The **`not-found.tsx`** copy: "This contact doesn't exist or was deleted." with "Back to contacts".
 
 - [ ] **Step 1: Write the failing tests.**
@@ -703,7 +700,7 @@ it('viewer sees no New contact button', () => {})
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement** everything above, matching `screens-v1.html` (detail and mobile detail with the Call button) and `login-rbac-v1.html` (viewer variant).
 - [ ] **Step 4: Run.** Expected: PASS.
-- [ ] **Step 5: Commit** `"Add contact detail with notes, timeline, reschedule, move and delete"`.
+- [ ] **Step 5: Commit** `"Add contact detail with notes, timeline, reschedule and move"`.
 
 ### Task 17: Contact form (create and edit)
 
@@ -862,7 +859,7 @@ it('viewer sees no New contact button', () => {})
     - **"rapid typing shows results for the final query"** (type "or", "ort", "orte" quickly; every visible name contains "orte")
     - `?page=999` clamps to the last page
   - **`contact-form.spec.ts`:** empty submit gives the summary and focus; fill and save lands on the detail page with the toast; edit summary and save.
-  - **`detail.spec.ts`:** add a note, then it appears in the notes and the timeline ("Alex Morgan added a note"); Reschedule updates the pill; delete, Undo, and the contact is back.
+  - **`detail.spec.ts`:** add a note, then it appears in the notes and the timeline ("Alex Morgan added a note"); Reschedule updates the pill.
   - **`pipeline.spec.ts`:** moving a Lead card to Active moves it with the toast; Undo returns it; after a reload the state persists; "Show 50 more" appends 50 cards.
   - **`viewer.spec.ts`:** Edit and Move are `aria-disabled` with tooltip text; the composer is replaced; there's no New contact button; `/contacts/new` shows "You can't add contacts".
   - **`mobile.spec.ts` (`@mobile`):** the tab bar is visible; the cards render; the Filters sheet opens, traps focus and closes on Esc.

@@ -35,7 +35,7 @@ Deadline: 24h from receipt of the brief. Functional deliverables come before pol
 - More roles (coordinator, attorney). The permission model already supports them, and each would be one seed change.
 - Self sign-up, password reset, account management. A nightly data reset. PR preview deploys: a staging Supabase project and preview workflow are future work, and the README lists this as known.
 - Live facet counts that follow the draft filters, with an "Apply · N contacts" preview.
-- Motion beyond CSS transitions. Editing or deleting notes. Assigned attorney, conflict checks, documents. MFA and SSO.
+- Deleting contacts, and with it Undo and restore: there's no delete button, dialog, toast or RPC in v1 *(Khubaib's call, 2026-11-17)*. The `deleted_at` column and its guard stay in the schema. Motion beyond CSS transitions. Editing or deleting notes. Assigned attorney, conflict checks, documents. MFA and SSO.
 
 **Anti-goals (it fails even if it works)**
 - Looks like a shadcn or "AI-generated" template, or uses generic marketing copy.
@@ -130,7 +130,7 @@ GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-aliv
 - `summary text null` (at most 1,000 characters)
 - `created_by`, `updated_by → profiles`
 - `created_at timestamptz`, `updated_at timestamptz` (maintained by a trigger, which also sets `updated_by = auth.uid()`)
-- `deleted_at timestamptz null`: soft delete, so Undo is possible *(Claude's call)*.
+- `deleted_at timestamptz null`: soft delete, so Undo is possible *(Claude's call)*. **Out of scope for v1:** nothing deletes or restores contacts, so the column stays unused.
 - **RLS:**
   - select needs `contacts.read` (and `deleted_at is null`, except through the restore path)
   - insert and update need `contacts.write`
@@ -203,7 +203,7 @@ Quick views are presets that write `followUp`. The pipeline uses the same filter
 - `createContact(input)` and `updateContact(id, input, expectedUpdatedAt)`.
   - `updateContact` uses **optimistic concurrency**: it returns `conflict` if the row changed since the form opened. The firm workspace is shared, and reviewers are signed in as the same admin.
 - `moveContact(id, toStatus)` returns the updated row.
-- `deleteContact(id)` (soft) and `restoreContact(id)`, which backs Undo.
+- ~~`deleteContact(id)` (soft) and `restoreContact(id)`, which backs Undo.~~ Out of scope for v1.
 - `addNote(contactId, body)`.
 
 Each one calls `requirePermission(...)` first (contacts.write, contacts.delete or notes.write; Postgres enforces the same rules again), re-validates with the same Zod schema, check the follow-up date against the user's time zone, and call `revalidatePath` on the affected routes.
@@ -270,7 +270,7 @@ Each one calls `requirePermission(...)` first (contacts.write, contacts.delete o
 
 ### 8.4 Contact detail (`/contacts/[id]`)
 - **Breadcrumb:** "Contacts / Name". Back returns to the list with its filters intact, because they're in the URL.
-- **Header:** name, status pill, matter, "Enquired Nov 12 · waiting 4d". Actions: **Move to…** (a menu listing the other two statuses), **Edit**, and an overflow menu (Delete).
+- **Header:** name, status pill, matter, "Enquired Nov 12 · waiting 4d". Actions: **Move to…** (a menu listing the other two statuses), and **Edit**. (Delete is out of scope for v1.)
 - **Left column:**
   - The Follow-up card first: an urgency pill and the date, with a **Reschedule** button opening a date popover that saves straight away.
   - The Details list (phone as a `tel:` link, email as a `mailto:` link, matter type, source, summary at 68ch).
@@ -334,7 +334,7 @@ Each one calls `requirePermission(...)` first (contacts.write, contacts.delete o
 - Closed contacts are never flagged overdue. Moving a contact to Closed keeps its follow-up date but mutes it.
 - Double-clicking Save, Move or Apply runs once.
 - A stale or invalid URL (`?page=999`, `?status=foo`) clamps to the last page or ignores the bad value.
-- Deleting a contact while on its detail page goes back to the list, with a toast offering Undo.
+- ~~Deleting a contact while on its detail page goes back to the list, with a toast offering Undo.~~ Out of scope for v1.
 - Two reviewers signed in as the admin and editing the same contact triggers the conflict banner. For a move, the last write wins.
 - A role or permission that changes mid-session: the next server action returns `forbidden`, the optimistic change is rolled back, and a toast says what wasn't allowed. The next navigation re-renders with the new permissions.
 - A Viewer opening `/contacts/new`, `/contacts/[id]/edit`, or calling an action directly gets the forbidden page or a `forbidden` result, and the database rejects it as well.
@@ -347,7 +347,7 @@ Each one calls `requirePermission(...)` first (contacts.write, contacts.delete o
 
 ### 8.10 RBAC in the UI (mockup: `design/mockups/login-rbac-v1.html`)
 - **The role is always visible:** a badge in the sidebar account block, and on mobile under the Account tab.
-- **In-context write actions are visible but disabled, with the reason.** This covers Edit, Move to…, Delete, the pipeline card menus and Reschedule. They use `aria-disabled="true"` (so they stay focusable) and show a tooltip on hover or focus: "Viewers can't edit contacts. Ask an admin."
+- **In-context write actions are visible but disabled, with the reason.** This covers Edit, Move to…, the pipeline card menus and Reschedule. They use `aria-disabled="true"` (so they stay focusable) and show a tooltip on hover or focus: "Viewers can't edit contacts. Ask an admin."
 - **Entry points that would only lead to a forbidden page are hidden:** the "New contact" buttons and the mobile "New" button. The empty state's "New contact" call to action is replaced with "No contacts yet. An admin can add them."
 - **The notes composer is replaced** for Viewers with "Viewers can read notes but can't add them."
 - **The forbidden page** (`app/forbidden.tsx`, or the pinned Next 16 equivalent, otherwise a shared component) is rendered when `requirePermission` fails on a page.
@@ -457,7 +457,7 @@ ETAs are focused agent hours. "Wall" is elapsed time with the tracks running in 
 | **M1c BE auth, RBAC and actions** | `signIn`/`signOut` (with `Sb-Forwarded-For`), `proxy.ts`, `getViewer`/`requirePermission`, `PermissionsProvider`, Server Actions with permission checks and conflict detection. Tests. | 1.5h | M1a |
 | **M2 FE design system** | Tokens in CSS, primitives (Button, Input, Select, Textarea, Checkbox, Radio, Segmented, Dialog, Sheet, Popover, DropdownMenu, Chip, Pill, Skeleton, EmptyState, ErrorState, Toast, DatePicker), the app shell (sidebar, rail, tab bar), the dev gallery | 2h | M0 |
 | **M3a FE list** | The contacts list: table, virtualization, sort, pagination, search, chips, quick views, filters panel and sheet, card list on mobile, all states | 3h | M2 |
-| **M3b FE detail** | Detail page, notes composer, timeline, Reschedule, delete with Undo, not-found | 1.5h | M2 |
+| **M3b FE detail** | Detail page, notes composer, timeline, Reschedule, not-found | 1.5h | M2 |
 | **M3c FE forms, login, RBAC states** | Create and edit, validation UX, error summary, conflict banner, unsaved-changes guard; the login page and all its states; the role badge, `<Can>`, disabled-with-reason controls, the forbidden page | 2h | M2 |
 | **M3d FE pipeline** | Board, Move to… menu, optimistic move with Undo, per-column paging, mobile tabs | 1.5h | M2 |
 | **M5a OPS CI** | `ci.yml` (checks, integration and e2e with Supabase in Docker, gitleaks), Dependabot, PR template, branch protection | 1h | M0 |
