@@ -1,5 +1,12 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { adminClient, resetData, rpc, seedContact, serviceClient, viewerClient } from './setup';
+import {
+  adminClient,
+  resetData,
+  rpc,
+  seedContact,
+  serviceClient,
+  viewerClient,
+} from './setup';
 
 beforeEach(resetData);
 
@@ -15,7 +22,10 @@ async function activities(contactId: string) {
 
 async function newContact() {
   const a = await adminClient();
-  const { data, error } = await seedContact(a.client, { full_name: 'Ana Ruiz', phone: '5125550101' });
+  const { data, error } = await seedContact(a.client, {
+    full_name: 'Ana Ruiz',
+    phone: '5125550101',
+  });
   if (error) throw new Error(error.message);
   return { a, c: data as { id: string } };
 }
@@ -40,20 +50,36 @@ describe('contact triggers', () => {
 
   it('logs exactly one status_changed with from/to and actor', async () => {
     const { a, c } = await newContact();
-    const { error } = await a.client.from('contacts').update({ status: 'active' }).eq('id', c.id);
+    const { error } = await a.client
+      .from('contacts')
+      .update({ status: 'active' })
+      .eq('id', c.id);
     expect(error).toBeNull();
-    const rows = (await activities(c.id)).filter((r) => r.type === 'status_changed');
+    const rows = (await activities(c.id)).filter(
+      (r) => r.type === 'status_changed',
+    );
     expect(rows).toEqual([
-      { type: 'status_changed', payload: { from: 'lead', to: 'active' }, actor_id: a.userId },
+      {
+        type: 'status_changed',
+        payload: { from: 'lead', to: 'active' },
+        actor_id: a.userId,
+      },
     ]);
   });
 
   it('logs follow_up_changed and updated fields', async () => {
     const { a, c } = await newContact();
-    await a.client.from('contacts').update({ follow_up_on: '2026-12-01' }).eq('id', c.id);
+    await a.client
+      .from('contacts')
+      .update({ follow_up_on: '2026-12-01' })
+      .eq('id', c.id);
     await a.client.from('contacts').update({ summary: 'hi' }).eq('id', c.id);
     const rows = await activities(c.id);
-    expect(rows.map((r) => r.type)).toEqual(['created', 'follow_up_changed', 'updated']);
+    expect(rows.map((r) => r.type)).toEqual([
+      'created',
+      'follow_up_changed',
+      'updated',
+    ]);
     expect(rows[1]?.payload).toEqual({ from: null, to: '2026-12-01' });
     expect(rows[2]?.payload).toEqual({ fields: ['summary'] });
   });
@@ -62,7 +88,12 @@ describe('contact triggers', () => {
     const { a, c } = await newContact();
     let prev = '';
     for (const summary of ['a', 'b']) {
-      const { data } = await a.client.from('contacts').update({ summary }).eq('id', c.id).select().single();
+      const { data } = await a.client
+        .from('contacts')
+        .update({ summary })
+        .eq('id', c.id)
+        .select()
+        .single();
       expect(data.updated_by).toBe(a.userId);
       expect(data.updated_at > prev).toBe(true);
       prev = data.updated_at;
@@ -76,9 +107,16 @@ describe('contact triggers', () => {
       .update({ deleted_at: new Date().toISOString() })
       .eq('id', c.id);
     expect(del.error).toBeNull();
-    const res = await a.client.from('contacts').update({ deleted_at: null }).eq('id', c.id);
+    const res = await a.client
+      .from('contacts')
+      .update({ deleted_at: null })
+      .eq('id', c.id);
     expect(res.error).toBeNull();
-    expect((await activities(c.id)).map((r) => r.type)).toEqual(['created', 'deleted', 'restored']);
+    expect((await activities(c.id)).map((r) => r.type)).toEqual([
+      'created',
+      'deleted',
+      'restored',
+    ]);
   });
 
   it('viewer cannot soft-delete', async () => {
@@ -90,7 +128,11 @@ describe('contact triggers', () => {
       .eq('id', c.id)
       .select();
     expect(r.data ?? []).toHaveLength(0);
-    const row = await serviceClient().from('contacts').select('deleted_at').eq('id', c.id).single();
+    const row = await serviceClient()
+      .from('contacts')
+      .select('deleted_at')
+      .eq('id', c.id)
+      .single();
     expect(row.data?.deleted_at).toBeNull();
     expect((await activities(c.id)).map((r) => r.type)).toEqual(['created']);
   });
@@ -102,12 +144,19 @@ describe('contact triggers', () => {
       .insert({ contact_id: c.id, body: 'called', author_id: a.userId });
     expect(error).toBeNull();
     const rows = await activities(c.id);
-    expect(rows.at(-1)).toMatchObject({ type: 'note_added', actor_id: a.userId });
+    expect(rows.at(-1)).toMatchObject({
+      type: 'note_added',
+      actor_id: a.userId,
+    });
   });
 
   it('writes no activities when caseflow.seeding is on', async () => {
     const id = await rpc<string>(serviceClient(), 'seed_insert_contact', {
-      c: { full_name: 'Seeded Person', phone: '5125550199', matter_type: 'family' },
+      c: {
+        full_name: 'Seeded Person',
+        phone: '5125550199',
+        matter_type: 'family',
+      },
     });
     expect(await activities(id)).toHaveLength(0);
   });
@@ -126,15 +175,24 @@ describe('contact triggers', () => {
   it('authenticated clients cannot call seed_insert_contact', async () => {
     const a = await adminClient();
     const r = await a.client.rpc('seed_insert_contact', {
-      c: { full_name: 'Sneaky Seed', phone: '5125550198', matter_type: 'family' },
+      c: {
+        full_name: 'Sneaky Seed',
+        phone: '5125550198',
+        matter_type: 'family',
+      },
     });
     expect(r.error?.code).toBe('42501');
   });
 
-  it('a signed-in client cannot suppress logging', async () => {
+  it('regression guard: signed-in writes are always logged', async () => {
     const { a, c } = await newContact();
-    await a.client.from('notes').insert({ contact_id: c.id, body: 'x', author_id: a.userId });
-    expect((await activities(c.id)).map((r) => r.type)).toEqual(['created', 'note_added']);
+    await a.client
+      .from('notes')
+      .insert({ contact_id: c.id, body: 'x', author_id: a.userId });
+    expect((await activities(c.id)).map((r) => r.type)).toEqual([
+      'created',
+      'note_added',
+    ]);
   });
 
   it('forged audit fields on update are overridden', async () => {

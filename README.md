@@ -67,3 +67,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
 - Control borders are darker than the mockups for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.
+
+## Audit and activity (database triggers)
+
+Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at`, so clients cannot forge them. Soft delete needs `contacts.delete`, enforced in the database. Every contact change and every note writes an activity row. Seeding skips logging only when there is no signed-in user, through the service-role `seed_insert_contact`.
