@@ -6,7 +6,7 @@ import LoaderCircle from 'lucide-react/icons/loader-circle';
 
 import { cn } from '@/utils/cn';
 
-import { Tooltip } from './tooltip';
+import { LazyTooltip } from './lazy-tooltip';
 
 type ButtonProps = ComponentProps<'button'> & {
   variant: 'primary' | 'ghost' | 'link';
@@ -110,12 +110,12 @@ export function Button({
   );
   if (disabledReason === undefined) return button;
   return (
-    <Tooltip
+    <LazyTooltip
       content={disabledReason}
       open={reasonOpen}
       onOpenChange={setReasonOpen}
     >
       {button}
-    </Tooltip>
+    </LazyTooltip>
   );
 }

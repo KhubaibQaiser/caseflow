@@ -20,7 +20,7 @@ import {
   getViewer,
   NoProfileError,
   requirePermission,
-} from '@/lib/auth/viewer';
+} from '@/lib/auth/viewer-supabase';
 import { ContactRowSchema } from '@/lib/contracts/contact';
 import { toFilters, type ListQuery } from '@/lib/contracts/list-query';
 import {

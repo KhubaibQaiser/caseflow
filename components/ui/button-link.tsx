@@ -8,6 +8,8 @@ const VARIANT = {
   // The transparent border becomes the outline in forced colours.
   primary:
     'h-[34px] border border-transparent bg-accent px-3.5 text-on-accent hover:bg-accent-hover',
+  ghost:
+    'h-[34px] border border-line bg-surface px-3.5 text-ink hover:border-lead-border hover:bg-canvas active:bg-track',
   link: 'px-0.5 text-accent underline-offset-3 hover:underline',
 };
 

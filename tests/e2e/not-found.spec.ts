@@ -12,10 +12,9 @@ test('an unknown URL returns 404 and names the path', async ({ page }) => {
   await expect(
     page.getByRole('link', { name: 'Go to contacts' }),
   ).toHaveAttribute('href', '/contacts');
-  await expect(page.getByRole('link', { name: 'Pipeline' })).toHaveAttribute(
-    'href',
-    '/pipeline',
-  );
+  await expect(
+    page.getByRole('main').getByRole('link', { name: 'Pipeline' }),
+  ).toHaveAttribute('href', '/pipeline');
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
     'content',
     /noindex/,

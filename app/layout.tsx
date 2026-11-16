@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Figtree } from 'next/font/google';
 import './globals.css';
 
@@ -15,6 +15,9 @@ export const metadata: Metadata = {
   title: 'Caseflow',
   description: 'Legal intake, without the spreadsheet.',
 };
+
+// cover lets the tab bar's safe-area padding see the home indicator.
+export const viewport: Viewport = { viewportFit: 'cover' };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (

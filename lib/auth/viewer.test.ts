@@ -1,31 +1,38 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-const redirect = vi.hoisted(() =>
-  vi.fn((to: string) => {
-    throw new Error(`REDIRECT ${to}`);
-  }),
-);
-vi.mock('next/navigation', () => ({ redirect }));
-vi.mock('@/lib/supabase/server', () => ({
-  createServerSupabase: async () => ({
-    auth: { getClaims: async () => ({ data: null }) },
+let role: string | undefined;
+vi.mock('next/headers', () => ({
+  cookies: async () => ({
+    get: (name: string) =>
+      name === 'fake-role' && role ? { value: role } : undefined,
   }),
 }));
 
-import { requirePermission } from './viewer';
+import { getViewer } from './viewer';
 
-describe('requirePermission without a session', () => {
-  it('redirects to /login with an encoded next and reason=expired', async () => {
-    await expect(
-      requirePermission('contacts.read', '/contacts?q=a&b'),
-    ).rejects.toThrow(
-      'REDIRECT /login?next=%2Fcontacts%3Fq%3Da%26b&reason=expired',
-    );
+afterEach(() => {
+  vi.unstubAllEnvs();
+  role = undefined;
+});
+
+describe('fake getViewer', () => {
+  it('fails closed in production: always the read-only Viewer, whatever the cookie says', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    role = 'admin';
+    const v = await getViewer();
+    expect(v.role).toBe('viewer');
+    expect(v.permissions).not.toContain('contacts.write');
   });
 
-  it('omits next when none is given', async () => {
-    await expect(requirePermission('contacts.read')).rejects.toThrow(
-      'REDIRECT /login?reason=expired',
-    );
+  it('outside production the fake-role cookie picks the role', async () => {
+    role = 'viewer';
+    expect((await getViewer()).role).toBe('viewer');
+    role = 'admin';
+    expect((await getViewer()).role).toBe('admin');
+  });
+
+  it('outside production an unknown cookie falls back to admin', async () => {
+    role = 'root';
+    expect((await getViewer()).role).toBe('admin');
   });
 });
