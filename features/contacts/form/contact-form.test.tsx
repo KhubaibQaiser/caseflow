@@ -61,7 +61,7 @@ describe('ContactForm', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
 
     const summary = await screen.findByRole('alert');
-    expect(summary).toHaveTextContent('2 fields need attention.');
+    expect(summary).toHaveTextContent('3 fields need attention.');
     expect(summary).toHaveFocus();
     expect(screen.getByRole('link', { name: /Full name:/ })).toHaveAttribute(
       'href',
@@ -70,7 +70,21 @@ describe('ContactForm', () => {
     expect(
       screen.getByRole('link', { name: /Email or phone: Add an email/ }),
     ).toHaveAttribute('href', '#contactMethod');
+    expect(screen.getByRole('link', { name: /Matter type:/ })).toHaveAttribute(
+      'href',
+      '#matterType',
+    );
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('has no matter type until one is chosen, and says so', async () => {
+    renderForm(vi.fn<Submit>());
+    const select = screen.getByRole('combobox', { name: /Matter type/ });
+    expect(select).toHaveValue('');
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+
+    expect(select).toBeInvalid();
+    expect(select).toHaveAccessibleDescription('Choose a matter type.');
   });
 
   it('shows the email-or-phone rule once, under the pair, with both inputs invalid', async () => {
@@ -149,6 +163,10 @@ describe('ContactForm', () => {
       screen.getByRole('textbox', { name: 'Phone' }),
       '512 555 0100',
     );
+    await userEvent.selectOptions(
+      screen.getByRole('combobox', { name: /Matter type/ }),
+      'family',
+    );
     await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
 
     expect(
@@ -196,7 +214,8 @@ describe('ContactForm', () => {
     expect(
       await screen.findByText('This contact was changed since you opened it.'),
     ).toBeVisible();
-    expect(screen.getByRole('button', { name: 'Overwrite' })).toBeVisible();
+    expect(screen.getByRole('button', { name: 'Reload latest' })).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Overwrite' })).toBeNull();
     expect(refresh).toHaveBeenCalled();
 
     // The refresh lands: the page re-renders with the newer contact.
@@ -220,36 +239,6 @@ describe('ContactForm', () => {
       'Marisol Ortega-Ruiz',
     );
     expect(screen.queryByText(/changed since you opened/)).toBeNull();
-  });
-
-  it('Overwrite resubmits with the newer stamp and keeps the typed values', async () => {
-    const onSubmit = vi
-      .fn<Submit>()
-      .mockResolvedValueOnce(fail('conflict', 'changed'))
-      .mockResolvedValueOnce(ok({ id: 'c1' }));
-    const view = renderForm(onSubmit, 'edit');
-    const name = screen.getByRole('textbox', { name: /Full name/ });
-    await userEvent.clear(name);
-    await userEvent.type(name, 'My edit');
-    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
-    await screen.findByRole('button', { name: 'Overwrite' });
-    view.rerender(
-      <ContactForm
-        mode="edit"
-        today={TODAY}
-        onSubmit={onSubmit}
-        initial={{ ...initial, updatedAt: '2026-11-17T09:00:00.000001+00:00' }}
-      />,
-    );
-    await userEvent.click(screen.getByRole('button', { name: 'Overwrite' }));
-
-    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
-    expect(onSubmit.mock.calls[1]?.[1]).toBe(
-      '2026-11-17T09:00:00.000001+00:00',
-    );
-    expect((onSubmit.mock.calls[1]?.[0] as { fullName: string }).fullName).toBe(
-      'My edit',
-    );
   });
 
   it('redirects to sign-in with the page as next when the session has ended', async () => {
@@ -300,5 +289,36 @@ describe('ContactForm', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Discard' }));
     expect(push).toHaveBeenCalledWith('/contacts/c1');
+  });
+
+  it('asks before an in-app link leaves a dirty form; Cancel keeps the input', async () => {
+    render(
+      <>
+        <a href="/contacts">Contacts</a>
+        <ContactForm
+          mode="edit"
+          initial={initial}
+          today={TODAY}
+          onSubmit={vi.fn<Submit>()}
+        />
+      </>,
+    );
+    const name = screen.getByRole('textbox', { name: /Full name/ });
+    await userEvent.type(name, ' Jr');
+    await userEvent.click(screen.getByRole('link', { name: 'Contacts' }));
+
+    expect(
+      await screen.findByRole('dialog', { name: 'Discard changes?' }),
+    ).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(name).toHaveValue('Marisol Ortega Jr');
+    expect(push).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('link', { name: 'Contacts' }));
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Discard' }),
+    );
+    expect(push).toHaveBeenCalledWith('/contacts');
   });
 });
