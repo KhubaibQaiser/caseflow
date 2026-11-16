@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
+import ChevronDown from 'lucide-react/icons/chevron-down';
+import Columns3 from 'lucide-react/icons/columns-3';
 import Search from 'lucide-react/icons/search';
 import Users from 'lucide-react/icons/users';
 
@@ -9,6 +11,20 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CheckboxGroup } from '@/components/ui/checkbox-group';
 import { Chip } from '@/components/ui/chip';
+import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { ErrorSummary, Field } from '@/components/ui/field';
@@ -16,9 +32,15 @@ import { Input } from '@/components/ui/input';
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
 import { RadioGroup } from '@/components/ui/radio-group';
 import { Segmented } from '@/components/ui/segmented';
+import { Sheet } from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
-import { STATUSES, STATUS_LABEL } from '@/lib/contracts/enums';
+import { toast } from '@/components/ui/toaster';
+import { Tooltip } from '@/components/ui/tooltip';
+import { STATUSES, STATUS_LABEL, type Status } from '@/lib/contracts/enums';
+import { toDateOnly } from '@/lib/dates/date-only';
+
+const VIEWER_REASON = "Viewers can't edit contacts. Ask an admin.";
 
 const LONG_SUMMARY =
   'Rear-ended at a stop light on I-35 near the Riverside exit on October 2. ' +
@@ -149,6 +171,134 @@ function FormDemo() {
   );
 }
 
+function MoveMenu() {
+  const [status, setStatus] = useState<Status>('lead');
+  const move = (next: Status) => {
+    const previous = status;
+    setStatus(next);
+    toast.success(`Marisol Ortega moved to ${STATUS_LABEL[next]}`, {
+      action: { label: 'Undo', onClick: () => setStatus(previous) },
+    });
+  };
+  return (
+    <div className="flex items-center gap-2">
+      <StatusPill status={status} />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="sm">
+            Move to…
+            <ChevronDown aria-hidden className="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          <DropdownMenuLabel>Move Marisol to</DropdownMenuLabel>
+          {STATUSES.filter((s) => s !== status).map((s) => (
+            <DropdownMenuItem key={s} onSelect={() => move(s)}>
+              <StatusPill status={s} />
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
+
+function DateDemo() {
+  const today = toDateOnly(new Date());
+  const [empty, setEmpty] = useState<string | null>(null);
+  const [set, setSet] = useState<string | null>('2026-11-20');
+  return (
+    <div className="grid max-w-[720px] gap-3 sm:grid-cols-3">
+      <Field id="demo-date-empty" label="Next follow-up" hint="Today or later.">
+        <DatePicker
+          value={empty}
+          onChange={setEmpty}
+          min={today}
+          label="Next follow-up"
+        />
+      </Field>
+      <Field id="demo-date-set" label="Next follow-up" hint="Today or later.">
+        <DatePicker
+          value={set}
+          onChange={setSet}
+          min={today}
+          label="Next follow-up"
+        />
+      </Field>
+      <Field
+        id="demo-date-invalid"
+        label="Next follow-up"
+        error="Pick today or a later date."
+      >
+        <DatePicker
+          value="2026-10-05"
+          onChange={() => {}}
+          min={today}
+          label="Next follow-up"
+        />
+      </Field>
+    </div>
+  );
+}
+
+function SheetDemo() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost">Filters</Button>
+      </DialogTrigger>
+      <Sheet
+        side="right"
+        title="Filters"
+        footer={
+          <>
+            <DialogClose asChild>
+              <Button variant="ghost" className="h-10 flex-1">
+                Cancel
+              </Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button variant="primary" className="h-10 flex-[1.4]">
+                Apply
+              </Button>
+            </DialogClose>
+          </>
+        }
+      >
+        <CheckboxGroup id="demo-sheet-status" legend="Status">
+          <Checkbox label="Lead" count={642} />
+          <Checkbox label="Active" count={642} />
+          <Checkbox label="Closed" count={1153} />
+        </CheckboxGroup>
+      </Sheet>
+    </Dialog>
+  );
+}
+
+function DiscardDialog() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost">Cancel edit</Button>
+      </DialogTrigger>
+      <DialogContent
+        title="Discard changes?"
+        description="Your edits to Marisol Ortega haven't been saved."
+        footer={
+          <>
+            <DialogClose asChild>
+              <Button variant="ghost">Keep editing</Button>
+            </DialogClose>
+            <DialogClose asChild>
+              <Button variant="primary">Discard</Button>
+            </DialogClose>
+          </>
+        }
+      />
+    </Dialog>
+  );
+}
+
 export function Gallery() {
   const [chips, setChips] = useState([
     { label: 'Status', value: 'Lead, Active' },
@@ -196,14 +346,11 @@ export function Gallery() {
           <Button variant="primary" disabled>
             Save contact
           </Button>
-          <Button
-            variant="ghost"
-            disabledReason="Viewers can't edit contacts. Ask an admin."
-          >
+          <Button variant="ghost" disabledReason={VIEWER_REASON}>
             Edit
           </Button>
           <span className="text-ink-2 text-xs">
-            Edit stays focusable; the reason is a title until the tooltip lands.
+            Edit stays focusable. Hover, focus or tap it for the reason.
           </span>
         </Row>
       </Section>
@@ -345,6 +492,99 @@ export function Gallery() {
             <span className="text-13 text-ink-2">No filters.</span>
           )}
         </div>
+      </Section>
+
+      <Section
+        title="Menu, tooltip and dialogs"
+        note="Arrow keys move through the menu; Esc closes any overlay and returns focus to its trigger."
+      >
+        <Row label="Menu">
+          <MoveMenu />
+        </Row>
+        <Row label="Viewer">
+          <Button variant="ghost" size="sm" disabledReason={VIEWER_REASON}>
+            Move to…
+            <ChevronDown aria-hidden className="size-3.5" />
+          </Button>
+          <Button variant="ghost" size="sm" disabledReason={VIEWER_REASON}>
+            Reschedule
+          </Button>
+        </Row>
+        <Row label="Tooltip">
+          <Tooltip content="Pipeline">
+            <a
+              href="#pipeline"
+              aria-label="Pipeline"
+              className="rounded-ctl text-ink-2 hover:bg-track hover:text-ink grid size-9 place-items-center transition-colors duration-150"
+            >
+              <Columns3 aria-hidden className="size-4" />
+            </a>
+          </Tooltip>
+          <span className="text-ink-2 text-xs">Icon rail label on tablet.</span>
+        </Row>
+        <Row label="Dialog">
+          <DiscardDialog />
+        </Row>
+        <Row label="Sheet">
+          <SheetDemo />
+          <span className="text-ink-2 text-xs">
+            Mobile filters. Esc, the scrim or ✕ closes it.
+          </span>
+        </Row>
+      </Section>
+
+      <Section
+        title="Date picker"
+        note="Empty, set and invalid. Days before today are disabled; Clear removes the date."
+      >
+        <DateDemo />
+      </Section>
+
+      <Section
+        title="Toast"
+        note="Bottom centre, 6s, paused on hover or focus. Alt+T jumps to it."
+      >
+        <Row label="Success">
+          <Button
+            variant="ghost"
+            onClick={() => toast.success('Contact saved')}
+          >
+            Contact saved
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() =>
+              toast.success('Marisol Ortega moved to Active', {
+                action: {
+                  label: 'Undo',
+                  onClick: () => toast('Marisol Ortega moved back to Lead'),
+                },
+              })
+            }
+          >
+            Move with Undo
+          </Button>
+        </Row>
+        <Row label="Error">
+          <Button
+            variant="ghost"
+            onClick={() =>
+              toast.error("Move didn't save. Marisol Ortega is back in Lead.", {
+                action: { label: 'Retry', onClick: () => {} },
+              })
+            }
+          >
+            Move failed
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() =>
+              toast.error("You don't have permission to move contacts.")
+            }
+          >
+            Forbidden
+          </Button>
+        </Row>
       </Section>
 
       <Section title="Loading, empty and error">

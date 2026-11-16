@@ -5,7 +5,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 ## Status
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
-- FE: base UI primitives in `components/ui`, shown in every state at `/dev/components` (dev only; 404 in production).
+- FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
 
@@ -51,6 +51,9 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
 - `components/ui`: token-styled primitives (button, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
+  - Overlays wrap Radix (dialog, sheet, popover, dropdown menu, tooltip); they animate on `data-state` and stand still under reduced motion
+  - `DatePicker` (react-day-picker in a popover) reads and writes `'YYYY-MM-DD'` via `lib/dates`
+  - `Toaster` (sonner) is mounted in the root layout; call `toast.success(msg, { action: { label: 'Undo', onClick } })`
 - `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config; migrations arrive with the BE track
 - `tests/`: integration and e2e suites land with the BE and FE tracks (e2e goes in `tests/e2e/`)
