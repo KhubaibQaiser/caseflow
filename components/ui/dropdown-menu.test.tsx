@@ -60,4 +60,18 @@ describe('DropdownMenu', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+
+  it('draws a solid focus outline on the keyboard-highlighted item', async () => {
+    const user = userEvent.setup();
+    render(<MoveMenu onSelect={vi.fn()} />);
+
+    await user.tab();
+    await user.keyboard('{Enter}');
+
+    // outline-none zeroes the outline style, so the focus ring must restore it explicitly.
+    expect(screen.getByRole('menuitem', { name: 'Active' })).toHaveClass(
+      'focus-visible:outline-solid',
+      'focus-visible:outline-accent',
+    );
+  });
 });
