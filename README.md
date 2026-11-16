@@ -133,4 +133,4 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 
 ## Query RPCs
 
-`search_contacts` (rows, `total`, `matching`) and `contact_facets` (counts per filter group, each leaving out its own group) share one predicate, `contact_matches`. They run as the caller, so RLS applies, and they are callable by `authenticated` only. Filters are normalised in SQL first: bad values are ignored, an unknown `tz` falls back to UTC, and page and size are clamped. "Today" and the created-date filter use the `tz` argument. `ping()` returns true for the anon keep-alive job.
+`search_contacts` (rows, `total`, `matching`) and `contact_facets` (counts per filter group, each leaving out its own group) share one set of per-row filter flags, `contact_flags`. They run as the caller, so RLS applies, and they are callable by `authenticated` only. Filters are normalised in SQL first: bad values are ignored, an unknown `tz` falls back to UTC, and page and size are clamped. "Today" and the created-date filter use the `tz` argument. `ping()` returns true for the anon keep-alive job.
