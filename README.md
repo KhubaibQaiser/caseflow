@@ -7,6 +7,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
 - App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
+- Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` in T22. `/dev/auth` shows every state with canned results (404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
 
