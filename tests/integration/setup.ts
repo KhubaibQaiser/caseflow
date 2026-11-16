@@ -11,7 +11,9 @@ let cfg: Cfg | undefined;
 export function assertLocalUrl(url: string): string {
   const host = new URL(url).hostname;
   if (host !== '127.0.0.1' && host !== 'localhost') {
-    throw new Error(`Refusing to run integration tests against non-local host: ${host}`);
+    throw new Error(
+      `Refusing to run integration tests against non-local host: ${host}`,
+    );
   }
   return url;
 }
@@ -39,12 +41,13 @@ function config(): Cfg {
   const url = kv.API_URL;
   const anon = kv.PUBLISHABLE_KEY ?? kv.ANON_KEY;
   const secret = kv.SECRET_KEY ?? kv.SERVICE_ROLE_KEY;
-  if (!url || !anon || !secret) throw new Error('Local Supabase is not running (supabase start)');
+  if (!url || !anon || !secret)
+    throw new Error('Local Supabase is not running (supabase start)');
   return (cfg = { url: assertLocalUrl(url), anon, secret });
 }
 
 const opts = { auth: { persistSession: false, autoRefreshToken: false } };
-const PASSWORD = 'it-Passw0rd!local';
+export const PASSWORD = 'it-Passw0rd!local';
 
 export type TestClient = { client: SupabaseClient; userId: string };
 
@@ -53,7 +56,26 @@ export function serviceClient(): SupabaseClient {
   return createClient(c.url, c.secret, opts);
 }
 
-async function signedIn(email: string, name: string, role: 'admin' | 'viewer'): Promise<TestClient> {
+export function anonClient(): SupabaseClient {
+  const c = config();
+  return createClient(c.url, c.anon, opts);
+}
+
+export async function anonSignedIn(email: string): Promise<SupabaseClient> {
+  const client = anonClient();
+  const { error } = await client.auth.signInWithPassword({
+    email,
+    password: PASSWORD,
+  });
+  if (error) throw new Error(error.message);
+  return client;
+}
+
+async function signedIn(
+  email: string,
+  name: string,
+  role: 'admin' | 'viewer',
+): Promise<TestClient> {
   const svc = serviceClient();
   const created = await svc.auth.admin.createUser({
     email,
@@ -65,7 +87,8 @@ async function signedIn(email: string, name: string, role: 'admin' | 'viewer'): 
     const list = await svc.auth.admin.listUsers({ perPage: 1000 });
     userId = list.data.users.find((u) => u.email === email)?.id;
   }
-  if (!userId) throw new Error(`cannot create ${email}: ${created.error?.message}`);
+  if (!userId)
+    throw new Error(`cannot create ${email}: ${created.error?.message}`);
   const prof = await svc
     .from('profiles')
     .upsert({ user_id: userId, display_name: name, role });
@@ -73,13 +96,18 @@ async function signedIn(email: string, name: string, role: 'admin' | 'viewer'): 
 
   const c = config();
   const client = createClient(c.url, c.anon, opts);
-  const { error } = await client.auth.signInWithPassword({ email, password: PASSWORD });
+  const { error } = await client.auth.signInWithPassword({
+    email,
+    password: PASSWORD,
+  });
   if (error) throw new Error(error.message);
   return { client, userId };
 }
 
-export const adminClient = () => signedIn('it-admin@caseflow.test', 'IT Admin', 'admin');
-export const viewerClient = () => signedIn('it-viewer@caseflow.test', 'IT Viewer', 'viewer');
+export const adminClient = () =>
+  signedIn('it-admin@caseflow.test', 'IT Admin', 'admin');
+export const viewerClient = () =>
+  signedIn('it-viewer@caseflow.test', 'IT Viewer', 'viewer');
 
 export async function resetData(): Promise<void> {
   const svc = serviceClient();
