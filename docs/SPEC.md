@@ -31,7 +31,7 @@ Deadline: 24h from receipt of the brief. Functional deliverables come before pol
 
 **Non-goals (documented in the README as future work)**
 - Drag and drop on the pipeline. It can be added later on top of the menu, which WCAG 2.5.7 requires anyway.
-- Global search (an icon in the header that opens a modal searching every object) and keyboard shortcuts (a command palette, j/k to move through rows, quick status changes). Keyboard shortcuts come after the BRIEF requirements are fully met.
+- Global search (an icon in the header that opens a modal searching every object) and keyboard shortcuts (a command palette, j/k to move through rows, quick status changes). Keyboard shortcuts come after the BRIEF requirements are fully met. Undo for pipeline moves (for later review).
 - More roles (coordinator, attorney). The permission model already supports them, and each would be one seed change.
 - Self sign-up, password reset, account management. A nightly data reset. PR preview deploys: a staging Supabase project and preview workflow are future work, and the README lists this as known.
 - Live facet counts that follow the draft filters, with an "Apply · N contacts" preview.
@@ -277,7 +277,7 @@ Each one calls `requirePermission(...)` first (contacts.write, contacts.delete o
   - **Notes:** a composer (textarea, at most 2,000 characters with a counter near the limit, Save disabled while empty or pending, Cmd/Ctrl+Enter submits) above a list of notes, newest first.
 - **Right column:** the **activity timeline**, with entries such as "Status changed Lead → Active" and "Follow-up set to Sat, Nov 14". Each timestamp is a `<time>` element with the full date in a tooltip.
 - **Mobile:** a single column with a large **Call** button.
-- **Not found:** if the id is unknown or the contact was deleted, a page reads "This contact doesn't exist or was deleted." with a link back to Contacts.
+- **Not found:** if the id is unknown, a page reads "This contact doesn't exist." with a link back to Contacts.
 
 ### 8.5 Create and edit forms (`/contacts/new`, `/contacts/[id]/edit`)
 - A full page with fieldsets: Person (name, then email and phone), Matter (type, source, summary with a counter), and Intake (status segmented control, next follow-up date picker with "Today or later.").
@@ -299,7 +299,7 @@ Each one calls `requirePermission(...)` first (contacts.write, contacts.delete o
 - **Cards:** name (a link to the detail page), urgency pill, "matter · phone", and a **Move to…** menu (Radix DropdownMenu, fully keyboard accessible).
 - **Moving a card:**
   - The card moves optimistically with `useOptimistic`, and the column counts update.
-  - A toast says "Marisol Ortega moved to Active · Undo" (about 6s). Undo moves it back.
+  - A toast says "Marisol Ortega moved to Active." (about 6s). Undo is future work.
   - **On failure** the card returns to its column and an error toast offers Retry.
 - **Mobile:** tabs for each status with counts, showing one column at a time.
 
@@ -408,7 +408,7 @@ Each one calls `requirePermission(...)` first (contacts.write, contacts.delete o
   - List search, filters, sort and pagination, then a reload keeps the state
   - Create with validation errors, then success, then edit
   - Detail: add a note and see it in the timeline
-  - Pipeline: move, Undo, reload
+  - Pipeline: move, reload
   - Mobile viewport smoke test for the list, the filters sheet and the tab bar
   - **axe on every route**
 
@@ -459,7 +459,7 @@ ETAs are focused agent hours. "Wall" is elapsed time with the tracks running in 
 | **M3a FE list** | The contacts list: table, virtualization, sort, pagination, search, chips, quick views, filters panel and sheet, card list on mobile, all states | 3h | M2 |
 | **M3b FE detail** | Detail page, notes composer, timeline, Reschedule, not-found | 1.5h | M2 |
 | **M3c FE forms, login, RBAC states** | Create and edit, validation UX, error summary, conflict banner, unsaved-changes guard; the login page and all its states; the role badge, `<Can>`, disabled-with-reason controls, the forbidden page | 2h | M2 |
-| **M3d FE pipeline** | Board, Move to… menu, optimistic move with Undo, per-column paging, mobile tabs | 1.5h | M2 |
+| **M3d FE pipeline** | Board, Move to… menu, optimistic move, per-column paging, mobile tabs | 1.5h | M2 |
 | **M5a OPS CI** | `ci.yml` (checks, integration and e2e with Supabase in Docker, gitleaks), Dependabot, PR template, branch protection | 1h | M0 |
 | **M5b OPS deploy** | `deploy.yml` (migrate, deploy, smoke test), the `seed` workflow, keep-alive cron, Vercel and Supabase configuration | 1h | M5a + Khubaib's accounts |
 | **M4 Integration** | Swap fixtures for real data, e2e suite green, first production deploy | 1.5h | M1b, M1c, M3*, M5b |

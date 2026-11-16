@@ -563,7 +563,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 - Thin styled wrappers over `@radix-ui/react-{dialog,popover,dropdown-menu,tooltip}`, animated with CSS `data-state` keyframes (150–200ms, ease-out) and disabled under `prefers-reduced-motion`.
 - **`Sheet`**: `{side:'right'; title; children; footer}`, built on Dialog (modal; Esc, scrim and ✕ close it; focus returns to the trigger).
 - **`DatePicker`**: `{value:string|null; onChange(v:string|null):void; min?:string; label}`. It uses react-day-picker inside a Popover, **and converts with `toDateOnly`**. It also has a Clear action.
-- **`Toaster`**: sonner with token styles, mounted in the root layout. `toast.success(msg, {action:{label:'Undo', onClick}})`.
+- **`Toaster`**: sonner with token styles, mounted in the root layout. `toast.success(msg)`.
 
 - [ ] **Step 1: Write the failing tests.**
   - Picking Nov 20 in `DatePicker` calls `onChange('2026-11-20')`, even when the mocked system time zone is `Pacific/Kiritimati`.
@@ -691,7 +691,7 @@ it('viewer sees no New contact button', () => {})
     - For viewers, the composer is replaced with "Viewers can read notes but can't add them."
   - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}" / "deleted" / "restored". Each uses a `<time dateTime>` with the full timestamp in a title.
   - `FollowUpCard`: an urgency pill, the date, and **Reschedule** (a DatePicker in a Popover, saving on select).
-  - The **`not-found.tsx`** copy: "This contact doesn't exist or was deleted." with "Back to contacts".
+  - The **`not-found.tsx`** copy: "This contact doesn't exist." with "Back to contacts".
 
 - [ ] **Step 1: Write the failing tests.**
   - Notes: an empty body disables Save. If `onAdd` resolves `{ok:false}`, the textarea keeps "Called back" and an error is visible. Double Cmd+Enter calls `onAdd` once.
@@ -743,7 +743,7 @@ it('viewer sees no New contact button', () => {})
 - **Consumes:** `getPipelineColumn`, `getContactFacets` (T4), `MoveMenu` (T16), `FiltersPanel` with `hideStatus` (T15), `moveContactAction` (T10, as a prop).
 - **Produces:**
   - `useBoardMoves(columns: Record<Status,{rows;matching}>, onMove)` returns `{columns, move(id, to)}`. It uses `useOptimistic`: the card moves immediately and the counts update. Then:
-    - on `ok`, the toast "{name} moved to {Status} · Undo" (6s); Undo calls `move(id, from)`
+    - on `ok`, the toast "{name} moved to {Status}." (6s)
     - on failure, the change rolls back and the error toast reads "Move failed. Retry." (with a Retry action), or "You don't have permission to move contacts." for `forbidden`
   - `Column` `{status; rows; matching; onLoadMore}`. The header shows the status and its count. "Show 50 more · {matching - rows.length} left" is a button that appends rows from `getPipelineColumn(status, f, rows.length)`, called through a Server Action wrapper `loadMoreColumnAction`.
   - `PipelineCard`: name link, urgency pill, "matter · phone", `MoveMenu`. Viewers see it disabled with the reason "Viewers can't move contacts."
@@ -755,12 +755,11 @@ it('viewer sees no New contact button', () => {})
   - `move` moves the card to the target column before the promise resolves.
   - A rejected `onMove` restores the original column and counts.
   - A double-click on a move item calls `onMove` once.
-  - Undo calls `onMove` with the original status.
   - `Column` shows "Show 50 more · 592 left" for `matching=642, rows=50`.
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement** everything above, matching `screens-v1.html` (pipeline and mobile pipeline).
 - [ ] **Step 4: Run.** Expected: PASS.
-- [ ] **Step 5: Commit** `"Add pipeline board with optimistic moves, Undo and per-column paging"`.
+- [ ] **Step 5: Commit** `"Add pipeline board with optimistic moves and per-column paging"`.
 
 ### Task 19: Login page
 
@@ -860,7 +859,7 @@ it('viewer sees no New contact button', () => {})
     - `?page=999` clamps to the last page
   - **`contact-form.spec.ts`:** empty submit gives the summary and focus; fill and save lands on the detail page with the toast; edit summary and save.
   - **`detail.spec.ts`:** add a note, then it appears in the notes and the timeline ("Alex Morgan added a note"); Reschedule updates the pill.
-  - **`pipeline.spec.ts`:** moving a Lead card to Active moves it with the toast; Undo returns it; after a reload the state persists; "Show 50 more" appends 50 cards.
+  - **`pipeline.spec.ts`:** moving a Lead card to Active moves it with the toast; after a reload the state persists; "Show 50 more" appends 50 cards.
   - **`viewer.spec.ts`:** Edit and Move are `aria-disabled` with tooltip text; the composer is replaced; there's no New contact button; `/contacts/new` shows "You can't add contacts".
   - **`mobile.spec.ts` (`@mobile`):** the tab bar is visible; the cards render; the Filters sheet opens, traps focus and closes on Esc.
   - **`a11y.spec.ts`:** axe has **no serious or critical violations** on `/login`, `/contacts`, `/contacts/[id]`, `/contacts/new`, `/contacts/[id]/edit` and `/pipeline`, as both Admin and Viewer.

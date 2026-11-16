@@ -91,6 +91,7 @@ Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) 
 ## With more time
 
 - Keyboard shortcuts (after the BRIEF requirements are fully met).
+- Undo for pipeline moves (for later review).
 
 ## Decisions that differ from the spec
 
