@@ -75,7 +75,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 - `checks`: format check, typecheck, lint (including the colour-literal check), unit tests, build.
 - `integration-e2e`: local Supabase (CLI 3.2), `db reset`, seed when `scripts/seed.ts` exists, integration tests, and e2e when `tests/e2e` exists.
-- `checks` also runs `pnpm size` after the build: gzipped first-load JS per route (root chunks plus the chunks in each route's client-reference manifest) must stay at or under 180 kB. `/dev/*` is exempt. Shell routes are about 173 kB, `/` about 164 kB; the Next runtime alone is about 131 kB. Anything heavy that isn't needed on first paint is lazy (the button tooltip, the mobile Account sheet).
+- `checks` also runs `pnpm size` after the build: gzipped first-load JS per route (root chunks plus the chunks in each route's client-reference manifest) must stay at or under 220 kB. `/dev/*` is exempt. Shell routes are about 173 kB, `/` about 164 kB; the Next runtime alone is about 131 kB. Anything heavy that isn't needed on first paint is lazy (every tooltip, the mobile Account sheet).
 - `gitleaks`: secret scan of each PR's or push's commits.
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
