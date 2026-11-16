@@ -74,4 +74,43 @@ describe('DropdownMenu', () => {
       'focus-visible:outline-accent',
     );
   });
+
+  it.each([
+    ['a click', '{MouseLeft}'],
+    ['Enter', '{Enter}'],
+    ['Space', ' '],
+    ['ArrowDown', '{ArrowDown}'],
+  ])(
+    "doesn't open from a Viewer's blocked trigger on %s, and shows the reason",
+    async (_, keys) => {
+      const user = userEvent.setup();
+      render(
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              disabledReason="Viewers can't edit contacts. Ask an admin."
+            >
+              Move to…
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem>Active</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>,
+      );
+      const trigger = screen.getByRole('button', { name: 'Move to…' });
+
+      if (keys === '{MouseLeft}') await user.click(trigger);
+      else {
+        await user.tab();
+        await user.keyboard(keys);
+      }
+
+      expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+      expect(await screen.findByRole('tooltip')).toHaveTextContent(
+        "Viewers can't edit contacts. Ask an admin.",
+      );
+    },
+  );
 });
