@@ -65,7 +65,7 @@ jobs:
           : "${pub:?publishable key missing}" "${sec:?secret key missing}"
           {
             echo "NEXT_PUBLIC_SUPABASE_URL=$(get API_URL)"
-            echo "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=$pub"
+            echo "SUPABASE_PUBLISHABLE_KEY=$pub"
             echo "SUPABASE_SECRET_KEY=$sec"
           } >> "$GITHUB_ENV"
       # T22 removes the seed and e2e guards and `--passWithNoTests` (package.json test:integration).
