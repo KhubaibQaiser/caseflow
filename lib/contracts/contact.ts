@@ -1,5 +1,10 @@
 import { z } from 'zod';
-import { MATTER_TYPES, REFERRAL_SOURCES, STATUSES } from './enums';
+import {
+  ACTIVITY_TYPES,
+  MATTER_TYPES,
+  REFERRAL_SOURCES,
+  STATUSES,
+} from './enums';
 import { ROLES } from './permissions';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -113,7 +118,7 @@ export type Note = z.infer<typeof NoteSchema>;
 
 export const ActivitySchema = z.object({
   id: z.string(),
-  type: z.string(),
+  type: z.enum(ACTIVITY_TYPES),
   payload: z.record(z.string(), z.unknown()),
   createdAt: z.string(),
   actor: z.object({ name: z.string() }),
