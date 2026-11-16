@@ -47,7 +47,7 @@ Khubaib's scope decision, 2026-11-17: each column pages with a "Show 50 more" bu
 - Each column calls `search_contacts` with the status fixed, the default urgency sort, `page_size` 50 and "Show 50 more · N left" (§7.4).
 - Users cannot hand-order cards within a column.
 - Tests required by §9: component test for the Move to… menu with the keyboard; e2e for pipeline move and reload; axe on every route.
-- README: "Menu versus drag and drop" under trade-offs, and drag and drop under "With more time" (§13).
+- README: "Why no drag and drop", and drag and drop under "With more time" (§13).
 
 ## Rejected and why
 

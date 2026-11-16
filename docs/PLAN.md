@@ -349,14 +349,14 @@ it('rejects contact with neither email nor phone', async () => { /* check violat
   - insert → `created` with `{status}`
   - status changed → `status_changed` with `{from,to}`
   - `follow_up_on` changed → `follow_up_changed` with `{from,to}`
-  - `deleted_at` set → `deleted`; `deleted_at` cleared → `restored`
+  - `deleted_at` set → `deleted`; `deleted_at` cleared → `restored` (guard-only, unreachable in v1)
   - other column changes → `updated` with `{fields:[...]}`
 - **`notes_after_insert()`:** inserts a `note_added` activity.
 
 - [ ] **Step 1: Write the failing tests.**
   - Updating status from lead to active produces exactly one `status_changed` activity, with payload `{from:'lead',to:'active'}` and `actor_id` equal to the admin.
   - Adding a note produces `note_added`.
-  - A viewer can't set `deleted_at`. An admin can (giving `deleted`), and clearing it gives `restored`.
+  - A viewer can't set `deleted_at`. An admin can (giving `deleted`), and clearing it gives `restored` (guard-only, unreachable in v1).
   - With `select set_config('caseflow.seeding','on',true)` in the same transaction (run through an RPC test helper), no activities are written.
   - `updated_at` advances on every update.
 - [ ] **Step 2: Run** `pnpm test:integration triggers`. Expected: FAIL.
@@ -577,20 +577,20 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 ### Task 12b: App-level error and status pages
 
 **Files:**
-- Create: `app/not-found.tsx`, `app/error.tsx`, `app/global-error.tsx`
-- Test: `app/error.test.tsx`, `tests/e2e/not-found.spec.ts`
-- `app/forbidden.tsx` stays in T13 (it needs `experimental.authInterrupts`; see `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/forbidden.md`).
+- Create: `app/not-found.tsx`, `app/(app)/not-found.tsx`, `app/(app)/[...missing]/page.tsx`, `app/error.tsx`, `app/global-error.tsx`
+- Test: `app/not-found.test.tsx`, `app/error.test.tsx`, `app/global-error.test.tsx`, `tests/e2e/not-found.spec.ts`
+- `app/forbidden.tsx` is created in T13 (it needs `experimental.authInterrupts`; see `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/forbidden.md`).
 
 **Interfaces (produces):**
-- **`not-found.tsx`:** "Page not found.", the requested path, a primary "Go to contacts" and a secondary "Pipeline" link. It renders inside the app shell when signed in.
+- **Not found:** the copy is "Page not found.", the requested path, a primary "Go to contacts" and a secondary "Pipeline" link. Signed-in unknown URLs render inside the app shell through `app/(app)/[...missing]/page.tsx` (it calls `notFound()`) and `app/(app)/not-found.tsx`. The root `app/not-found.tsx` stays as the standalone fallback for signed-out visitors, because Next's root not-found renders only in the root layout (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/not-found.md`).
 - **`error.tsx`** (client boundary under the root layout): "Something broke on our side.", a short reason class (network, server or unknown), the error digest, and a "Go to contacts" link. Retry runs `startTransition(() => { router.refresh(); reset() })` (SPEC §8.8). It never shows a stack trace in production.
 - **`global-error.tsx`:** catches root-layout crashes. It has its own `<html>` and `<body>`, Figtree, inline token values (`globals.css` isn't loaded there), a React `<title>` (not metadata) and a plain Reload button.
 - All three reuse `EmptyState`, `ErrorState` and `Button` (T11), work on mobile, focus the heading on mount, are `noindex`, and use `role="alert"` on the error pages only.
 - Deliberately skipped: `app/unauthorized.tsx` (the proxy redirects to `/login?reason=expired`) and a root `app/loading.tsx` (routes have their own skeletons).
 
 - [ ] **Step 1: Write the failing tests.**
-  - Unit: clicking Retry in `error.tsx` calls `router.refresh` and `reset`.
-  - e2e: a bad URL returns 404 and shows "Page not found." with the path.
+  - Unit: both not-found pages render "Page not found." with the path and the two links. Clicking Retry in `error.tsx` calls `router.refresh` and `reset`. `global-error.tsx` renders its own `<html>` and `<body>` and a Reload button.
+  - e2e: a bad URL returns 404 and shows "Page not found." with the path, inside the shell when signed in.
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement** everything above.
 - [ ] **Step 4: Run.** Expected: PASS.
@@ -599,7 +599,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 ### Task 13: App shell, permissions context and forbidden state
 
 **Files:**
-- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22)
+- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22), `app/forbidden.tsx`
 - Test: `lib/auth/permissions-context.test.tsx`, `components/shell/timezone-sync.test.tsx`
 
 **Interfaces (produces):**
@@ -711,7 +711,7 @@ it('viewer sees no New contact button', () => {})
     - The composer's Save is disabled while the text is empty or a save is pending. Cmd/Ctrl+Enter submits.
     - **On failure the text is kept**, with an inline error and Retry. On success the field clears and the new note is announced.
     - For viewers, the composer is replaced with "Viewers can read notes but can't add them."
-  - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}" / "deleted" / "restored". Each uses a `<time dateTime>` with the full timestamp in a title.
+  - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}". It renders no copy for `deleted` or `restored` (unreachable in v1). Each uses a `<time dateTime>` with the full timestamp in a title.
   - `FollowUpCard`: an urgency pill, the date, and **Reschedule** (a DatePicker in a Popover, saving on select).
   - The **`not-found.tsx`** copy: "This contact doesn't exist." with "Back to contacts".
 

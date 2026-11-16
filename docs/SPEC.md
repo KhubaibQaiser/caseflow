@@ -31,8 +31,8 @@ Deadline: 24h from receipt of the brief. Functional deliverables come before pol
 
 **Non-goals (documented in the README as future work)**
 - Drag and drop on the pipeline. It can be added later on top of the menu, which WCAG 2.5.7 requires anyway.
-- Global search (an icon in the header that opens a modal searching every object) and keyboard shortcuts (a command palette, j/k to move through rows, quick status changes).
-- Keyboard shortcuts (after the BRIEF requirements are fully met).
+- Global search (an icon in the header that opens a modal searching every object).
+- Keyboard shortcuts (a command palette, j/k to move through rows, quick status changes), after the BRIEF requirements are fully met.
 - Undo for pipeline moves (for later review).
 - More roles (coordinator, attorney). The permission model already supports them, and each would be one seed change.
 - Self sign-up, password reset, account management. A nightly data reset. PR preview deploys: a staging Supabase project and preview workflow are future work, and the README lists this as known.
@@ -132,7 +132,7 @@ GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-aliv
 - `summary text null` (at most 1,000 characters)
 - `created_by`, `updated_by → profiles`
 - `created_at timestamptz`, `updated_at timestamptz` (maintained by a trigger, which also sets `updated_by = auth.uid()`)
-- `deleted_at timestamptz null`: soft delete, so Undo is possible *(Claude's call)*. **Out of scope for v1:** nothing deletes or restores contacts, so the column stays unused.
+- `deleted_at timestamptz null`: soft delete column *(Claude's call)*. **Out of scope for v1:** nothing deletes or restores contacts, so the column stays unused.
 - **RLS:**
   - select needs `contacts.read` (and `deleted_at is null`; `deleted_at` is unused in v1)
   - insert and update need `contacts.write`
@@ -146,7 +146,7 @@ GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-aliv
 - **RLS:** select needs `contacts.read`; insert needs `notes.write` and `author_id = auth.uid()`.
 
 **`activities`**
-- `id`, `contact_id`, `actor_id → profiles`, `type activity_type` (created, updated, status_changed, follow_up_changed, note_added, deleted, restored), `payload jsonb` (for example `{from, to}` or `{fields: [...]}`), `created_at`
+- `id`, `contact_id`, `actor_id → profiles`, `type activity_type` (created, updated, status_changed, follow_up_changed, note_added, deleted, restored; the last two are guard-only and unreachable in v1), `payload jsonb` (for example `{from, to}` or `{fields: [...]}`), `created_at`
 - **Written only by triggers**, on contacts insert/update and notes insert, with `actor_id = auth.uid()`. The client never writes activities: RLS allows select only, with `contacts.read`.
 
 **Seeding** (`supabase/seed/` plus `scripts/seed.ts`, idempotent)
@@ -214,7 +214,7 @@ Quick views are presets that write `followUp`. The pipeline uses the same filter
 Each one calls `requirePermission(...)` first (contacts.write or notes.write; Postgres enforces the same rules again), re-validates with the same Zod schema, check the follow-up date against the user's time zone, and call `revalidatePath` on the affected routes.
 
 ### 7.6 Contact read for the detail page
-`getContact(id)` returns the contact, its notes (newest first, with the author's display name and role) and its activities (newest first, limit 100, with the actor's name). A missing contact gives `notFound()` (`deleted_at` is unused in v1).
+`getContact(id)` returns the contact, its notes (newest first, with the author's display name and role) and its activities (newest first, limit 100, with the actor's name). `getContact` returns `null` for a missing contact, and the page calls `notFound()`.
 
 ### 7.7 RBAC enforcement (four layers; only Postgres is trusted)
 1. **`proxy.ts`: logged in or not, nothing more.** It refreshes the session and redirects anyone without one to `/login?next=…`. It isn't relied on for authorization, because Next's docs warn against it and CVE-2025-29927 showed a middleware bypass.
@@ -400,7 +400,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - Form error summary and focus
   - The Move to… menu with keyboard
 - **Integration (Vitest against local Supabase):**
-  - **RBAC policies:** a Viewer can't insert, update, soft-delete or add notes, even through the Supabase API directly; an Admin can do all of it. `has_permission` matches the seeded matrix.
+  - **RBAC policies:** a Viewer can't insert, update, set `deleted_at` (guard-only, unreachable in v1) or add notes, even through the Supabase API directly; an Admin can do all of it. `has_permission` matches the seeded matrix.
   - The seed is idempotent (running it twice gives the same row counts and accounts)
   - The activity triggers
   - **Facets match `search_contacts` totals** for a set of filter combinations
