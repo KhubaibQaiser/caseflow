@@ -4,6 +4,7 @@ import LogOut from 'lucide-react/icons/log-out';
 import Lock from 'lucide-react/icons/lock';
 
 import { Button } from '@/components/ui/button';
+import { LazyTooltip } from '@/components/ui/lazy-tooltip';
 import { useViewer } from '@/lib/auth/permissions-context';
 import { ROLE_LABEL } from '@/lib/contracts/permissions';
 import { cn } from '@/utils/cn';
@@ -62,16 +63,17 @@ export function SignOutForm({
 }) {
   return (
     <form action={signOut} className={className}>
-      <Button
-        variant="ghost"
-        size="sm"
-        title="Sign out"
-        type="submit"
-        className={cn(rail && 'max-lg:w-[30px] max-lg:px-0', 'w-full')}
-      >
-        <LogOut aria-hidden className="size-4" />
-        <span className={cn(rail && 'max-lg:sr-only')}>Sign out</span>
-      </Button>
+      <LazyTooltip content="Sign out" contentClassName="lg:hidden">
+        <Button
+          variant="ghost"
+          size="sm"
+          type="submit"
+          className={cn(rail && 'max-lg:w-[30px] max-lg:px-0', 'w-full')}
+        >
+          <LogOut aria-hidden className="size-4" />
+          <span className={cn(rail && 'max-lg:sr-only')}>Sign out</span>
+        </Button>
+      </LazyTooltip>
     </form>
   );
 }

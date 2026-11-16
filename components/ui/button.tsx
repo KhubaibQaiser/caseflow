@@ -1,15 +1,12 @@
 'use client';
 
-import { Suspense, lazy, useId, useState } from 'react';
+import { useId, useState } from 'react';
 import type { ComponentProps } from 'react';
 import LoaderCircle from 'lucide-react/icons/loader-circle';
 
 import { cn } from '@/utils/cn';
 
-// Only a blocked Button needs the tooltip (floating-ui, ~20 kB), so it loads on demand.
-const Tooltip = lazy(() =>
-  import('./tooltip').then((m) => ({ default: m.Tooltip })),
-);
+import { LazyTooltip } from './lazy-tooltip';
 
 type ButtonProps = ComponentProps<'button'> & {
   variant: 'primary' | 'ghost' | 'link';
@@ -113,15 +110,12 @@ export function Button({
   );
   if (disabledReason === undefined) return button;
   return (
-    // The plain button shows while the tooltip chunk loads.
-    <Suspense fallback={button}>
-      <Tooltip
-        content={disabledReason}
-        open={reasonOpen}
-        onOpenChange={setReasonOpen}
-      >
-        {button}
-      </Tooltip>
-    </Suspense>
+    <LazyTooltip
+      content={disabledReason}
+      open={reasonOpen}
+      onOpenChange={setReasonOpen}
+    >
+      {button}
+    </LazyTooltip>
   );
 }

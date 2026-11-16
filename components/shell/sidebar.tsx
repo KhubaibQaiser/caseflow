@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import { LazyTooltip } from '@/components/ui/lazy-tooltip';
+
 import { AccountBlock } from './account-block';
 import type { SignOut } from './account-block';
 import { BrandMark } from './brand-mark';
@@ -21,16 +23,16 @@ export function Sidebar({ signOut }: { signOut: SignOut }) {
       </div>
       <nav aria-label="Main" className="flex flex-col gap-0.5">
         {NAV.map(({ href, label, icon: Icon }) => (
-          <Link
-            key={href}
-            title={label}
-            href={href}
-            aria-current={isCurrent(pathname, href) ? 'page' : undefined}
-            className="rounded-ctl text-ink-2 hover:bg-canvas hover:text-ink aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent flex h-[34px] items-center gap-2.5 px-2.5 text-sm font-medium no-underline transition-colors duration-150 aria-[current=page]:font-semibold max-lg:justify-center max-lg:px-0"
-          >
-            <Icon aria-hidden className="size-4 shrink-0" />
-            <span className="max-lg:sr-only">{label}</span>
-          </Link>
+          <LazyTooltip key={href} content={label} contentClassName="lg:hidden">
+            <Link
+              href={href}
+              aria-current={isCurrent(pathname, href) ? 'page' : undefined}
+              className="rounded-ctl text-ink-2 hover:bg-canvas hover:text-ink aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent flex h-[34px] items-center gap-2.5 px-2.5 text-sm font-medium no-underline transition-colors duration-150 aria-[current=page]:font-semibold max-lg:justify-center max-lg:px-0"
+            >
+              <Icon aria-hidden className="size-4 shrink-0" />
+              <span className="max-lg:sr-only">{label}</span>
+            </Link>
+          </LazyTooltip>
         ))}
       </nav>
       <AccountBlock signOut={signOut} />

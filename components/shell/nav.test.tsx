@@ -99,3 +99,24 @@ describe('TabBar Account tab', () => {
     ).toBeInTheDocument();
   });
 });
+
+describe('Sidebar rail', () => {
+  it('shows an icon link’s label in a tooltip on keyboard focus', async () => {
+    pathname = '/contacts';
+    inShell(<Sidebar signOut={signOut} />);
+    const user = userEvent.setup();
+    // First stop is Contacts; Radix opens the tip on focus, once the lazy chunk has loaded.
+    await user.tab();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Contacts');
+  });
+
+  it('labels Sign out the same way', async () => {
+    pathname = '/contacts';
+    inShell(<Sidebar signOut={signOut} />);
+    const user = userEvent.setup();
+    await user.tab();
+    await user.tab();
+    await user.tab();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Sign out');
+  });
+});
