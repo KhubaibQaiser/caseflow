@@ -161,6 +161,54 @@ describe('contact triggers', () => {
     expect(await activities(id)).toHaveLength(0);
   });
 
+  it('seeding keeps a backdated created_at', async () => {
+    const svc = serviceClient();
+    const id = await rpc<string>(svc, 'seed_insert_contact', {
+      c: {
+        full_name: 'Old Timer',
+        phone: '5125550197',
+        matter_type: 'family',
+        created_at: '2024-03-01T12:00:00Z',
+      },
+    });
+    const { data } = await svc
+      .from('contacts')
+      .select('created_at')
+      .eq('id', id)
+      .single();
+    expect(new Date(data?.created_at).toISOString()).toBe(
+      '2024-03-01T12:00:00.000Z',
+    );
+  });
+
+  it('seeding keeps a backdated updated_at; a signed-in insert gets now()', async () => {
+    const svc = serviceClient();
+    const id = await rpc<string>(svc, 'seed_insert_contact', {
+      c: {
+        full_name: 'Old Timer',
+        phone: '5125550196',
+        matter_type: 'family',
+        updated_at: '2024-03-02T12:00:00Z',
+      },
+    });
+    const { data } = await svc
+      .from('contacts')
+      .select('updated_at')
+      .eq('id', id)
+      .single();
+    expect(new Date(data?.updated_at).toISOString()).toBe(
+      '2024-03-02T12:00:00.000Z',
+    );
+
+    const a = await adminClient();
+    const { data: c } = await seedContact(a.client, {
+      full_name: 'Fresh One',
+      phone: '5125550195',
+      updated_at: '2001-01-01T00:00:00Z',
+    });
+    expect(new Date(c.updated_at).getFullYear()).toBeGreaterThan(2020);
+  });
+
   it('delete guard rejects a caller without contacts.delete', async () => {
     const { c } = await newContact();
     // service role has no auth.uid(), so has_permission is false and RLS is bypassed
@@ -184,7 +232,7 @@ describe('contact triggers', () => {
     expect(r.error?.code).toBe('42501');
   });
 
-  it('regression guard: signed-in writes are always logged', async () => {
+  it('signed-in writes are logged (cannot prove the seeding guard: no pg client)', async () => {
     const { a, c } = await newContact();
     await a.client
       .from('notes')

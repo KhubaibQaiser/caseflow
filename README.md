@@ -5,6 +5,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 ## Status
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
+- FE: base UI primitives in `components/ui`, shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
 
@@ -36,11 +37,11 @@ M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or 
 - `pnpm typecheck`: generate route types, then `tsc --noEmit`
 - `pnpm lint`: ESLint plus the colour-literal check
 - `pnpm test`: unit tests
-- `pnpm test:integration`: integration tests
+- `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
 - `pnpm e2e`: Playwright end-to-end tests
 - `pnpm format`, `pnpm format:check`: Prettier
 - `pnpm seed`: create the role accounts and reset the firm data (see Seeding below)
-- `pnpm db:types`: regenerate Supabase types from the local stack (available once the BE track lands)
+- `pnpm db:types`: regenerate Supabase types from the local stack
 
 ## Seeding
 
@@ -55,8 +56,34 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/contracts`: Zod schemas and types shared by browser and server (contact, filters, list query, facets, permissions, results)
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
-- `supabase/`: local stack config; migrations arrive with the BE track
-- `tests/`: integration and e2e suites land with the BE and FE tracks (e2e goes in `tests/e2e/`)
+- `components/ui`: token-styled primitives (button, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
+- `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
+- `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`)
+- `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); e2e lands with the FE track in `tests/e2e/`
+
+## CI
+
+`.github/workflows/ci.yml` runs on every pull request and push to `main`:
+
+- `checks`: format check, typecheck, lint (including the colour-literal check), unit tests, build.
+- `integration-e2e`: local Supabase (CLI 3.2), `db reset`, seed when `scripts/seed.ts` exists, integration tests, and e2e when `tests/e2e` exists.
+- `gitleaks`: secret scan of each PR's or push's commits.
+
+Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
+
+## Deploy
+
+Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variable is set to `true` (T23).
+
+`.github/workflows/deploy.yml` runs only after CI passes on a push to `main`:
+
+- A stale-run guard skips any run whose commit is no longer the tip of `main`.
+- `supabase db push` applies migrations to the production project.
+- The Vercel production env is synced from GitHub secrets; the secret key is stored as sensitive.
+- A prebuilt production deploy follows (`vercel build --prod`, then `vercel deploy --prebuilt --prod`). Vercel's Git auto-deploy is off.
+- The smoke test (`tests/e2e/smoke.spec.ts`) runs against the deployed URL once that file exists.
+
+`seed.yml` is a manual workflow (`workflow_dispatch`) that only runs on `main`; it restores the demo accounts and data. `keep-alive.yml` pings Supabase daily so the project does not pause. There are no PR previews.
 
 ## Docs
 
@@ -68,10 +95,9 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 ## Decisions that differ from the spec
 
-- Filters use a flat follow-up range (`followUpFrom`/`followUpTo`) instead of the nested form in section 7.4.
 - Soft-deleted contacts are readable through the raw API and the app's queries filter them out; the spec (section 6) wants RLS to hide them.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
-- Control borders are darker than the mockups for 3:1 contrast.
+- Control borders are darker than the mockups (`#7F8D87`) for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.
 
 ## Audit and activity (database triggers)

@@ -1,0 +1,80 @@
+'use client';
+
+import type { ComponentProps } from 'react';
+import LoaderCircle from 'lucide-react/icons/loader-circle';
+
+import { cn } from '@/utils/cn';
+
+type ButtonProps = ComponentProps<'button'> & {
+  variant: 'primary' | 'ghost' | 'link';
+  pending?: boolean;
+  pendingLabel?: string;
+  disabledReason?: string;
+} & (
+    | { size?: 'sm' | 'md' }
+    // An icon-only button has no visible text, so it must be named.
+    | { size: 'icon'; 'aria-label': string }
+  );
+
+// Hover and press affordances only on buttons that will act (literal classes so Tailwind sees them).
+// Open (aria-expanded) and pressed (aria-pressed) ghosts are `!` so hover can't wash them out,
+// and use the system Highlight in forced colours so the state survives there too.
+const VARIANT = {
+  primary:
+    'border-transparent bg-accent text-on-accent enabled:not-aria-disabled:not-aria-busy:hover:bg-accent-hover',
+  ghost:
+    'border-line bg-surface text-ink enabled:not-aria-disabled:not-aria-busy:hover:border-lead-border enabled:not-aria-disabled:not-aria-busy:hover:bg-canvas enabled:not-aria-disabled:not-aria-busy:active:bg-track aria-expanded:border-accent! aria-expanded:bg-accent-soft! aria-expanded:text-accent! aria-pressed:border-accent! aria-pressed:bg-accent-soft! aria-pressed:text-accent! forced-colors:aria-expanded:bg-[Highlight]! forced-colors:aria-expanded:border-[Highlight]! forced-colors:aria-expanded:text-[HighlightText]! forced-colors:aria-expanded:forced-color-adjust-none forced-colors:aria-pressed:bg-[Highlight]! forced-colors:aria-pressed:border-[Highlight]! forced-colors:aria-pressed:text-[HighlightText]! forced-colors:aria-pressed:forced-color-adjust-none',
+  // border-0, not transparent: forced colours would draw a box around a link.
+  link: 'border-0 px-0.5 text-accent underline-offset-3 enabled:not-aria-disabled:not-aria-busy:hover:underline',
+};
+
+const SIZE = {
+  sm: 'h-[30px] px-2.5',
+  md: 'h-[34px] px-3.5',
+  icon: 'size-[34px] px-0',
+};
+
+export function Button({
+  variant,
+  size = 'md',
+  pending = false,
+  pendingLabel,
+  disabledReason,
+  onClick,
+  className,
+  children,
+  type = 'button',
+  ...rest
+}: ButtonProps) {
+  // aria-disabled (not disabled) keeps the button focusable so the reason can be read.
+  const blocked = pending || disabledReason !== undefined;
+  return (
+    <button
+      {...rest}
+      type={type}
+      aria-busy={pending || undefined}
+      aria-disabled={disabledReason !== undefined || rest['aria-disabled']}
+      title={disabledReason ?? rest.title}
+      onClick={(event) => {
+        if (blocked) event.preventDefault();
+        else onClick?.(event);
+      }}
+      className={cn(
+        'rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 enabled:not-aria-disabled:not-aria-busy:active:translate-y-px',
+        'disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:opacity-45',
+        'aria-busy:cursor-progress',
+        VARIANT[variant],
+        variant !== 'link' && SIZE[size],
+        className,
+      )}
+    >
+      {pending && (
+        <LoaderCircle
+          aria-hidden
+          className="size-4 animate-spin motion-reduce:animate-none"
+        />
+      )}
+      {pending && pendingLabel ? pendingLabel : children}
+    </button>
+  );
+}

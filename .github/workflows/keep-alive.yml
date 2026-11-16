@@ -1,0 +1,28 @@
+name: Keep alive
+
+# A daily query stops the free Supabase project from pausing (ADR-0008).
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    # DEPLOY_ENABLED is a repository variable; T23 sets it.
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+    steps:
+      - name: Query a table
+        run: |
+          check() {
+            code=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' "$@" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
+            echo "$code"
+            [ "$code" = 200 ]
+          }
+          check "$SUPABASE_URL/rest/v1/role_permissions?select=role&limit=1"
+          # T8's PR adds the rpc/ping call back.
