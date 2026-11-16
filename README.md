@@ -5,6 +5,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 ## Status
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
+- App-level 404, error and crash pages are planned (T12b).
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
@@ -53,7 +54,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `components/ui`: token-styled primitives (button, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
   - Overlays wrap Radix (dialog, sheet, popover, dropdown menu, tooltip); they animate on `data-state` and stand still under reduced motion
   - `DatePicker` (react-day-picker in a popover, opened by a field or your own button via `trigger`) reads and writes `'YYYY-MM-DD'` via `lib/dates`
-  - `Toaster` (sonner) is mounted in the root layout; call `toast.success(msg, { action: { label: 'Undo', onClick } })`; an error with an action stays until acted on or dismissed
+  - `Toaster` (sonner) is mounted in the root layout; call `toast.success('Contact saved')`; `toast.error(msg, { action: { label: 'Retry', onClick } })` stays until acted on or dismissed
 - `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`)
 - `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); e2e lands with the FE track in `tests/e2e/`
@@ -92,9 +93,18 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 - `DESIGN.md`: design system
 - `AGENTS.md`: rules for agents and contributors
 
+## Why no drag and drop
+
+Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) and exclude keyboard and many assistive-technology users. The "Move to…" menu works for everyone with a single pointer or the keyboard. Cards are ordered by urgency, so there's no manual order to drag.
+
+## With more time
+
+- Keyboard shortcuts (after the BRIEF requirements are fully met).
+- Undo for pipeline moves (for later review).
+
 ## Decisions that differ from the spec
 
-- Soft-deleted contacts are readable through the raw API and the app's queries filter them out; the spec (section 6) wants RLS to hide them.
+- Deleting contacts is out of scope for v1: there's no delete UI, and the `deleted_at` column stays unused.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
 - Control borders are darker than the mockups (`#7F8D87`) for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.

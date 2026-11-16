@@ -20,7 +20,7 @@ Spec decisions 6 and 7. The board needs one column per status, and contacts must
 
 ### Option 1 — "Move to…" menu only (chosen)
 
-- **Pros:** Meets 2.5.7 by design. A Radix DropdownMenu is fully keyboard accessible. The same menu appears on the card and on the detail page. Moves are optimistic with Undo.
+- **Pros:** Meets 2.5.7 by design. A Radix DropdownMenu is fully keyboard accessible. The same menu appears on the card and on the detail page. Moves are optimistic.
 - **Cons:** Less direct than dragging for mouse users. Drag and drop has to be listed as future work.
 
 ### Option 2 — Drag and drop plus the menu
@@ -39,13 +39,15 @@ Option 1. Chosen by Khubaib in the spec interview. A menu meets WCAG 2.5.7 by it
 
 Board order (decision 7) was Claude's proposal, and Khubaib did not object: overdue first, then due today, then soonest follow-up, then no follow-up, with ties going to the most recently updated. There is no manual ordering, so there is no `position` column.
 
+Khubaib's scope decision, 2026-11-17: each column pages with a "Show 50 more" button and no virtualization, and "Move to…" is the move control on desktop and mobile.
+
 ## Consequences
 
-- Cards show name, urgency pill, "matter · phone" and a Move to… menu. A move updates the card and the column counts through `useOptimistic`, shows "Name moved to Active · Undo" for about 6s, and rolls back with a Retry toast on failure (§8.6).
+- Cards show name, urgency pill, "matter · phone" and a Move to… menu. A move updates the card and the column counts through `useOptimistic`, shows "Name moved to Active." for about 6s, and rolls back with a Retry toast on failure (§8.6).
 - Each column calls `search_contacts` with the status fixed, the default urgency sort, `page_size` 50 and "Show 50 more · N left" (§7.4).
 - Users cannot hand-order cards within a column.
-- Tests required by §9: component test for the Move to… menu with the keyboard; e2e for pipeline move, Undo and reload; axe on every route.
-- README: "Menu versus drag and drop" under trade-offs, and drag and drop under "With more time" (§13).
+- Tests required by §9: component test for the Move to… menu with the keyboard; e2e for pipeline move and reload; axe on every route.
+- README: "Why no drag and drop", and drag and drop under "With more time" (§13).
 
 ## Rejected and why
 

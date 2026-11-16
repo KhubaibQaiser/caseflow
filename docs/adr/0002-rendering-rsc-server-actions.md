@@ -42,7 +42,7 @@ Option 1. Chosen by Khubaib in the spec interview. Server Components read and Se
 - Data access lives in server-only `lib/data`. Writes go through Server Actions that return `Result<T>` and call `revalidatePath` (§7.5).
 - Every route has `loading.tsx` and `error.tsx`, with Suspense around the data regions (§8.8, §8.12).
 - `proxy.ts` refreshes the session and redirects to `/login?next=…`, adding `reason=expired` when a session has died (§8.1). It only checks that a session exists; pages and actions authorize with `requirePermission` (§7.7).
-- Tests required by §9: integration test for edit conflict detection in `updateContact`; e2e for create with validation errors then success then edit, a note appearing in the timeline, and pipeline move, Undo and reload (`useOptimistic` with rollback).
+- Tests required by §9: integration test for edit conflict detection in `updateContact`; e2e for create with validation errors then success then edit, a note appearing in the timeline, and pipeline move and reload (`useOptimistic` with rollback).
 - README: "Component structure and state management" explains RSC reads, Server Action writes and `useOptimistic` (§13).
 
 ## Rejected and why
