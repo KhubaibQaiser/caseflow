@@ -22,12 +22,12 @@ export function ErrorText({
 
 /**
  * Props for a group container (fieldset or radiogroup) with an optional error.
- * tabIndex -1 lets an ErrorSummary link move focus to the group.
+ * With an error, tabIndex -1 lets an ErrorSummary link move focus to the group.
  */
 export function groupErrorProps(id: string, error?: string) {
   return {
     id,
-    tabIndex: -1,
+    tabIndex: error ? -1 : undefined,
     'aria-invalid': error ? true : undefined,
     'aria-describedby': error ? `${id}-error` : undefined,
   };

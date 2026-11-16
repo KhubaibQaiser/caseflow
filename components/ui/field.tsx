@@ -75,15 +75,22 @@ export function Field({
 
 type FieldError = { id: string; label: string; message: string };
 
-export function ErrorSummary({ errors }: { errors: FieldError[] }) {
+type ErrorSummaryProps = {
+  errors: FieldError[];
+  /** Submit count (e.g. RHF submitCount): each new failed attempt refocuses the summary. */
+  attempt?: number;
+};
+
+export function ErrorSummary({ errors, attempt }: ErrorSummaryProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const hadErrors = useRef(false);
+  const last = useRef<{ has: boolean; attempt?: number }>({ has: false });
 
   useEffect(() => {
     const has = errors.length > 0;
-    if (has && !hadErrors.current) ref.current?.focus();
-    hadErrors.current = has;
-  }, [errors]);
+    if (has && (!last.current.has || attempt !== last.current.attempt))
+      ref.current?.focus();
+    last.current = { has, attempt };
+  }, [errors, attempt]);
 
   if (errors.length === 0) return null;
 
@@ -106,23 +113,24 @@ export function ErrorSummary({ errors }: { errors: FieldError[] }) {
     >
       <CircleAlert aria-hidden className="mt-px size-4 shrink-0" />
       <div>
-        <b className="font-semibold">
+        <p className="m-0 font-semibold">
           {count === 1
             ? '1 field needs attention.'
             : `${count} fields need attention.`}
-        </b>{' '}
-        {errors.map((error, i) => (
-          <span key={error.id}>
-            {i > 0 && <span aria-hidden> · </span>}
-            <a
-              href={`#${error.id}`}
-              onClick={(event) => jump(event, error.id)}
-              className="text-overdue underline underline-offset-2"
-            >
-              {error.label}
-            </a>
-          </span>
-        ))}
+        </p>
+        <ul className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">
+          {errors.map((error) => (
+            <li key={error.id}>
+              <a
+                href={`#${error.id}`}
+                onClick={(event) => jump(event, error.id)}
+                className="text-overdue underline underline-offset-2"
+              >
+                {error.label}: {error.message}
+              </a>
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   );
