@@ -23,6 +23,7 @@ Read `docs/SPEC.md`, `docs/PLAN.md` and `docs/adr/README.md`. Before writing rou
 - Performance: Lighthouse Performance >= 90 and Accessibility >= 95 on `/contacts` (mobile). CLS < 0.05. `/contacts` JS < 180kB gzipped. Import icons one at a time.
 - Commits are small and imperative, failing test first. PRs merge with merge commits. End each commit message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Secrets never appear in code, logs, chat or commits.
+- Secrets go in with `gh secret set` / `vercel env add` from piped values only.
 
 ## Commands
 
