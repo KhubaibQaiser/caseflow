@@ -32,6 +32,7 @@
   --r-ctl: 6px;
   --r-surface: 10px;
   --r-pill: 999px;
+  --tabbar: 60px;
 }
 
 @theme inline {
@@ -163,4 +164,13 @@
 
 .tnum {
   font-variant-numeric: tabular-nums;
+}
+
+/* Toasts clear the mobile tab bar (sonner sets its offset inline, hence !important). */
+@media (max-width: 767.98px) {
+  body:has([data-tab-bar]) [data-sonner-toaster] {
+    --offset-bottom: calc(
+      var(--tabbar) + env(safe-area-inset-bottom) + 12px
+    ) !important;
+  }
 }
