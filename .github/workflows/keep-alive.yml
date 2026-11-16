@@ -25,4 +25,4 @@ jobs:
             [ "$code" = 200 ]
           }
           check "$SUPABASE_URL/rest/v1/role_permissions?select=role&limit=1"
-          # T8's PR adds the rpc/ping call back.
+          check -X POST "$SUPABASE_URL/rest/v1/rpc/ping"
