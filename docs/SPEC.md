@@ -31,7 +31,7 @@ Deadline: 24h from receipt of the brief. Functional deliverables come before pol
 
 **Non-goals (documented in the README as future work)**
 - Drag and drop on the pipeline. It can be added later on top of the menu, which WCAG 2.5.7 requires anyway.
-- Global search (an icon in the header that opens a modal searching every object) and keyboard shortcuts (a command palette, j/k to move through rows, quick status changes).
+- Global search (an icon in the header that opens a modal searching every object) and keyboard shortcuts (a command palette, j/k to move through rows, quick status changes). Keyboard shortcuts come after the BRIEF requirements are fully met.
 - More roles (coordinator, attorney). The permission model already supports them, and each would be one seed change.
 - Self sign-up, password reset, account management. A nightly data reset. PR preview deploys: a staging Supabase project and preview workflow are future work, and the README lists this as known.
 - Live facet counts that follow the draft filters, with an "Apply · N contacts" preview.

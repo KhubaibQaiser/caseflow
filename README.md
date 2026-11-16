@@ -88,6 +88,10 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 
 Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) and exclude keyboard and many assistive-technology users. The "Move to…" menu works for everyone with a single pointer or the keyboard. Cards are ordered by urgency, so there's no manual order to drag.
 
+## With more time
+
+- Keyboard shortcuts (after the BRIEF requirements are fully met).
+
 ## Decisions that differ from the spec
 
 - Filters use a flat follow-up range (`followUpFrom`/`followUpTo`) instead of the nested form in section 7.4.
