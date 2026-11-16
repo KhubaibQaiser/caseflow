@@ -65,4 +65,23 @@ describe('Button', () => {
     await user.click(screen.getByRole('button'));
     expect(onSubmit).not.toHaveBeenCalled();
   });
+
+  it('keeps the disabled reason even if callers pass aria props', () => {
+    render(
+      <Button
+        variant="ghost"
+        disabledReason="Viewers can't edit contacts. Ask an admin."
+        aria-disabled={false}
+        title="Edit"
+      >
+        Edit
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Edit' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute(
+      'title',
+      "Viewers can't edit contacts. Ask an admin.",
+    );
+  });
 });

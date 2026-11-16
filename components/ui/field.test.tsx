@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it } from 'vitest';
+import { useState } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ErrorSummary, Field } from './field';
 import { Input } from './input';
@@ -23,16 +24,45 @@ describe('ErrorSummary', () => {
     expect(alert).toHaveTextContent('2 fields need attention.');
   });
 
-  it('links each error to its field', () => {
+  it('refocuses on every failed submit, even with the same errors', () => {
+    const { rerender } = render(<ErrorSummary errors={errors} attempt={1} />);
+    const alert = screen.getByRole('alert');
+    alert.blur();
+
+    rerender(<ErrorSummary errors={errors} attempt={1} />);
+    expect(alert).not.toHaveFocus();
+
+    rerender(<ErrorSummary errors={errors} attempt={2} />);
+    expect(alert).toHaveFocus();
+  });
+
+  it('links each error to its field with label and message', () => {
     render(<ErrorSummary errors={errors} />);
 
-    expect(screen.getByRole('link', { name: 'Full name' })).toHaveAttribute(
-      'href',
-      '#full-name',
-    );
     expect(
-      screen.getByRole('link', { name: 'Email or phone' }),
+      screen.getByRole('link', { name: 'Full name: Enter a full name.' }),
+    ).toHaveAttribute('href', '#full-name');
+    expect(
+      screen.getByRole('link', {
+        name: 'Email or phone: Add an email or phone.',
+      }),
     ).toHaveAttribute('href', '#phone');
+  });
+
+  it('moves focus to the input when a link is followed', async () => {
+    Element.prototype.scrollIntoView = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <>
+        <ErrorSummary errors={errors.slice(0, 1)} />
+        <Field id="full-name" label="Full name" error="Enter a full name.">
+          <Input />
+        </Field>
+      </>,
+    );
+
+    await user.click(screen.getByRole('link', { name: /^Full name:/ }));
+    expect(screen.getByRole('textbox', { name: /Full name/ })).toHaveFocus();
   });
 
   it('uses the singular for one error', () => {
@@ -94,5 +124,31 @@ describe('Textarea', () => {
     await user.type(box, '9');
     expect(screen.getByText('9 / 10')).toBeInTheDocument();
     expect(box).toHaveAccessibleDescription('9 / 10');
+  });
+});
+
+describe('controlled Textarea', () => {
+  it('counts the controlled value, including after a reset', async () => {
+    const user = userEvent.setup();
+    function Controlled() {
+      const [value, setValue] = useState('123456789');
+      return (
+        <Field id="summary" label="Matter summary">
+          <Textarea
+            maxLength={10}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+          <button type="button" onClick={() => setValue('')}>
+            Reset
+          </button>
+        </Field>
+      );
+    }
+    render(<Controlled />);
+    expect(screen.getByText('9 / 10')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Reset' }));
+    expect(screen.queryByText(/\/ 10/)).not.toBeInTheDocument();
   });
 });

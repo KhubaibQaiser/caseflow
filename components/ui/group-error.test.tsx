@@ -84,6 +84,7 @@ describe('group errors', () => {
     const group = screen.getByRole('group', { name: 'Matter type' });
     expect(group).not.toHaveAttribute('aria-invalid');
     expect(group).not.toHaveAttribute('aria-describedby');
+    expect(group).not.toHaveAttribute('tabindex');
   });
 
   it('lets an ErrorSummary link move focus to the group', async () => {
@@ -106,7 +107,9 @@ describe('group errors', () => {
       </>,
     );
 
-    await user.click(screen.getByRole('link', { name: 'Status' }));
+    await user.click(
+      screen.getByRole('link', { name: 'Status: Choose a status.' }),
+    );
     expect(screen.getByRole('radiogroup', { name: 'Status' })).toHaveFocus();
   });
 });
