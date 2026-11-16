@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DataError, mapContactRow } from './supabase';
+import { DataError, getPipelineColumn, mapContactRow } from './supabase';
 
 const raw = {
   id: 'c1',
@@ -33,5 +33,13 @@ describe('mapContactRow', () => {
       expect(e).toBeInstanceOf(DataError);
       expect((e as Error).message).not.toContain('secret@example.com');
     }
+  });
+});
+
+describe('getPipelineColumn offsets', () => {
+  it.each([-25, 1.5, Number.NaN])('rejects offset %s', async (o) => {
+    await expect(getPipelineColumn('lead', {}, o, 25)).rejects.toBeInstanceOf(
+      DataError,
+    );
   });
 });

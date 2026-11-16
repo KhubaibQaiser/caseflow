@@ -31,6 +31,8 @@ import { addDaysDateOnly, todayIn } from '@/lib/dates/date-only';
 import {
   adminClient,
   anonClient,
+  anonSignedIn,
+  PASSWORD,
   resetData,
   serviceClient,
   viewerClient,
@@ -177,5 +179,50 @@ describe('getViewer and permissions', () => {
     await expect(requirePermission('contacts.write')).rejects.toMatchObject({
       name: 'ForbiddenError',
     });
+  });
+});
+
+describe('viewer edge cases', () => {
+  it('signed in without a profile throws NoProfileError and never redirects', async () => {
+    const svc = serviceClient();
+    const made = await svc.auth.admin.createUser({
+      email: 'it-noprofile@caseflow.test',
+      password: PASSWORD,
+      email_confirm: true,
+    });
+    if (made.error && !/already/i.test(made.error.message)) throw made.error;
+    current = await anonSignedIn('it-noprofile@caseflow.test');
+    await expect(getViewer()).rejects.toBeInstanceOf(NoProfileError);
+    await expect(requirePermission('contacts.read')).rejects.toBeInstanceOf(
+      NoProfileError,
+    );
+    const r = await assertPermission('contacts.read');
+    expect(r.ok).toBe(false);
+  });
+
+  it('throws (not null) when the profiles query errors', async () => {
+    current = {
+      auth: { getClaims: async () => ({ data: { claims: { sub: 'u' } } }) },
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            maybeSingle: async () => ({
+              data: null,
+              error: { message: 'boom' },
+            }),
+          }),
+        }),
+      }),
+    } as unknown as SupabaseClient;
+    await expect(getViewer()).rejects.toThrow(/profile/i);
+  });
+});
+
+describe('data layer as a viewer', () => {
+  it('reads contacts and details read-only', async () => {
+    const id = await seed({ full_name: 'Read Only' });
+    current = (await viewerClient()).client;
+    expect((await searchContacts(q())).rows).toHaveLength(1);
+    expect((await getContact(id))?.fullName).toBe('Read Only');
   });
 });
