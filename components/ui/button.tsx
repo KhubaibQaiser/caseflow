@@ -7,22 +7,32 @@ import { cn } from '@/utils/cn';
 
 type ButtonProps = ComponentProps<'button'> & {
   variant: 'primary' | 'ghost' | 'link';
-  size?: 'sm' | 'md';
   pending?: boolean;
   pendingLabel?: string;
   disabledReason?: string;
-};
+} & (
+    | { size?: 'sm' | 'md' }
+    // An icon-only button has no visible text, so it must be named.
+    | { size: 'icon'; 'aria-label': string }
+  );
 
 // Hover and press affordances only on buttons that will act (literal classes so Tailwind sees them).
+// Open (aria-expanded) and pressed (aria-pressed) ghosts are `!` so hover can't wash them out,
+// and use the system Highlight in forced colours so the state survives there too.
 const VARIANT = {
   primary:
     'border-transparent bg-accent text-on-accent enabled:not-aria-disabled:not-aria-busy:hover:bg-accent-hover',
   ghost:
-    'border-line bg-surface text-ink enabled:not-aria-disabled:not-aria-busy:hover:border-lead-border enabled:not-aria-disabled:not-aria-busy:hover:bg-canvas enabled:not-aria-disabled:not-aria-busy:active:bg-track',
-  link: 'border-transparent px-0.5 text-accent underline-offset-3 enabled:not-aria-disabled:not-aria-busy:hover:underline',
+    'border-line bg-surface text-ink enabled:not-aria-disabled:not-aria-busy:hover:border-lead-border enabled:not-aria-disabled:not-aria-busy:hover:bg-canvas enabled:not-aria-disabled:not-aria-busy:active:bg-track aria-expanded:border-accent! aria-expanded:bg-accent-soft! aria-expanded:text-accent! aria-pressed:border-accent! aria-pressed:bg-accent-soft! aria-pressed:text-accent! forced-colors:aria-expanded:bg-[Highlight]! forced-colors:aria-expanded:border-[Highlight]! forced-colors:aria-expanded:text-[HighlightText]! forced-colors:aria-expanded:forced-color-adjust-none forced-colors:aria-pressed:bg-[Highlight]! forced-colors:aria-pressed:border-[Highlight]! forced-colors:aria-pressed:text-[HighlightText]! forced-colors:aria-pressed:forced-color-adjust-none',
+  // border-0, not transparent: forced colours would draw a box around a link.
+  link: 'border-0 px-0.5 text-accent underline-offset-3 enabled:not-aria-disabled:not-aria-busy:hover:underline',
 };
 
-const SIZE = { sm: 'h-[30px] px-2.5', md: 'h-[34px] px-3.5' };
+const SIZE = {
+  sm: 'h-[30px] px-2.5',
+  md: 'h-[34px] px-3.5',
+  icon: 'size-[34px] px-0',
+};
 
 export function Button({
   variant,
