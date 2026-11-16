@@ -96,6 +96,18 @@ describe('Field', () => {
     );
   });
 
+  it('keeps the invalid border on hover', () => {
+    render(
+      <Field id="full-name" label="Full name" error="Enter a full name.">
+        <Input />
+      </Field>,
+    );
+    // Hover must not out-rank aria-invalid:border-overdue in the cascade.
+    expect(screen.getByRole('textbox')).toHaveClass(
+      'enabled:not-aria-invalid:hover:border-ink-2',
+    );
+  });
+
   it('leaves a valid control unmarked', () => {
     render(
       <Field id="phone" label="Phone">

@@ -84,4 +84,15 @@ describe('Button', () => {
       "Viewers can't edit contacts. Ask an admin.",
     );
   });
+
+  it("keeps the caller's title and aria-disabled without a disabled reason", () => {
+    render(
+      <Button variant="ghost" title="Edit contact" aria-disabled="true">
+        Edit
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Edit' });
+    expect(button).toHaveAttribute('title', 'Edit contact');
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+  });
 });
