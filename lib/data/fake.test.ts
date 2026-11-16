@@ -46,8 +46,10 @@ describe('fake data layer', () => {
     const col = await getPipelineColumn('active', {}, 0, 50);
     expect(col.rows.length).toBeLessThanOrEqual(50);
     expect(col.rows.every((x) => x.status === 'active')).toBe(true);
-    const d = await getContact(col.rows[0].id);
-    expect(d?.id).toBe(col.rows[0].id);
+    const id = col.rows[0]?.id ?? '';
+    const d = await getContact(id);
+    expect(id).not.toBe('');
+    expect(d?.id).toBe(id);
     expect(await getContact('nope')).toBeNull();
   });
 

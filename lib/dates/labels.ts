@@ -16,16 +16,26 @@ export function followUpView(
   row: Pick<ContactRow, 'status' | 'followUpOn' | 'urgency' | 'daysOverdue'>,
   today: string,
 ): { tone: FollowUpTone; text: string } {
-  const absolute = row.followUpOn ? formatDateShort(row.followUpOn, today) : 'Not set';
+  const absolute = row.followUpOn
+    ? formatDateShort(row.followUpOn, today)
+    : 'Not set';
   if (row.status === 'closed') return { tone: 'muted', text: absolute };
-  if (row.urgency === 'overdue') return { tone: 'overdue', text: `Overdue · ${row.daysOverdue ?? 0}d` };
+  if (row.urgency === 'overdue')
+    return { tone: 'overdue', text: `Overdue · ${row.daysOverdue ?? 0}d` };
   if (row.urgency === 'today') return { tone: 'today', text: 'Today' };
   return { tone: row.urgency, text: absolute };
 }
 
-export function waitingLabel(createdAt: string, today: string, tz: string): string {
+export function waitingLabel(
+  createdAt: string,
+  today: string,
+  tz: string,
+): string {
   const created = todayIn(tz, new Date(createdAt));
-  const days = Math.max(0, differenceInCalendarDays(parseDateOnly(today), parseDateOnly(created)));
+  const days = Math.max(
+    0,
+    differenceInCalendarDays(parseDateOnly(today), parseDateOnly(created)),
+  );
   return days === 0 ? 'Today' : `${days}d`;
 }
 

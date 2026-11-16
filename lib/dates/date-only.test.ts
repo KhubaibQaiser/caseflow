@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { addDaysDateOnly, parseDateOnly, resolveTimeZone, toDateOnly, todayIn } from './date-only';
+import {
+  addDaysDateOnly,
+  parseDateOnly,
+  resolveTimeZone,
+  toDateOnly,
+  todayIn,
+} from './date-only';
 
 describe('date-only helpers', () => {
   it('toDateOnly never shifts the date', () => {
@@ -9,7 +15,9 @@ describe('date-only helpers', () => {
 
   it('parseDateOnly returns local midnight', () => {
     const d = parseDateOnly('2026-11-16');
-    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([2026, 10, 16]);
+    expect([d.getFullYear(), d.getMonth(), d.getDate()]).toEqual([
+      2026, 10, 16,
+    ]);
     expect([d.getHours(), d.getMinutes(), d.getSeconds()]).toEqual([0, 0, 0]);
   });
 
