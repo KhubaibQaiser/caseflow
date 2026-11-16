@@ -47,7 +47,7 @@
 M0 (sequential): T1 → T2 → T3 → T4
 then in parallel worktrees:
   BE:  T5 → T6 → T7 → T8 → T9 → T10
-  FE:  T11 → T12 → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
+  FE:  T11 → T12 → T12b → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
   OPS: T20 → T21
 then: T22 (integration and e2e) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission)
 stretch: S1 dark mode · S2 Attorney role + staging previews
@@ -349,14 +349,14 @@ it('rejects contact with neither email nor phone', async () => { /* check violat
   - insert → `created` with `{status}`
   - status changed → `status_changed` with `{from,to}`
   - `follow_up_on` changed → `follow_up_changed` with `{from,to}`
-  - `deleted_at` set → `deleted`; `deleted_at` cleared → `restored`
+  - `deleted_at` set → `deleted`; `deleted_at` cleared → `restored` (guard-only, unreachable in v1)
   - other column changes → `updated` with `{fields:[...]}`
 - **`notes_after_insert()`:** inserts a `note_added` activity.
 
 - [ ] **Step 1: Write the failing tests.**
   - Updating status from lead to active produces exactly one `status_changed` activity, with payload `{from:'lead',to:'active'}` and `actor_id` equal to the admin.
   - Adding a note produces `note_added`.
-  - A viewer can't set `deleted_at`. An admin can (giving `deleted`), and clearing it gives `restored`.
+  - A viewer can't set `deleted_at`. An admin can (giving `deleted`), and clearing it gives `restored` (guard-only, unreachable in v1).
   - With `select set_config('caseflow.seeding','on',true)` in the same transaction (run through an RPC test helper), no activities are written.
   - `updated_at` advances on every update.
 - [ ] **Step 2: Run** `pnpm test:integration triggers`. Expected: FAIL.
@@ -457,12 +457,12 @@ it('viewer can call both RPCs', async () => {})
 - Test: `lib/data/supabase.test.ts` (mapper unit tests), and add to `tests/integration/queries.test.ts`
 
 **Interfaces (produces):**
-- **`lib/supabase/server.ts`:** `createServerSupabase(): Promise<SupabaseClient<Database>>`, built with `@supabase/ssr` `createServerClient` and Next `cookies()`, using the publishable key.
+- **`lib/supabase/server.ts`:** `createServerSupabase(): Promise<SupabaseClient<Database>>`, built with `@supabase/ssr` `createServerClient` and Next `cookies()`, using `SUPABASE_PUBLISHABLE_KEY`. There is no browser Supabase client, so `SUPABASE_URL` and the key have no `NEXT_PUBLIC_` prefix and stay out of client bundles.
 - **`lib/supabase/admin.ts`:**
   - `createSignInClient(clientIp: string|null)`: secret key, `auth:{persistSession:false}`, and `global.headers['Sb-Forwarded-For'] = clientIp` when present.
   - `createServiceClient()`: used only by scripts and tests.
 - **`lib/data/supabase.ts`:** implements the four signatures from Task 4. Each calls the RPCs with `tz` from `getRequestTimeZone()` and parses the responses with the contract schemas.
-  - `getContact` joins notes with the author profile and activities with the actor profile (limit 100), and returns `null` when the contact is missing or deleted.
+  - `getContact` joins notes with the author profile and activities with the actor profile (limit 100), and returns `null` when the contact is missing.
   - Mappers: `mapContactRow(raw): ContactRow` (snake to camel).
 - **`lib/auth/viewer.ts`:**
   - `getViewer = cache(async (): Promise<Viewer|null>)`, using `Viewer` from `lib/contracts/permissions` (T2). It uses `supabase.auth.getClaims()` to verify the session, then reads `profiles`.
@@ -490,7 +490,6 @@ it('viewer can call both RPCs', async () => {})
   - `updateContact(db, id, input, expectedUpdatedAt: string): Result<ContactRow>`. It runs `update … where id=$1 and updated_at=$2`. With 0 rows: if the row exists, return `conflict` ("This contact was changed since you opened it."), otherwise `not_found`.
   - `setStatus(db, id, status): Result<ContactRow>`
   - `setFollowUp(db, id, followUpOn: string|null): Result<ContactRow>`
-  - `softDelete(db, id): Result<null>` and `restore(db, id): Result<null>`
   - `insertNote(db, contactId, body): Result<Note>`
   - PostgREST and RLS errors map to codes: `42501` or an empty update under RLS becomes `forbidden`, and `23514` becomes `validation`.
 - **`features/contacts/actions.ts`** (`'use server'`):
@@ -498,7 +497,6 @@ it('viewer can call both RPCs', async () => {})
   - `updateContactAction(id: string, raw: unknown, expectedUpdatedAt: string)`
   - `moveContactAction(id: string, status: Status)`
   - `rescheduleAction(id: string, followUpOn: string|null)`
-  - `deleteContactAction(id: string)` and `restoreContactAction(id: string)`
   - `addNoteAction(contactId: string, body: string)`
   - Order in each: `assertPermission` → `makeContactInputSchema({today: todayIn(tz), previousFollowUpOn})` validation (Zod issues become `fieldErrors` keyed by field, with `contactMethod` for the cross-field rule) → mutation → `revalidatePath('/contacts')`, `revalidatePath('/pipeline')`, `revalidatePath('/contacts/'+id)`.
 - **`features/auth/actions.ts`:**
@@ -512,7 +510,7 @@ it('viewer can call both RPCs', async () => {})
 
 - [ ] **Step 1: Write the failing tests.**
   - Integration: `updateContact` with a stale `expectedUpdatedAt` returns `{ok:false,error:{code:'conflict'}}`.
-  - Viewer `setStatus` returns `forbidden`. Viewer `softDelete` returns `forbidden`. Admin `softDelete` then `restore` both succeed.
+  - Viewer `setStatus` returns `forbidden`.
   - `insertNote` with an empty body returns `validation`.
   - Unit (with the Supabase client and `next/headers` mocked):
     - a 429 maps to `rate_limited` with `retryAfter`
@@ -565,7 +563,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 - Thin styled wrappers over `@radix-ui/react-{dialog,popover,dropdown-menu,tooltip}`, animated with CSS `data-state` keyframes (150–200ms, ease-out) and disabled under `prefers-reduced-motion`.
 - **`Sheet`**: `{side:'right'; title; children; footer}`, built on Dialog (modal; Esc, scrim and ✕ close it; focus returns to the trigger).
 - **`DatePicker`**: `{value:string|null; onChange(v:string|null):void; min?:string; label}`. It uses react-day-picker inside a Popover, **and converts with `toDateOnly`**. It also has a Clear action.
-- **`Toaster`**: sonner with token styles, mounted in the root layout. `toast.success(msg, {action:{label:'Undo', onClick}})`.
+- **`Toaster`**: sonner with token styles, mounted in the root layout. `toast.success(msg)`.
 
 - [ ] **Step 1: Write the failing tests.**
   - Picking Nov 20 in `DatePicker` calls `onChange('2026-11-20')`, even when the mocked system time zone is `Pacific/Kiritimati`.
@@ -576,10 +574,32 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 - [ ] **Step 4: Run.** Expected: PASS.
 - [ ] **Step 5: Commit** `"Add Radix-based overlays, date picker and toaster"`.
 
+### Task 12b: App-level error and status pages
+
+**Files:**
+- Create: `app/not-found.tsx`, `app/(app)/not-found.tsx`, `app/(app)/[...missing]/page.tsx`, `app/error.tsx`, `app/global-error.tsx`
+- Test: `app/not-found.test.tsx`, `app/error.test.tsx`, `app/global-error.test.tsx`, `tests/e2e/not-found.spec.ts`
+- `app/forbidden.tsx` is created in T13 (it needs `experimental.authInterrupts`; see `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/forbidden.md`).
+
+**Interfaces (produces):**
+- **Not found:** the copy is "Page not found.", the requested path, a primary "Go to contacts" and a secondary "Pipeline" link. Signed-in unknown URLs render inside the app shell through `app/(app)/[...missing]/page.tsx` (it calls `notFound()`) and `app/(app)/not-found.tsx`. The root `app/not-found.tsx` stays as the standalone fallback for signed-out visitors, because Next's root not-found renders only in the root layout (`node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/not-found.md`).
+- **`error.tsx`** (client boundary under the root layout): "Something broke on our side.", a short reason class (network, server or unknown), the error digest, and a "Go to contacts" link. Retry runs `startTransition(() => { router.refresh(); reset() })` (SPEC §8.8). It never shows a stack trace in production.
+- **`global-error.tsx`:** catches root-layout crashes. It has its own `<html>` and `<body>`, Figtree, inline token values (`globals.css` isn't loaded there), a React `<title>` (not metadata) and a plain Reload button.
+- All three reuse `EmptyState`, `ErrorState` and `Button` (T11), work on mobile, focus the heading on mount, are `noindex`, and use `role="alert"` on the error pages only.
+- Deliberately skipped: `app/unauthorized.tsx` (the proxy redirects to `/login?reason=expired`) and a root `app/loading.tsx` (routes have their own skeletons).
+
+- [ ] **Step 1: Write the failing tests.**
+  - Unit: both not-found pages render "Page not found." with the path and the two links. Clicking Retry in `error.tsx` calls `router.refresh` and `reset`. `global-error.tsx` renders its own `<html>` and `<body>` and a Reload button.
+  - e2e: a bad URL returns 404 and shows "Page not found." with the path, inside the shell when signed in.
+- [ ] **Step 2: Run.** Expected: FAIL.
+- [ ] **Step 3: Implement** everything above.
+- [ ] **Step 4: Run.** Expected: PASS.
+- [ ] **Step 5: Commit** `"Add app-level not-found, error and global-error pages"`. This is its own small PR, after T12.
+
 ### Task 13: App shell, permissions context and forbidden state
 
 **Files:**
-- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22)
+- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22), `app/forbidden.tsx`
 - Test: `lib/auth/permissions-context.test.tsx`, `components/shell/timezone-sync.test.tsx`
 
 **Interfaces (produces):**
@@ -677,24 +697,23 @@ it('viewer sees no New contact button', () => {})
 - [ ] **Step 4: Run.** Expected: PASS.
 - [ ] **Step 5: Commit** `"Add filters panel with draft, Apply and Cancel"`.
 
-### Task 16: Contact detail (header, follow-up, details, notes, timeline, move, delete)
+### Task 16: Contact detail (header, follow-up, details, notes, timeline, move)
 
 **Files:**
 - Create: `features/contacts/detail/{contact-header,follow-up-card,details-list,notes,timeline,move-menu}.tsx`, `app/(app)/contacts/[id]/{page,loading,error,not-found}.tsx`
 - Test: `features/contacts/detail/notes.test.tsx`, `features/contacts/detail/move-menu.test.tsx`
 
 **Interfaces:**
-- **Consumes:** `getContact` (T4), the action signatures from T10 (passed as props: `onMove`, `onReschedule`, `onDelete`, `onRestore`, `onAddNote`), `<Can>` and `usePermission` (T13).
+- **Consumes:** `getContact` (T4), the action signatures from T10 (passed as props: `onMove`, `onReschedule`, `onAddNote`), `<Can>` and `usePermission` (T13).
 - **Produces:**
   - `MoveMenu` `{current: Status; onMove(s): Promise<Result<ContactRow>>; disabledReason?: string}`. It's a DropdownMenu listing the other two statuses as pills. Reused by the pipeline.
   - `Notes` `{notes: Note[]; onAdd(body): Promise<Result<Note>>}`:
     - The composer's Save is disabled while the text is empty or a save is pending. Cmd/Ctrl+Enter submits.
     - **On failure the text is kept**, with an inline error and Retry. On success the field clears and the new note is announced.
     - For viewers, the composer is replaced with "Viewers can read notes but can't add them."
-  - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}" / "deleted" / "restored". Each uses a `<time dateTime>` with the full timestamp in a title.
+  - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}". It renders no copy for `deleted` or `restored` (unreachable in v1). Each uses a `<time dateTime>` with the full timestamp in a title.
   - `FollowUpCard`: an urgency pill, the date, and **Reschedule** (a DatePicker in a Popover, saving on select).
-  - **Delete** (in the overflow menu, admin only, otherwise disabled with a reason): calls `onDelete`, navigates to `/contacts`, and shows the toast "Contact deleted" with Undo, which calls `onRestore`.
-  - The **`not-found.tsx`** copy: "This contact doesn't exist or was deleted." with "Back to contacts".
+  - The **`not-found.tsx`** copy: "This contact doesn't exist." with "Back to contacts".
 
 - [ ] **Step 1: Write the failing tests.**
   - Notes: an empty body disables Save. If `onAdd` resolves `{ok:false}`, the textarea keeps "Called back" and an error is visible. Double Cmd+Enter calls `onAdd` once.
@@ -703,7 +722,7 @@ it('viewer sees no New contact button', () => {})
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement** everything above, matching `screens-v1.html` (detail and mobile detail with the Call button) and `login-rbac-v1.html` (viewer variant).
 - [ ] **Step 4: Run.** Expected: PASS.
-- [ ] **Step 5: Commit** `"Add contact detail with notes, timeline, reschedule, move and delete"`.
+- [ ] **Step 5: Commit** `"Add contact detail with notes, timeline, reschedule and move"`.
 
 ### Task 17: Contact form (create and edit)
 
@@ -746,7 +765,7 @@ it('viewer sees no New contact button', () => {})
 - **Consumes:** `getPipelineColumn`, `getContactFacets` (T4), `MoveMenu` (T16), `FiltersPanel` with `hideStatus` (T15), `moveContactAction` (T10, as a prop).
 - **Produces:**
   - `useBoardMoves(columns: Record<Status,{rows;matching}>, onMove)` returns `{columns, move(id, to)}`. It uses `useOptimistic`: the card moves immediately and the counts update. Then:
-    - on `ok`, the toast "{name} moved to {Status} · Undo" (6s); Undo calls `move(id, from)`
+    - on `ok`, the toast "{name} moved to {Status}." (6s)
     - on failure, the change rolls back and the error toast reads "Move failed. Retry." (with a Retry action), or "You don't have permission to move contacts." for `forbidden`
   - `Column` `{status; rows; matching; onLoadMore}`. The header shows the status and its count. "Show 50 more · {matching - rows.length} left" is a button that appends rows from `getPipelineColumn(status, f, rows.length)`, called through a Server Action wrapper `loadMoreColumnAction`.
   - `PipelineCard`: name link, urgency pill, "matter · phone", `MoveMenu`. Viewers see it disabled with the reason "Viewers can't move contacts."
@@ -758,12 +777,11 @@ it('viewer sees no New contact button', () => {})
   - `move` moves the card to the target column before the promise resolves.
   - A rejected `onMove` restores the original column and counts.
   - A double-click on a move item calls `onMove` once.
-  - Undo calls `onMove` with the original status.
   - `Column` shows "Show 50 more · 592 left" for `matching=642, rows=50`.
 - [ ] **Step 2: Run.** Expected: FAIL.
 - [ ] **Step 3: Implement** everything above, matching `screens-v1.html` (pipeline and mobile pipeline).
 - [ ] **Step 4: Run.** Expected: PASS.
-- [ ] **Step 5: Commit** `"Add pipeline board with optimistic moves, Undo and per-column paging"`.
+- [ ] **Step 5: Commit** `"Add pipeline board with optimistic moves and per-column paging"`.
 
 ### Task 19: Login page
 
@@ -824,7 +842,7 @@ it('viewer sees no New contact button', () => {})
 
 **Interfaces (produces):**
 - **GitHub secrets:** `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`, `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, `SEED_ADMIN_PASSWORD`, `SEED_VIEWER_PASSWORD`.
-- **Vercel production environment:** `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`.
+- **Vercel production environment:** `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`.
 - **`deploy.yml`:** on push to `main`, with `needs` on the CI jobs (via `workflow_run`, or by re-running `checks`). Then `supabase link --project-ref`, `supabase db push`, `vercel pull --environment=production`, `vercel build --prod`, `vercel deploy --prebuilt --prod`, and a smoke test that runs `pnpm exec playwright test tests/e2e/smoke.spec.ts` against the deployed URL.
 - **`seed.yml`:** `workflow_dispatch`. Runs `pnpm seed` against production.
 - **`keep-alive.yml`:** a daily cron (`17 6 * * *`). Uses `curl` against `${SUPABASE_URL}/rest/v1/role_permissions?select=role&limit=1` with the publishable key, calls `${SUPABASE_URL}/rest/v1/rpc/ping` (T8) with the publishable key. It fails the job on a non-200 response.
@@ -862,8 +880,8 @@ it('viewer sees no New contact button', () => {})
     - **"rapid typing shows results for the final query"** (type "or", "ort", "orte" quickly; every visible name contains "orte")
     - `?page=999` clamps to the last page
   - **`contact-form.spec.ts`:** empty submit gives the summary and focus; fill and save lands on the detail page with the toast; edit summary and save.
-  - **`detail.spec.ts`:** add a note, then it appears in the notes and the timeline ("Alex Morgan added a note"); Reschedule updates the pill; delete, Undo, and the contact is back.
-  - **`pipeline.spec.ts`:** moving a Lead card to Active moves it with the toast; Undo returns it; after a reload the state persists; "Show 50 more" appends 50 cards.
+  - **`detail.spec.ts`:** add a note, then it appears in the notes and the timeline ("Alex Morgan added a note"); Reschedule updates the pill.
+  - **`pipeline.spec.ts`:** moving a Lead card to Active moves it with the toast; after a reload the state persists; "Show 50 more" appends 50 cards.
   - **`viewer.spec.ts`:** Edit and Move are `aria-disabled` with tooltip text; the composer is replaced; there's no New contact button; `/contacts/new` shows "You can't add contacts".
   - **`mobile.spec.ts` (`@mobile`):** the tab bar is visible; the cards render; the Filters sheet opens, traps focus and closes on Esc.
   - **`a11y.spec.ts`:** axe has **no serious or critical violations** on `/login`, `/contacts`, `/contacts/[id]`, `/contacts/new`, `/contacts/[id]/edit` and `/pipeline`, as both Admin and Viewer.

@@ -5,6 +5,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 ## Status
 
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
+- App-level 404, error and crash pages are planned (T12b).
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
 - Live URL: not deployed yet.
@@ -90,9 +91,18 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 - `DESIGN.md`: design system
 - `AGENTS.md`: rules for agents and contributors
 
+## Why no drag and drop
+
+Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) and exclude keyboard and many assistive-technology users. The "Move to…" menu works for everyone with a single pointer or the keyboard. Cards are ordered by urgency, so there's no manual order to drag.
+
+## With more time
+
+- Keyboard shortcuts (after the BRIEF requirements are fully met).
+- Undo for pipeline moves (for later review).
+
 ## Decisions that differ from the spec
 
-- Soft-deleted contacts are readable through the raw API and the app's queries filter them out; the spec (section 6) wants RLS to hide them.
+- Deleting contacts is out of scope for v1: there's no delete UI, and the `deleted_at` column stays unused.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
 - Control borders are darker than the mockups (`#7F8D87`) for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.

@@ -25,7 +25,7 @@ Settled in the spec interview on 2026-11-16. Khubaib decides; Claude proposes. A
 | 19 | Product name Caseflow; voice "crisp power-tool"; both user types are equal primary users | — | Impeccable init interview |
 | 20 | Forms are full pages, not modals *(Claude's call)* | — | Own URL, back button, works on mobile |
 | 21 | Each pipeline column loads 50 cards with "Show 50 more" *(Claude's call)* | — | Thousands of contacts per column |
-| 22 | Soft delete with Undo; edit conflict detection via `updated_at` *(Claude's call)* | — | Never lose work; reviewers share the firm workspace |
+| 22 | ~~Soft delete with Undo~~ (delete is out of scope, see 29); edit conflict detection via `updated_at` *(Claude's call)* | — | Never lose work; reviewers share the firm workspace |
 | 23 | RBAC in v1 with two roles: Admin (full) and Viewer (read-only). Four layers (proxy for sign-in only, server `requirePermission`, Postgres RLS trusted, client `usePermission`). Role read from `profiles`. Viewer UI: write actions disabled with a reason, entry points hidden, forbidden page on write URLs | [0003](adr/0003-auth-and-rbac.md) | Demonstrates RBAC end to end without the cost of more roles |
 | 25 | Supabase free plan; one firm workspace of about 2.5k contacts (about 3MB); no trigram indexes *(Claude's call)* | [0001](adr/0001-backend-supabase.md) | Stays far below the 500MB limit |
 | 26 | Repo private during development, public at submission, with branch protection enabled then | — | GitHub Free only enforces protection on public repos |
@@ -33,3 +33,4 @@ Settled in the spec interview on 2026-11-16. Khubaib decides; Claude proposes. A
 
 | 27 | No demo or simulation controls; presented as a fully functional app | — | Khubaib's call: the app should be judged as it is |
 | 28 | Light mode only in v1; tokens ready for theming; dark mode is stretch S1 | — | Nice-to-have; functional deliverables first |
+| 29 | Contact delete, Undo and restore are out of scope for v1: no UI, no RPCs. The `deleted_at` column and its guard stay. Pipeline paging stays "Show 50 more" with no virtualization, and moves use the "Move to…" menu on desktop and mobile (no drag and drop) | [0005](adr/0005-pipeline-move-menu.md) | Khubaib's call, 2026-11-17: no extra backend features the BRIEF doesn't require |
