@@ -81,21 +81,17 @@ export function Toolbar({
           ref={filtersButton}
           variant="ghost"
           aria-expanded={filtersOpen}
+          // One name in every browser; a flex badge would read "Filters , 2 applied".
+          aria-label={applied > 0 ? `Filters, ${applied} applied` : undefined}
           onClick={() => setFiltersOpen((o) => !o)}
           className="max-md:h-9 max-md:flex-1"
         >
           <ListFilter aria-hidden className="size-4" />
           Filters
           {applied > 0 && (
-            <>
-              <span
-                aria-hidden
-                className="bg-accent text-on-accent rounded-pill tnum px-[7px] text-xs leading-[18px]"
-              >
-                {applied}
-              </span>
-              <span className="sr-only">, {applied} applied</span>
-            </>
+            <span className="bg-accent text-on-accent rounded-pill tnum px-[7px] text-xs leading-[18px]">
+              {applied}
+            </span>
           )}
         </Button>
         <Suspense

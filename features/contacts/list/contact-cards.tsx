@@ -45,7 +45,7 @@ export function ContactCards({
           <Link
             href={`/contacts/${r.id}`}
             title={r.fullName}
-            className="text-ink truncate text-sm font-semibold no-underline after:absolute after:inset-0"
+            className="text-ink block truncate text-sm leading-6 font-semibold no-underline after:absolute after:inset-0"
           >
             {r.fullName}
           </Link>
