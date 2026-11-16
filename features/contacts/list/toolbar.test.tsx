@@ -77,7 +77,7 @@ describe('Toolbar search', () => {
 
     await user.click(box);
     await user.keyboard('{Escape}');
-    expect(box).toHaveValue('');
+    await waitFor(() => expect(box).toHaveValue(''));
     await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
   });
 });

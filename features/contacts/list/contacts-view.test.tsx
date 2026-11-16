@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ContactsView } from './contacts-view';
+import { BusyRegion, ContactsView } from './contacts-view';
 import { FACETS, rows, wrapper } from './test-utils';
 
 function stubViewport(desktop: boolean) {
@@ -154,5 +154,31 @@ describe('Filters panel in the list', () => {
     expect(
       await screen.findByRole('complementary', { name: 'Filters' }),
     ).toBeVisible();
+  });
+});
+
+describe('BusyRegion', () => {
+  it('marks loading without dimming the rows', () => {
+    const { rerender } = render(
+      <BusyRegion busy>
+        <p>Kevin Carrillo</p>
+      </BusyRegion>,
+    );
+    const region = screen.getByText('Kevin Carrillo').parentElement!;
+    expect(region).toHaveAttribute('aria-busy', 'true');
+    // Text keeps full contrast (spec 8.11); a thin bar carries the signal instead.
+    expect(region.className).not.toMatch(/opacity/);
+    expect(region.querySelector('[data-loading-bar]')).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+
+    rerender(
+      <BusyRegion busy={false}>
+        <p>Kevin Carrillo</p>
+      </BusyRegion>,
+    );
+    expect(region).not.toHaveAttribute('aria-busy');
+    expect(region.querySelector('[data-loading-bar]')).toBeNull();
   });
 });
