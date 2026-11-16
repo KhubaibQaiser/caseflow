@@ -231,6 +231,25 @@ export type Database = {
     };
     Functions: {
       contact_facets: { Args: { f: Json; tz?: string }; Returns: Json };
+      contact_flags: {
+        Args: { nf: Json; today: string; tz: string };
+        Returns: {
+          created_ok: boolean;
+          fu_ok: boolean;
+          id: string;
+          is_due_today: boolean;
+          is_next7: boolean;
+          is_none: boolean;
+          is_overdue: boolean;
+          matter_ok: boolean;
+          matter_type: string;
+          q_ok: boolean;
+          referral_source: string;
+          source_ok: boolean;
+          status: string;
+          status_ok: boolean;
+        }[];
+      };
       contact_matches: {
         Args: {
           c: Omit<
@@ -244,6 +263,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      filter_set: { Args: { arr: Json }; Returns: string[] };
       follow_up_hit: {
         Args: {
           c: Omit<
