@@ -51,6 +51,57 @@ describe('Button', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
+  it('shows the disabled reason on keyboard focus', async () => {
+    const user = userEvent.setup();
+    const reason = "Viewers can't edit contacts. Ask an admin.";
+    render(
+      <Button variant="ghost" disabledReason={reason}>
+        Edit
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Edit' });
+    expect(button).not.toHaveAttribute('title');
+    expect(button).toHaveAccessibleDescription(reason);
+
+    await user.tab();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(reason);
+    expect(button).toHaveAccessibleDescription(reason);
+  });
+
+  it('dims only the content of a blocked button, so its focus ring keeps full strength', () => {
+    render(
+      <Button
+        variant="ghost"
+        disabledReason="Viewers can't edit contacts. Ask an admin."
+      >
+        Move to…
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Move to…' });
+
+    // Opacity on the button would fade its outline and ring below 3:1.
+    expect(button.className).not.toMatch(/aria-disabled:opacity/);
+    expect(screen.getByText('Move to…')).toHaveClass(
+      'group-aria-disabled:opacity-45',
+    );
+  });
+
+  it('shows the disabled reason on tap', async () => {
+    const user = userEvent.setup();
+    const reason = "Viewers can't edit contacts. Ask an admin.";
+    render(
+      <Button variant="ghost" disabledReason={reason}>
+        Edit
+      </Button>,
+    );
+
+    await user.pointer({
+      keys: '[TouchA]',
+      target: screen.getByRole('button', { name: 'Edit' }),
+    });
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(reason);
+  });
+
   it('does not submit its form while blocked', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn((e: FormEvent) => e.preventDefault());
@@ -72,6 +123,7 @@ describe('Button', () => {
         variant="ghost"
         disabledReason="Viewers can't edit contacts. Ask an admin."
         aria-disabled={false}
+        aria-describedby="edit-hint"
         title="Edit"
       >
         Edit
@@ -79,10 +131,12 @@ describe('Button', () => {
     );
     const button = screen.getByRole('button', { name: 'Edit' });
     expect(button).toHaveAttribute('aria-disabled', 'true');
-    expect(button).toHaveAttribute(
-      'title',
+    // The tooltip replaces the native title; the reason stays in the description.
+    expect(button).not.toHaveAttribute('title');
+    expect(button).toHaveAccessibleDescription(
       "Viewers can't edit contacts. Ask an admin.",
     );
+    expect(button.getAttribute('aria-describedby')).toContain('edit-hint');
   });
 
   it("keeps the caller's title and aria-disabled without a disabled reason", () => {
