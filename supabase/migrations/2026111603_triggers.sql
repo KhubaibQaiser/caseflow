@@ -31,7 +31,7 @@ declare
   actor uuid := auth.uid();
   changed text[];
 begin
-  if current_setting('caseflow.seeding', true) = 'on' then
+  if current_setting('caseflow.seeding', true) = 'on' and auth.uid() is null then
     return null;
   end if;
 
@@ -74,7 +74,7 @@ returns trigger
 language plpgsql security definer set search_path = public
 as $$
 begin
-  if current_setting('caseflow.seeding', true) = 'on' then
+  if current_setting('caseflow.seeding', true) = 'on' and auth.uid() is null then
     return null;
   end if;
   insert into public.activities (contact_id, actor_id, type, payload)
