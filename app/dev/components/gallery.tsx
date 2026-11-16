@@ -39,6 +39,7 @@ import { toast } from '@/components/ui/toaster';
 import { Tooltip } from '@/components/ui/tooltip';
 import { STATUSES, STATUS_LABEL, type Status } from '@/lib/contracts/enums';
 import { toDateOnly } from '@/lib/dates/date-only';
+import { formatDateShort } from '@/lib/dates/labels';
 
 const VIEWER_REASON = "Viewers can't edit contacts. Ask an admin.";
 
@@ -238,6 +239,47 @@ function DateDemo() {
         />
       </Field>
     </div>
+  );
+}
+
+function RescheduleDemo() {
+  const today = toDateOnly(new Date());
+  const [date, setDate] = useState<string | null>('2026-11-20');
+  return (
+    <>
+      <span className="text-13 tnum text-ink">
+        {date ? formatDateShort(date, today) : 'Not set'}
+      </span>
+      <DatePicker
+        value={date}
+        onChange={(next) => {
+          setDate(next);
+          toast.success(
+            next
+              ? `Follow-up set to ${formatDateShort(next, today)}`
+              : 'Follow-up cleared',
+          );
+        }}
+        min={today}
+        label="Reschedule follow-up"
+        trigger={
+          <Button variant="ghost" size="sm">
+            Reschedule
+          </Button>
+        }
+      />
+      <DatePicker
+        value={date}
+        onChange={() => {}}
+        label="Reschedule follow-up"
+        trigger={
+          <Button variant="ghost" size="sm" disabledReason={VIEWER_REASON}>
+            Reschedule
+          </Button>
+        }
+      />
+      <span className="text-ink-2 text-xs">Admin, then Viewer.</span>
+    </>
   );
 }
 
@@ -506,9 +548,6 @@ export function Gallery() {
             Move to…
             <ChevronDown aria-hidden className="size-3.5" />
           </Button>
-          <Button variant="ghost" size="sm" disabledReason={VIEWER_REASON}>
-            Reschedule
-          </Button>
         </Row>
         <Row label="Tooltip">
           <Tooltip content="Pipeline">
@@ -538,11 +577,14 @@ export function Gallery() {
         note="Empty, set and invalid. Days before today are disabled; Clear removes the date."
       >
         <DateDemo />
+        <Row label="Button trigger">
+          <RescheduleDemo />
+        </Row>
       </Section>
 
       <Section
         title="Toast"
-        note="Bottom centre, 6s, paused on hover or focus. Alt+T jumps to it."
+        note="Bottom centre, 6s, paused on hover or focus. An error with Retry stays until acted on or dismissed. Alt+T jumps to it."
       >
         <Row label="Success">
           <Button
