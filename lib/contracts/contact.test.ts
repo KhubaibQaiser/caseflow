@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { makeContactInputSchema } from './contact';
+import { ActivitySchema, makeContactInputSchema } from './contact';
 
 const valid = {
   fullName: 'Marisol Ortega',
@@ -75,5 +75,52 @@ describe('makeContactInputSchema', () => {
       followUpOn: null,
       referralSource: null,
     });
+  });
+
+  it('reports field and cross-field errors together', () => {
+    const r = schema.safeParse({
+      fullName: 'Ann',
+      email: '',
+      phone: '',
+      matterType: '',
+      followUpOn: '2000-01-01',
+    });
+    expect(r.success).toBe(false);
+    const paths = r.error!.issues.map((i) => i.path[0]);
+    expect(paths).toEqual(
+      expect.arrayContaining(['matterType', 'contactMethod', 'followUpOn']),
+    );
+  });
+
+  it('cross-field rules tolerate invalid field values', () => {
+    const r = schema.safeParse({
+      fullName: 'A',
+      email: 'not-an-email',
+      phone: '',
+      matterType: 'family',
+      followUpOn: 'tomorrow',
+    });
+    const paths = r.error!.issues.map((i) => i.path[0]);
+    expect(paths).toContain('email');
+    expect(paths).not.toContain('contactMethod');
+    expect(paths.filter((p) => p === 'followUpOn')).toHaveLength(1);
+    expect(schema.safeParse(null).success).toBe(false);
+  });
+});
+
+describe('ActivitySchema', () => {
+  it('accepts only spec activity types', () => {
+    const a = {
+      id: 'a1',
+      payload: {},
+      createdAt: '2026-11-16T03:00:00.000Z',
+      actor: { name: 'Khubaib' },
+    };
+    expect(ActivitySchema.safeParse({ ...a, type: 'note_added' }).success).toBe(
+      true,
+    );
+    expect(ActivitySchema.safeParse({ ...a, type: 'emailed' }).success).toBe(
+      false,
+    );
   });
 });
