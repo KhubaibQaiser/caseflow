@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Caseflow — Direction C mockup</title>
+<style>
+:root{--bg-secondary:#fff;--border:#e3e8e2;--text-secondary:#6b7280;--selected-border:#1f5c4a}
+body{margin:0;padding:24px;background:#e9ece8;font-family:system-ui}
+
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Bricolage+Grotesque:opsz,wght@12..96,600&family=Figtree:wght@400;500;600&display=swap');
+.dirs { display:flex; flex-direction:column; gap:2rem; }
+.dir { background:var(--bg-secondary); border:2px solid var(--border); border-radius:14px; overflow:hidden; cursor:pointer; transition:border-color .15s; }
+.dir.selected { border-color:var(--selected-border); }
+.dir-head { display:flex; gap:.75rem; align-items:baseline; padding:1rem 1.25rem; border-bottom:1px solid var(--border); }
+.dir-head b { font-size:1rem; white-space:nowrap; } .dir-head span { color:var(--text-secondary); font-size:.85rem; }
+.app { display:grid; grid-template-columns:184px 1fr; min-height:440px; font-size:13px; }
+.app nav { display:flex; flex-direction:column; gap:2px; padding:16px 12px; }
+.app nav .brand-x { margin:0 8px 18px; }
+.app nav a { padding:7px 10px; border-radius:6px; text-decoration:none; }
+.app nav .me { margin-top:auto; padding:8px 10px; font-size:12px; }
+.main { padding:20px 24px; display:flex; flex-direction:column; gap:14px; min-width:0; }
+.top { display:flex; align-items:center; justify-content:space-between; }
+.top h1 { margin:0; } .top .count { margin-left:8px; }
+.bar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.search { flex:0 1 300px; padding:7px 10px; }
+.chip { padding:3px 8px; display:inline-flex; gap:6px; align-items:center; font-size:12px; }
+table.t { width:100%; border-collapse:collapse; }
+table.t th { text-align:left; font-weight:500; font-size:11.5px; padding:8px 10px; white-space:nowrap; }
+table.t td { padding:9px 10px; white-space:nowrap; }
+.sub { font-size:12px; }
+.foot { display:flex; justify-content:space-between; align-items:center; font-size:12px; }
+.pages { display:flex; gap:4px; } .pages span { padding:3px 8px; border-radius:5px; }
+
+
+
+/* C — Intake Desk */
+.dC .app { background:#F4F6F3; color:#1E2A26; font-family:'Figtree',sans-serif; }
+.dC nav { background:#FFFFFF; border-right:1px solid #E3E8E2; }
+.dC .brand-x { font-family:'Bricolage Grotesque'; font-size:19px; font-weight:600; color:#1F5C4A; }
+.dC nav a { color:#56645E; } .dC nav a.on { background:#E6F0EB; color:#1F5C4A; font-weight:600; border-radius:8px; }
+.dC nav .me { color:#56645E; display:flex; gap:8px; align-items:center; }
+.dC h1 { font-family:'Bricolage Grotesque'; font-size:24px; font-weight:600; letter-spacing:-.01em; }
+.dC .count { background:#E6F0EB; color:#1F5C4A; border-radius:999px; padding:2px 9px; font-size:12px; font-weight:600; vertical-align:middle; }
+.dC .btn { background:#1F5C4A; color:#fff; padding:8px 14px; border-radius:10px; font-weight:600; }
+.dC .search { background:#fff; border:1px solid #DCE3DB; border-radius:10px; color:#8A968F; }
+.dC .fbtn { background:#fff; border:1px solid #DCE3DB; padding:6px 12px; border-radius:10px; font-weight:500; }
+.dC .fbtn em { font-style:normal; background:#1F5C4A; color:#fff; border-radius:999px; padding:0 7px; margin-left:4px; font-size:11px; }
+.dC .chip { background:#fff; border:1px solid #DCE3DB; border-radius:999px; padding:3px 10px; }
+.dC .clear { color:#1F5C4A; font-weight:600; font-size:12px; }
+.dC .card-t { background:#fff; border:1px solid #E3E8E2; border-radius:14px; overflow:hidden; }
+.dC th { color:#7A8781; background:#FAFBF9; border-bottom:1px solid #E3E8E2; }
+.dC td { border-bottom:1px solid #EEF1ED; padding:10px; }
+.dC .who { display:flex; gap:10px; align-items:center; }
+.dC .av { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-size:11px; font-weight:600; background:#E6F0EB; color:#1F5C4A; }
+.dC .nm { font-weight:600; } .dC .sub { color:#7A8781; }
+.dC .st { border-radius:999px; padding:2px 9px; font-size:11.5px; font-weight:600; }
+.dC .st.lead { background:#FFF3DC; color:#8A5A00; } .dC .st.active { background:#DFF3E8; color:#1F6B47; } .dC .st.closed { background:#EDEFEE; color:#5E6B65; }
+.dC .od { background:#FDE7E4; color:#A33A2C; border-radius:999px; padding:2px 8px; font-size:11.5px; font-weight:600; }
+.dC .foot { color:#7A8781; } .dC .pages .on { background:#1F5C4A; color:#fff; }
+
+</style></head><body>
+<div class="dir dC" data-choice="c" >
+  <div class="dir-head"><b>C · Intake Desk</b><span>Soft sage, rounded pills, initials avatars. Warm and people-first: these are clients in a difficult moment, not leads in a funnel. Friendlier, with a little less density.</span></div>
+  <div class="app">
+    <nav><div class="brand-x">Caseflow</div><a class="on">Contacts</a><a>Pipeline</a><div class="me"><span class="av">UT</span>user@test.com</div></nav>
+    <div class="main">
+      <div class="top"><div><h1 style="display:inline">Contacts</h1> <span class="count">2,437</span></div><span class="btn">+ New contact</span></div>
+      <div class="bar"><span class="search">Search name, email, phone…</span><span class="fbtn">Filters<em>2</em></span>
+        <span class="chip">Lead, Active ✕</span><span class="chip">Overdue ✕</span><span class="clear">Clear all</span></div>
+      <div class="card-t"><table class="t">
+        <tr><th>Client</th><th>Matter</th><th>Status</th><th>Follow-up</th><th>Source</th></tr>
+        <tr><td><div class="who"><span class="av">MO</span><div><div class="nm">Marisol Ortega</div><div class="sub">(512) 555-0148</div></div></div></td><td>Personal injury</td><td><span class="st lead">Lead</span></td><td><span class="od">2 days overdue</span></td><td class="sub">Google search</td></tr>
+        <tr><td><div class="who"><span class="av">KO</span><div><div class="nm">Kevin O'Donnell</div><div class="sub">kodonnell@fastmail.com</div></div></div></td><td>Criminal defense</td><td><span class="st lead">Lead</span></td><td><span class="od">5 days overdue</span></td><td class="sub">Bar referral</td></tr>
+        <tr><td><div class="who"><span class="av">DK</span><div><div class="nm">Daniel Kessler</div><div class="sub">dkessler@proton.me</div></div></div></td><td>Employment</td><td><span class="st active">Active</span></td><td>Today</td><td class="sub">Past client</td></tr>
+        <tr><td><div class="who"><span class="av">AB</span><div><div class="nm">Aisha Bello</div><div class="sub">(737) 555-0192</div></div></div></td><td>Family</td><td><span class="st active">Active</span></td><td>Fri, Nov 20</td><td class="sub">Attorney referral</td></tr>
+      </table></div>
+      <div class="foot"><span>Showing 1–250 of 2,437 · Rows 250 ▾</span><div class="pages"><span>‹</span><span class="on">1</span><span>2</span><span>3</span><span>…</span><span>10</span><span>›</span></div></div>
+    </div>
+  </div>
+</div>
+
+
+</body></html>

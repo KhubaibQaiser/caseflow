@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Caseflow · Screens</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#F4F6F3; --surface:#FFFFFF; --panel:#FAFBF9; --line:#E3E8E2; --line-soft:#EEF1ED;
+  --ink:#1E2A26; --ink-2:#56645E; --accent:#1F5C4A; --accent-soft:#E6F0EB;
+  --overdue-bg:#FCE8E4; --overdue:#9E3426; --today-bg:#FFF1D6; --today:#7A4B00;
+  --r-ctl:6px; --r-surface:10px;
+  font-family:'Figtree',system-ui,sans-serif; color:var(--ink);
+}
+*{box-sizing:border-box}
+::selection{background:#CFE3D9;color:var(--ink)}
+body{margin:0;padding:28px;background:#E4E8E3;font-size:14px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.caption{font-size:13px;color:#3D4A44;max-width:1440px}
+.caption b{color:var(--ink)}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- desktop frame ---------- */
+.desk{width:1440px;height:820px;background:var(--canvas);border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(30,42,38,.12);display:flex;flex-direction:column}
+.topbar{height:52px;flex:none;display:flex;align-items:center;gap:28px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.mark{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;letter-spacing:-.01em;color:var(--accent)}
+.mark i{width:18px;height:18px;border-radius:5px;background:var(--accent);display:block;position:relative}
+.mark i::after{content:'';position:absolute;inset:5px 4px 5px 4px;border-left:2px solid #fff;border-bottom:2px solid #fff;border-radius:0 0 0 3px}
+.tabs{display:flex;gap:4px;height:100%}
+.tabs a{display:flex;align-items:center;padding:0 12px;color:var(--ink-2);text-decoration:none;font-weight:500;border-bottom:2px solid transparent}
+.tabs a.on{color:var(--ink);border-bottom-color:var(--accent)}
+.user{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px}
+.body{flex:1;display:flex;min-height:0}
+
+.filters{width:252px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:16px;overflow:hidden;display:flex;flex-direction:column;gap:18px}
+.fhead{display:flex;align-items:center;justify-content:space-between}
+.fhead h2{margin:0;font-size:14px;font-weight:600}
+.fhead h2 span{color:var(--ink-2);font-weight:500}
+.link{color:var(--accent);font-weight:600;font-size:13px;text-decoration:none}
+.group h3{margin:0 0 8px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.opt{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.opt .n{margin-left:auto;color:var(--ink-2)}
+.box{width:16px;height:16px;border:1.5px solid #9AA8A1;border-radius:4px;flex:none;display:grid;place-items:center}
+.box.on{background:var(--accent);border-color:var(--accent)}
+.box.on::after{content:'';width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.radio{width:16px;height:16px;border:1.5px solid #9AA8A1;border-radius:50%;flex:none}
+.radio.on{border:5px solid var(--accent)}
+.more{font-size:13px;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line)}
+
+.main{flex:1;min-width:0;padding:18px 24px 14px;display:flex;flex-direction:column;gap:12px}
+.head{display:flex;align-items:baseline;gap:10px}
+.head h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.head .of{color:var(--ink-2);font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:var(--r-ctl);font:inherit;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff;margin-left:auto;align-self:center}
+.btn.ghost{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;height:34px;width:320px;padding:0 10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-ctl);color:var(--ink-2);font-size:13px}
+.search.focus{border-color:var(--accent);box-shadow:0 0 0 3px #CFE3D9}
+.badge{background:var(--accent);color:#fff;border-radius:999px;padding:0 7px;font-size:11px;line-height:18px}
+.seg{display:inline-flex;background:#E9EEEA;border-radius:8px;padding:3px;gap:2px}
+.seg a{padding:5px 10px;border-radius:5px;font-size:13px;font-weight:500;color:var(--ink-2);text-decoration:none;display:flex;gap:6px}
+.seg a.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(30,42,38,.12)}
+.seg .c{color:var(--ink-2)}
+.seg .c.hot{color:var(--overdue);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;font-size:12.5px}
+.chip b{font-weight:600}
+.chip button{width:24px;height:24px;border:0;background:none;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.chip button svg{width:14px;height:14px}
+
+.tablewrap{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:0 10px;height:34px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.sorted{color:var(--ink)}
+th.sorted svg{width:13px;height:13px;vertical-align:-2px;margin-left:3px;color:var(--accent)}
+td{height:36px;padding:0 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+tr:hover td{background:#F7F9F7}
+td.name{font-weight:600}
+td.muted{color:var(--ink-2)}
+.st{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;line-height:20px}
+.st.lead{border:1px solid #C3CEC8;color:#3D4A44;padding:0 8px}
+.st.active{background:var(--accent-soft);color:var(--accent)}
+.st.closed{background:#ECEFED;color:var(--ink-2)}
+.fu{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;line-height:20px}
+.fu.over{background:var(--overdue-bg);color:var(--overdue)}
+.fu.today{background:var(--today-bg);color:var(--today)}
+.fu.later{padding:0;font-weight:400;color:var(--ink-2)}
+.foot{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--ink-2)}
+.pp{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink)}
+.pager{margin-left:auto;display:flex;gap:2px;align-items:center}
+.pager a{min-width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r-ctl);color:var(--ink);text-decoration:none}
+.pager a.on{background:var(--accent);color:#fff;font-weight:600}
+.pager a.dim{color:#A9B4AE}
+
+/* ---------- mobile frame ---------- */
+.phone{width:390px;height:844px;background:var(--canvas);border-radius:28px;overflow:hidden;box-shadow:0 8px 30px rgba(30,42,38,.12);display:flex;flex-direction:column;border:8px solid #1E2A26}
+.mtop{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.mmain{flex:1;padding:14px 16px 0;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.mmain .head h1{font-size:20px}
+.mmain .search{width:100%;height:40px}
+.mrow{display:flex;gap:8px}
+.mrow .btn{height:36px;flex:1;justify-content:center}
+.mscroll{display:flex;gap:6px;overflow:hidden}
+.mscroll .seg a{white-space:nowrap}
+.cards{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);overflow:hidden}
+.card{padding:10px 12px;border-bottom:1px solid var(--line-soft);display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:13px}
+.card .nm{font-weight:600;font-size:14px}
+.card .meta{color:var(--ink-2);grid-column:1/-1;display:flex;gap:8px;align-items:center}
+.mtabs{height:60px;display:flex;background:var(--surface);border-top:1px solid var(--line)}
+.mtabs a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:600;color:var(--ink-2);text-decoration:none}
+.mtabs a.on{color:var(--accent)}
+.mtabs svg{width:20px;height:20px}
+.row2{display:flex;gap:20px;align-items:flex-start}
+
+.desk{flex-direction:row}
+.side{width:196px;flex:none;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 10px}
+.side .mark{padding:4px 8px 18px}
+.side a.nav{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:var(--r-ctl);color:var(--ink-2);text-decoration:none;font-weight:500}
+.side a.nav.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.side a.nav .n{margin-left:auto;font-size:12px;color:var(--ink-2);font-weight:500}
+.side .acct{margin-top:auto;border-top:1px solid var(--line);padding:12px 10px 2px;font-size:13px;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between}
+.filters{border-right:0;border-left:1px solid var(--line);width:256px}
+.fhead .act{display:flex;align-items:center;gap:10px}
+.iconbtn{width:28px;height:28px;border:0;background:none;border-radius:var(--r-ctl);display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.iconbtn:hover{background:#E9EEEA}
+.btn.ghost.pressed{background:var(--accent-soft);border-color:#B9D2C6;color:var(--accent)}
+.phone{position:relative}
+.sheetwrap{position:static;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.scrim{position:absolute;inset:0;z-index:1;background:rgba(30,42,38,.38)}
+.sheet{position:absolute;z-index:2;top:0;right:0;bottom:0;width:88%;background:var(--panel);box-shadow:-8px 0 24px rgba(30,42,38,.18);display:flex;flex-direction:column}
+.sheet .in{flex:1;padding:16px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.sheet .sfoot{padding:12px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.sheet .sfoot .btn{width:100%;justify-content:center;height:40px;margin:0}
+td.em{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.desk{position:relative}
+.desk > .filters{position:absolute;top:111px;right:0;bottom:0;z-index:5;padding:0;gap:0;border-top:1px solid var(--line);border-top-left-radius:var(--r-surface);box-shadow:-10px 8px 28px rgba(30,42,38,.14)}
+.filters .fhead,.sheet .fhead{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.fbody{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:18px}
+.ffoot{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.ffoot .btn{flex:1;justify-content:center;margin:0;height:36px}
+.ffoot .btn.primary{flex:1.4}
+.fbody::-webkit-scrollbar{width:8px}.fbody::-webkit-scrollbar-thumb{background:#C9D3CD;border-radius:8px}
+.sheet .in{padding:0;gap:0}
+.dirty{font-size:12px;color:var(--ink-2);padding:0 16px 10px;background:var(--surface)}
+
+.main.scroll{overflow:hidden}
+.crumbs{font-size:13px;color:var(--ink-2)} .crumbs a{color:var(--ink-2)} .crumbs span{margin:0 4px}
+.dhead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.dhead h1{margin:0 0 6px;font-size:24px;font-weight:600;letter-spacing:-.01em}
+.dmeta{display:flex;gap:8px;align-items:center;color:var(--ink-2);font-size:13px;flex-wrap:wrap}
+.dact{display:flex;gap:8px;align-items:center}
+.dgrid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;min-height:0}
+.dcol{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:14px 16px}
+.panel h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--ink)}
+.panel h2 .cnt{color:var(--ink-2);font-weight:500;margin-left:4px}
+.furow{display:flex;align-items:center;gap:12px;font-size:13px}
+.furow .btn{margin-left:auto}
+.btn.sm{height:30px;padding:0 10px;font-size:12.5px}
+.btn[disabled]{opacity:.45}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;margin:0;font-size:13px}
+.kv dt{color:var(--ink-2)} .kv dd{margin:0}
+.kv .prose{line-height:1.55;max-width:68ch}
+.composer{border:1px solid var(--line);border-radius:var(--r-ctl);margin-bottom:12px}
+.composer .ta{min-height:56px;padding:10px 12px;color:var(--ink-2);font-size:13px}
+.composer .crow{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 8px 12px;border-top:1px solid var(--line-soft)}
+.hint{font-size:12px;color:var(--ink-2)}
+.note{padding:10px 0;border-top:1px solid var(--line-soft)} .note p{margin:4px 0 0;font-size:13px;line-height:1.55}
+.nmeta{font-size:12px;color:var(--ink-2)}
+.timeline{list-style:none;margin:0;padding:0;font-size:13px}
+.timeline li{display:flex;gap:10px;padding:0 0 14px;position:relative}
+.timeline li::before{content:'';position:absolute;left:4px;top:12px;bottom:0;width:1px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline .dot{width:9px;height:9px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);margin-top:4px;flex:none}
+.timeline .dot.first{background:var(--accent)}
+.timeline span{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}
+.formpage{max-width:none}
+.fh1{margin:0;font-size:24px;font-weight:600}
+.esum{display:flex;gap:10px;align-items:flex-start;background:var(--overdue-bg);color:var(--overdue);border-radius:var(--r-ctl);padding:10px 12px;font-size:13px;max-width:720px}
+.esum a{color:var(--overdue);text-decoration:underline;text-underline-offset:2px}
+.form{max-width:720px;display:flex;flex-direction:column;gap:14px}
+fieldset{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-surface);padding:12px 16px 16px;margin:0;display:flex;flex-direction:column;gap:12px}
+legend{font-size:13px;font-weight:600;padding:0 4px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:600}
+.field label i{font-style:normal;font-weight:500;color:var(--ink-2);margin-left:6px;font-size:12px}
+.in{height:36px;border:1px solid #C9D3CD;border-radius:var(--r-ctl);padding:0 10px;display:flex;align-items:center;justify-content:space-between;color:var(--ink-2);font-size:13px;background:var(--surface)}
+.in.filled{color:var(--ink)}
+.in.ta2{height:72px;align-items:flex-start;padding-top:9px}
+.err .in,.pair.err .in{border-color:var(--overdue);box-shadow:0 0 0 3px #F8D7D1}
+.field.err .in{border-color:var(--overdue);box-shadow:0 0 0 3px #F8D7D1}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pair .emsg{grid-column:1/-1}
+.emsg{margin:0;display:flex;gap:6px;align-items:center;color:var(--overdue);font-size:12.5px;font-weight:500}
+.emsg svg{width:14px;height:14px}
+.help{margin:0;font-size:12px;color:var(--ink-2)}
+.row2f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.segf{display:inline-flex;background:#E9EEEA;border-radius:8px;padding:3px;gap:2px;align-self:flex-start}
+.segf span{padding:6px 14px;border-radius:5px;font-size:13px;font-weight:500;color:var(--ink-2)}
+.segf .on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(30,42,38,.12)}
+.ffbar{display:flex;justify-content:flex-end;gap:8px}
+.ffbar .btn.primary{margin-left:0}
+.board{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.colm{background:#EBEFEB;border-radius:var(--r-surface);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}
+.colm header{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.colm h2{margin:0;font-size:13px;font-weight:600} .colm header span{color:var(--ink-2);font-size:13px}
+.kcards{display:flex;flex-direction:column;gap:8px}
+.kc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;position:relative}
+.kt{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px}
+.km{font-size:12.5px;color:var(--ink-2)}
+.kmove{align-self:flex-start;margin-top:4px;display:inline-flex;gap:4px;align-items:center;height:26px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);font:inherit;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer}
+.kmove svg{width:14px;height:14px}
+.kmove.on{border-color:var(--accent);box-shadow:0 0 0 3px #CFE3D9}
+.menu{position:absolute;left:12px;top:100%;margin-top:-6px;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 24px rgba(30,42,38,.16);padding:6px;min-width:180px}
+.mlabel{font-size:11.5px;color:var(--ink-2);padding:4px 8px}
+.mi{padding:6px 8px;border-radius:5px} .mi:first-of-type{background:#F1F5F2}
+.more2{margin-top:auto;height:32px;border:1px dashed #C3CEC8;border-radius:var(--r-ctl);background:transparent;font:inherit;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+.main{position:relative}
+.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 12px 10px 14px;font-size:13px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 24px rgba(30,42,38,.25)}
+.toast .link{background:none;border:0;color:#9FD3BC;font:inherit;font-weight:600;cursor:pointer}
+.seg.full{display:flex} .seg.full a{flex:1;justify-content:center}
+.mh1{margin:0 0 6px;font-size:22px;font-weight:600}
+.mact{display:flex;gap:8px} .mact .btn{flex:1;justify-content:center;height:40px}
+.mmain.scroll{overflow:hidden}
+.states{display:flex;flex-direction:column;gap:14px;width:360px}
+.state{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:14px;min-height:200px}
+.slabel{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:10px}
+.sk{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.sk i{display:block;height:10px;border-radius:5px;background:linear-gradient(90deg,#ECF0ED,#F5F7F5,#ECF0ED)}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px;font-size:13px}
+.empty svg{width:22px;height:22px;color:var(--ink-2)} .empty p{margin:0 0 6px;color:var(--ink-2)}
+</style></head><body>
+<p class="caption"><b>Contact detail · desktop.</b> Header with status and quick actions (Move to…, Edit). Details on the left with the follow-up shown first, then notes with an inline composer. The activity timeline on the right is written by the database, so it can't drift from what actually happened.</p>
+<div class="desk">
+  <nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div>
+    <a class="nav on" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav" href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a>
+    <div class="acct">user@test.com <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></nav>
+  <main class="main scroll">
+    <div class="crumbs"><a href="#">Contacts</a> <span>/</span> Marisol Ortega</div>
+    <div class="dhead">
+      <div><h1>Marisol Ortega</h1>
+        <div class="dmeta"><span class="st lead">Lead</span><span>Personal injury</span><span>·</span><span class="tnum">Enquired Nov 12 · waiting 4d</span></div></div>
+      <div class="dact"><button class="btn ghost">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button><button class="btn ghost"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button><button class="iconbtn" aria-label="More actions"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></div>
+    </div>
+    <div class="dgrid">
+      <div class="dcol">
+        <section class="panel">
+          <h2>Follow-up</h2>
+          <div class="furow"><span class="fu over">Overdue · 2d</span><span class="tnum">Due Sat, Nov 14</span><button class="btn ghost sm">Reschedule</button></div>
+        </section>
+        <section class="panel">
+          <h2>Details</h2>
+          <dl class="kv tnum">
+            <dt>Phone</dt><dd>(512) 555-0148</dd>
+            <dt>Email</dt><dd>m.ortega@gmail.com</dd>
+            <dt>Matter type</dt><dd>Personal injury</dd>
+            <dt>Referral source</dt><dd>Google search</dd>
+            <dt>Matter summary</dt><dd class="prose">Rear-ended on I-35 northbound on Nov 9. Taken to St. David's ER, released same day. Other driver's insurer has already called her twice. Wants to know if she should give a recorded statement.</dd>
+          </dl>
+        </section>
+        <section class="panel">
+          <h2>Notes <span class="cnt">2</span></h2>
+          <div class="composer"><div class="ta">Add a note…</div><div class="crow"><span class="hint">Notes are visible to the whole intake team.</span><button class="btn primary sm" disabled>Save note</button></div></div>
+          <article class="note"><div class="nmeta tnum">Nov 13, 4:12 PM</div><p>Left voicemail. Asked her not to speak to the other insurer before we call back.</p></article>
+          <article class="note"><div class="nmeta tnum">Nov 12, 10:03 AM</div><p>Web enquiry. Prefers calls after 5pm. Has photos of both vehicles and the police report number.</p></article>
+        </section>
+      </div>
+      <aside class="panel tl">
+        <h2>Activity</h2>
+        <ol class="timeline tnum">
+          <li><span class="dot"></span><div><b>Note added</b><span>Nov 13, 4:12 PM</span></div></li>
+          <li><span class="dot"></span><div><b>Follow-up set</b> to Sat, Nov 14<span>Nov 12, 10:05 AM</span></div></li>
+          <li><span class="dot"></span><div><b>Note added</b><span>Nov 12, 10:03 AM</span></div></li>
+          <li><span class="dot first"></span><div><b>Contact created</b> as Lead<span>Nov 12, 9:58 AM</span></div></li>
+        </ol>
+      </aside>
+    </div>
+  </main>
+</div>
+
+<p class="caption"><b>New contact (same form for Edit) · desktop, after a failed submit.</b> A full page rather than a modal: it has its own URL, the back button works, and it fits on mobile. An error summary appears at the top, and focus moves to the first invalid field. The rule that needs an email or a phone is shown on the pair of fields together.</p>
+<div class="desk">
+  <nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div>
+    <a class="nav on" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav" href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a>
+    <div class="acct">user@test.com <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></nav>
+  <main class="main scroll formpage">
+    <div class="crumbs"><a href="#">Contacts</a> <span>/</span> New contact</div>
+    <h1 class="fh1">New contact</h1>
+    <div class="esum" role="alert"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg><div><b>2 fields need attention.</b> <a href="#">Full name</a> · <a href="#">Email or phone</a></div></div>
+    <form class="form">
+      <fieldset><legend>Person</legend>
+        <div class="field err"><label>Full name <i>Required</i></label><div class="in">e.g. Marisol Ortega</div><p class="emsg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Enter a full name.</p></div>
+        <div class="pair err">
+          <div class="field"><label>Email</label><div class="in">name@example.com</div></div>
+          <div class="field"><label>Phone</label><div class="in">(512) 555-0100</div></div>
+          <p class="emsg"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Add an email or a phone number. Intake can't follow up without one.</p>
+        </div>
+      </fieldset>
+      <fieldset><legend>Matter</legend>
+        <div class="row2f">
+          <div class="field"><label>Matter type <i>Required</i></label><div class="in sel filled">Personal injury <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div>
+          <div class="field"><label>Referral source</label><div class="in sel">Select a source <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></div>
+        </div>
+        <div class="field"><label>Matter summary</label><div class="in ta2">What happened, key dates, what they want from the firm.</div><p class="help tnum">0 / 1,000</p></div>
+      </fieldset>
+      <fieldset><legend>Intake</legend>
+        <div class="row2f">
+          <div class="field"><label>Status</label><div class="segf"><span class="on">Lead</span><span>Active</span><span>Closed</span></div></div>
+          <div class="field"><label>Next follow-up</label><div class="in sel tnum">Pick a date <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></div><p class="help">Today or later.</p></div>
+        </div>
+      </fieldset>
+      <div class="ffbar"><button class="btn ghost">Cancel</button><button class="btn primary">Save contact</button></div>
+    </form>
+  </main>
+</div>
+
+<p class="caption"><b>Pipeline · desktop.</b> One column per status, each sorted by urgency, with its count in the header. With thousands of contacts, each column loads 50 cards and has its own "Show 50 more". Moving a card uses the <b>Move to…</b> menu (shown open), and a toast offers Undo. Search and Filters are shared with Contacts.</p>
+<div class="desk">
+  <nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div>
+    <a class="nav" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav on" href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a>
+    <div class="acct">user@test.com <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></div></nav>
+  <main class="main">
+    <div class="head"><h1>Pipeline</h1><span class="of tnum">2,437 contacts</span><button class="btn primary"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div>
+    <div class="toolbar"><div class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button></div>
+    <div class="board">
+      <section class="colm"><header><h2>Lead</h2><span class="tnum">642</span></header>
+        <div class="kcards tnum">
+          <article class="kc"><div class="kt"><b>Kevin O'Donnell</b><span class="fu over">Overdue · 5d</span></div><div class="km">Criminal defense · (512) 555-0131</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc open"><div class="kt"><b>Marisol Ortega</b><span class="fu over">Overdue · 2d</span></div><div class="km">Personal injury · (512) 555-0148</div><button class="kmove on" aria-expanded="true">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="menu" role="menu"><div class="mlabel">Move Marisol to</div><div class="mi" role="menuitem"><span class="st active">Active</span></div><div class="mi" role="menuitem"><span class="st closed">Closed</span></div></div></article>
+          <article class="kc"><div class="kt"><b>Hana Yoshida</b><span class="fu today">Today</span></div><div class="km">Immigration · (737) 555-0166</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Priya Raman</b><span class="fu later">Mon, Nov 23</span></div><div class="km">Immigration · (512) 555-0177</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Grace Whitfield</b><span class="fu later">Wed, Nov 25</span></div><div class="km">Estate planning · (512) 555-0120</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        </div><button class="more2 tnum">Show 50 more · 592 left</button></section>
+      <section class="colm"><header><h2>Active</h2><span class="tnum">642</span></header>
+        <div class="kcards tnum">
+          <article class="kc"><div class="kt"><b>Daniel Kessler</b><span class="fu today">Today</span></div><div class="km">Employment · (512) 555-0103</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Aisha Bello</b><span class="fu later">Fri, Nov 20</span></div><div class="km">Family · (737) 555-0192</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Luis Carrillo</b><span class="fu later">Tue, Nov 24</span></div><div class="km">Personal injury · No phone</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Omar Haddad</b><span class="fu later">Mon, Nov 30</span></div><div class="km">Employment · (512) 555-0185</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        </div><button class="more2 tnum">Show 50 more · 592 left</button></section>
+      <section class="colm"><header><h2>Closed</h2><span class="tnum">1,153</span></header>
+        <div class="kcards tnum">
+          <article class="kc"><div class="kt"><b>Thomas Whitfield</b><span class="fu later">Not set</span></div><div class="km">Estate planning · (512) 555-0120</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Nadia Petrov</b><span class="fu later">Not set</span></div><div class="km">Immigration · (737) 555-0101</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Carlos Mendes</b><span class="fu later">Not set</span></div><div class="km">Employment · (512) 555-0144</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        </div><button class="more2 tnum">Show 50 more · 1,103 left</button></section>
+    </div>
+    <div class="toast" role="status">Marisol Ortega moved to <b>Active</b><button class="link">Undo</button></div>
+  </main>
+</div>
+
+<p class="caption"><b>Mobile · Pipeline, contact detail, and the three states.</b> On mobile the board shows one status at a time, chosen with tabs that carry counts. Contact detail stacks its sections. The states row shows a skeleton while loading, a filtered empty state that offers a way out, and an error that explains the problem and offers Retry.</p>
+<div class="row2">
+  <div class="phone"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><button class="btn primary" style="margin:0;height:32px;padding:0 10px"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New</button></header>
+    <div class="mmain"><div class="head"><h1>Pipeline</h1></div>
+      <nav class="seg full"><a class="on" href="#">Lead <span class="c tnum">642</span></a><a href="#">Active <span class="c tnum">642</span></a><a href="#">Closed <span class="c tnum">1,153</span></a></nav>
+      <div class="kcards tnum">
+        <article class="kc"><div class="kt"><b>Kevin O'Donnell</b><span class="fu over">Overdue · 5d</span></div><div class="km">Criminal defense · (512) 555-0131</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        <article class="kc"><div class="kt"><b>Marisol Ortega</b><span class="fu over">Overdue · 2d</span></div><div class="km">Personal injury · (512) 555-0148</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        <article class="kc"><div class="kt"><b>Hana Yoshida</b><span class="fu today">Today</span></div><div class="km">Immigration · (737) 555-0166</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        <article class="kc"><div class="kt"><b>Priya Raman</b><span class="fu later">Mon, Nov 23</span></div><div class="km">Immigration · (512) 555-0177</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        <article class="kc"><div class="kt"><b>Grace Whitfield</b><span class="fu later">Wed, Nov 25</span></div><div class="km">Estate planning · (512) 555-0120</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+      </div></div>
+    <nav class="mtabs"><a class="" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="on" href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div>
+
+  <div class="phone"><header class="mtop"><button class="iconbtn" aria-label="Back"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg></button><b style="font-size:15px">Contact</b><button class="iconbtn" aria-label="Edit"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button></header>
+    <div class="mmain scroll"><div><h1 class="mh1">Marisol Ortega</h1><div class="dmeta"><span class="st lead">Lead</span><span>Personal injury</span></div></div>
+      <div class="mact"><a class="btn primary" style="margin:0"><svg class="i" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg>Call</a><button class="btn ghost">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></div>
+      <section class="panel"><h2>Follow-up</h2><div class="furow"><span class="fu over">Overdue · 2d</span><span class="tnum">Sat, Nov 14</span></div></section>
+      <section class="panel"><h2>Details</h2><dl class="kv tnum"><dt>Phone</dt><dd>(512) 555-0148</dd><dt>Email</dt><dd>m.ortega@gmail.com</dd><dt>Source</dt><dd>Google search</dd></dl></section>
+      <section class="panel"><h2>Notes <span class="cnt">2</span></h2><div class="composer"><div class="ta">Add a note…</div></div></section>
+    </div>
+    <nav class="mtabs"><a class="on" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a href="#"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div>
+
+  <div class="states">
+    <div class="state"><div class="slabel">Loading</div>
+      <div class="sk"><i style="width:40%"></i><i style="width:70%"></i></div><div class="sk"><i style="width:55%"></i><i style="width:60%"></i></div><div class="sk"><i style="width:35%"></i><i style="width:75%"></i></div><div class="sk"><i style="width:50%"></i><i style="width:65%"></i></div></div>
+    <div class="state"><div class="slabel">Empty (filtered)</div>
+      <div class="empty"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><b>No contacts match these filters.</b><p>Status: Closed · Follow-up: Overdue</p><button class="btn ghost">Clear filters</button></div></div>
+    <div class="state"><div class="slabel">Error</div>
+      <div class="empty"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg><b>Contacts didn't load.</b><p>The server didn't respond. Your filters are kept.</p><button class="btn primary" style="margin:0">Retry</button></div></div>
+  </div>
+</div>
+
+</body></html>

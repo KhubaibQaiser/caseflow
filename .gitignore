@@ -1,0 +1,8 @@
+.superpowers/
+.impeccable/critique/
+node_modules/
+.next/
+.env*
+!.env.example
+.DS_Store
+.worktrees/
