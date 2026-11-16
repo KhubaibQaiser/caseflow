@@ -71,3 +71,28 @@ describe('TimezoneSync', () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('TimezoneSync double events', () => {
+  it('refreshes once when visibilitychange and focus both fire on returning to the tab', () => {
+    setCookie('America%2FChicago');
+    browserZone('America/Chicago');
+    render(<TimezoneSync />);
+
+    browserZone('Pacific/Auckland');
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('focus'));
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('refreshes once when both fire and the zone is unchanged', () => {
+    setCookie('America%2FChicago');
+    browserZone('America/Chicago');
+    render(<TimezoneSync />);
+
+    document.dispatchEvent(new Event('visibilitychange'));
+    window.dispatchEvent(new Event('focus'));
+
+    expect(refresh).toHaveBeenCalledTimes(1);
+  });
+});
