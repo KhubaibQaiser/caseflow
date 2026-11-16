@@ -7,7 +7,9 @@ begin
   if tg_op = 'INSERT' then
     -- auth.uid() wins; seed path has no uid so the supplied value stays.
     new.created_by := coalesce(auth.uid(), new.created_by);
-    new.created_at := now();
+    if not (current_setting('caseflow.seeding', true) = 'on' and auth.uid() is null) then
+      new.created_at := now();
+    end if;
   else
     new.created_by := old.created_by;
     new.created_at := old.created_at;
@@ -102,8 +104,8 @@ declare
   new_id uuid;
 begin
   perform set_config('caseflow.seeding', 'on', true);
-  insert into public.contacts (full_name, email, phone, matter_type, referral_source, status, follow_up_on, summary, created_by)
-  select r.full_name, r.email, r.phone, r.matter_type, r.referral_source, coalesce(r.status, 'lead'), r.follow_up_on, r.summary, r.created_by
+  insert into public.contacts (full_name, email, phone, matter_type, referral_source, status, follow_up_on, summary, created_by, created_at)
+  select r.full_name, r.email, r.phone, r.matter_type, r.referral_source, coalesce(r.status, 'lead'), r.follow_up_on, r.summary, r.created_by, coalesce(r.created_at, now())
   from jsonb_populate_record(null::public.contacts, c) r
   returning id into new_id;
   return new_id;
