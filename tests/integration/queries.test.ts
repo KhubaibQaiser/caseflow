@@ -35,7 +35,9 @@ type Facets = {
   };
 };
 
-const today = () => todayIn('UTC');
+// The DB's own UTC date, so a midnight rollover between test client and DB cannot skew offsets.
+let dbToday = todayIn('UTC');
+const today = () => dbToday;
 const off = (n: number) => addDaysDateOnly(today(), n);
 const pad = (n: number) => String(n).padStart(2, '0');
 
@@ -93,6 +95,16 @@ const facets = (client: SupabaseClient, f: Filters = {}, tz = 'UTC') =>
 let admin: SupabaseClient;
 beforeEach(async () => {
   await resetData();
+  const svc = serviceClient();
+  const probe = await seed({ full_name: 'Clock probe' });
+  const { data, error } = await svc
+    .from('contacts')
+    .select('created_at')
+    .eq('id', probe)
+    .single();
+  if (error) throw new Error(error.message);
+  dbToday = String(data.created_at).slice(0, 10);
+  await svc.from('contacts').delete().eq('id', probe);
   admin = (await adminClient()).client;
 });
 
@@ -298,6 +310,53 @@ describe('search_contacts and contact_facets', () => {
     expect(fc.facets.status).toEqual({ lead: 1, active: 1, closed: 0 });
     expect(fc.facets.matterType.family).toBe(1);
     expect(fc.facets.matterType.immigration).toBe(1);
+  });
+
+  it('followUp facet skips its own group but applies the others', async () => {
+    await seed({ full_name: 'Late', follow_up_on: off(-2) });
+    await seed({ full_name: 'Now', follow_up_on: off(0) });
+    await seed({ full_name: 'Never' });
+    const fc = await facets(admin, { followUp: 'overdue' });
+    expect(fc.matching).toBe(1);
+    expect(fc.quickViews.all).toBe(3);
+    expect(fc.facets.followUp).toEqual({
+      overdue: 1,
+      dueToday: 1,
+      next7Days: 1,
+      none: 1,
+    });
+  });
+
+  it('referralSource facet skips its own group but applies the others', async () => {
+    await seed({ full_name: 'Gus Lee', referral_source: 'google_search' });
+    await seed({ full_name: 'Pat Roe', referral_source: 'past_client' });
+    await seed({
+      full_name: 'Pat Closed',
+      referral_source: 'past_client',
+      status: 'closed',
+    });
+    const fc = await facets(admin, {
+      referralSource: ['google_search'],
+      status: ['lead'],
+    });
+    expect(fc.matching).toBe(1);
+    expect(fc.facets.referralSource.google_search).toBe(1);
+    expect(fc.facets.referralSource.past_client).toBe(1);
+  });
+
+  it('breaks ties by updated_at desc, then id', async () => {
+    const t = '2026-01-01T00:00:00Z';
+    const ids = [
+      await seed({ full_name: 'Same 1', updated_at: t }),
+      await seed({ full_name: 'Same 2', updated_at: t }),
+      await seed({ full_name: 'Same 3', updated_at: t }),
+    ].sort();
+    const newer = await seed({
+      full_name: 'Newer',
+      updated_at: '2026-02-01T00:00:00Z',
+    });
+    const got = (await search(admin, {})).rows.map((r) => r.id);
+    expect(got).toEqual([newer, ...ids]);
   });
 
   it('excludes soft-deleted contacts everywhere', async () => {
