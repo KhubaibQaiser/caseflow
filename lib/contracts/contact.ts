@@ -52,7 +52,7 @@ export function makeContactInputSchema(opts: {
         status: z.enum(STATUSES).default('lead'),
         followUpOn: z.preprocess(
           blankToNull,
-          z.string().regex(DATE, 'Use YYYY-MM-DD.').nullable(),
+          z.iso.date('Use YYYY-MM-DD.').nullable(),
         ),
         summary: z.preprocess(
           blankToNull,

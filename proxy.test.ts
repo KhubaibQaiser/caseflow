@@ -11,14 +11,21 @@ vi.mock('@supabase/ssr', () => ({
   createServerClient: (
     _url: string,
     _key: string,
-    opts: { cookies: { setAll: SetAll } },
+    opts: { cookies: { setAll: SetAll }; cookieOptions?: object },
   ) => ({
     auth: {
       getClaims: async () => {
         // A refresh (or a clear) hands back cookies plus cache headers.
         if (refresh)
           opts.cookies.setAll(
-            [{ name: 'sb-x-auth-token', value: 'fresh', options: {} }],
+            [
+              {
+                name: 'sb-x-auth-token',
+                value: 'fresh',
+                // @supabase/ssr merges cookieOptions into every cookie it sets.
+                options: { ...opts.cookieOptions },
+              },
+            ],
             { 'Cache-Control': 'private, no-store' },
           );
         return { data: claims ? { claims } : null };
@@ -42,6 +49,26 @@ beforeEach(() => {
   vi.stubEnv('AUTH_ENFORCED', 'true');
   vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:54321');
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'test-key');
+});
+
+describe('session cookie attributes', () => {
+  const setCookie = async () => {
+    claims = { sub: 'u1' };
+    refresh = true;
+    return (await proxy(req('/contacts'))).headers.get('set-cookie') ?? '';
+  };
+
+  it('are HttpOnly and SameSite=Lax, not Secure outside production', async () => {
+    const c = await setCookie();
+    expect(c).toMatch(/HttpOnly/i);
+    expect(c).toMatch(/SameSite=lax/i);
+    expect(c).not.toMatch(/Secure/i);
+  });
+
+  it('are Secure in production', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    expect(await setCookie()).toMatch(/Secure/i);
+  });
 });
 
 describe('proxy', () => {
