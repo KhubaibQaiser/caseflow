@@ -1,5 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import Link from 'next/link';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ContactDetail } from '@/lib/contracts/contact';
@@ -294,7 +295,7 @@ describe('ContactForm', () => {
   it('asks before an in-app link leaves a dirty form; Cancel keeps the input', async () => {
     render(
       <>
-        <a href="/contacts">Contacts</a>
+        <Link href="/contacts">Contacts</Link>
         <ContactForm
           mode="edit"
           initial={initial}

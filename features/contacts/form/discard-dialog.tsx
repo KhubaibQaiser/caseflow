@@ -19,7 +19,7 @@ export default function DiscardDialog({
         footer={
           <>
             <DialogClose asChild>
-              <Button variant="ghost">Keep editing</Button>
+              <Button variant="ghost">Cancel</Button>
             </DialogClose>
             <Button variant="primary" onClick={onDiscard}>
               Discard

@@ -48,24 +48,19 @@ function Banner({
 export function ConflictBanner({
   busy,
   onReload,
-  onOverwrite,
 }: {
   /** The newer copy is still loading. */
   busy: boolean;
   onReload(): void;
-  onOverwrite(): void;
 }) {
   return (
     <Banner
       tone="conflict"
       title="This contact was changed since you opened it."
-      detail="Reload latest drops your edits. Overwrite saves them over the newer version."
+      detail="Reload latest to see the newer version. Your unsaved edits are replaced, so re-apply them after."
     >
       <Button variant="ghost" size="sm" onClick={onReload} disabled={busy}>
         Reload latest
-      </Button>
-      <Button variant="ghost" size="sm" onClick={onOverwrite} disabled={busy}>
-        Overwrite
       </Button>
     </Banner>
   );

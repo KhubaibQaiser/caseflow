@@ -85,7 +85,7 @@ const valuesOf = (c?: ContactDetail): Values => ({
   fullName: c?.fullName ?? '',
   email: c?.email ?? '',
   phone: c?.phone ?? '',
-  matterType: c?.matterType ?? MATTER_TYPES[0],
+  matterType: c?.matterType ?? '',
   referralSource: c?.referralSource ?? '',
   status: c?.status ?? 'lead',
   followUpOn: c?.followUpOn ?? null,
@@ -108,7 +108,8 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
   const [banner, setBanner] = useState<Banner | null>(null);
   const [saving, setSaving] = useState(false);
   const [leaving, setLeaving] = useState(false);
-  const [asking, setAsking] = useState(false);
+  // Where a discard goes; set while the Discard changes? dialog is open.
+  const [leaveTo, setLeaveTo] = useState<string | null>(null);
   // The errors the last failed submit reported; the summary shows these while they stay unfixed.
   const [reported, setReported] = useState<Name[]>([]);
   const [attempt, setAttempt] = useState(0);
@@ -132,7 +133,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
     control,
     formState: { errors, isDirty },
   } = form;
-  useUnsavedGuard(isDirty && !leaving);
+  useUnsavedGuard(isDirty && !leaving, setLeaveTo);
 
   const status = useWatch({ control, name: 'status' });
   const followUpOn = useWatch({ control, name: 'followUpOn' });
@@ -147,11 +148,11 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
     setAttempt((a) => a + 1);
   };
 
-  const save = async (data: ContactInput, expectedUpdatedAt = stamp) => {
+  const save = async (data: ContactInput) => {
     setBanner(null);
     let result: Result<{ id: string }>;
     try {
-      result = await onSubmit(data, expectedUpdatedAt);
+      result = await onSubmit(data, stamp);
     } catch {
       result = fail('server', 'Network error.');
     }
@@ -186,12 +187,12 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
     }
   };
 
-  const run = (override?: string) => {
+  const run = () => {
     if (busy.current) return Promise.resolve();
     busy.current = true; // synchronous: a second click lands before React re-renders
     const valid: SubmitHandler<ContactInput> = async (data) => {
       setSaving(true);
-      await save(data, override);
+      await save(data);
     };
     return handleSubmit(valid, (invalid) =>
       report(Object.keys(invalid).filter(isName)),
@@ -206,10 +207,10 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
     return message ? [{ id: n, label: LABELS[n], message }] : [];
   });
 
-  const cancel = () => (isDirty ? setAsking(true) : router.push(backHref));
+  const cancel = () => (isDirty ? setLeaveTo(backHref) : router.push(backHref));
   const discard = () => {
     setLeaving(true);
-    router.push(backHref);
+    router.push(leaveTo ?? backHref);
   };
 
   const reloadLatest = () => {
@@ -232,11 +233,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
       >
         <ErrorSummary errors={summaryErrors} attempt={attempt} />
         {banner?.kind === 'conflict' && (
-          <ConflictBanner
-            busy={refreshing || saving}
-            onReload={reloadLatest}
-            onOverwrite={() => void run(initial?.updatedAt)}
-          />
+          <ConflictBanner busy={refreshing || saving} onReload={reloadLatest} />
         )}
         {banner?.kind === 'failed' && (
           <SaveFailedBanner
@@ -317,6 +314,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
               error={err('matterType')}
             >
               <NativeSelect {...register('matterType')}>
+                <option value="">Choose a matter type</option>
                 {MATTER_TYPES.map((t) => (
                   <option key={t} value={t}>
                     {MATTER_TYPE_LABEL[t]}
@@ -407,9 +405,9 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
           </Button>
         </div>
       </form>
-      {asking && (
+      {leaveTo !== null && (
         <Suspense fallback={null}>
-          <DiscardDialog onDiscard={discard} onClose={() => setAsking(false)} />
+          <DiscardDialog onDiscard={discard} onClose={() => setLeaveTo(null)} />
         </Suspense>
       )}
     </>

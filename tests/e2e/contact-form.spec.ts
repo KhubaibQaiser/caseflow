@@ -27,7 +27,7 @@ test('an empty submit lists every error and focuses the summary', async ({
 
   await page.getByRole('button', { name: 'Save contact' }).click();
   const summary = page.getByRole('alert').filter({ hasText: 'need attention' });
-  await expect(summary).toContainText('2 fields need attention.');
+  await expect(summary).toContainText('3 fields need attention.');
   await expect(summary).toBeFocused();
 
   await summary.getByRole('link', { name: /Email or phone/ }).click();
@@ -63,4 +63,27 @@ test('a viewer gets the forbidden screen on both form routes', async ({
     page.getByRole('heading', { name: "You can't edit contacts." }),
   ).toBeVisible();
   expect((await axe(page)).violations).toEqual([]);
+});
+
+test('a dirty form asks before the sidebar leaves it', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await asRole(context, baseURL, 'admin');
+  await page.goto('/contacts/new');
+  await page.getByRole('textbox', { name: /Full name/ }).fill('Ana Díaz');
+  await page.getByRole('link', { name: 'Pipeline' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Discard changes?' });
+  await expect(dialog).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]);
+
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(page).toHaveURL(/\/contacts\/new$/);
+  await expect(page.getByRole('textbox', { name: /Full name/ })).toHaveValue(
+    'Ana Díaz',
+  );
+  await page.getByRole('link', { name: 'Pipeline' }).click();
+  await page.getByRole('button', { name: 'Discard' }).click();
+  await expect(page).toHaveURL(/\/pipeline$/);
 });
