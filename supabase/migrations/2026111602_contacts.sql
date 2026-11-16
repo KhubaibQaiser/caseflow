@@ -10,7 +10,7 @@ create type public.activity_type as enum
 create table public.contacts (
   id uuid primary key default gen_random_uuid(),
   full_name text not null
-    constraint contacts_full_name_len check (full_name = btrim(full_name) and char_length(full_name) between 2 and 120),
+    constraint contacts_full_name_len check (full_name = regexp_replace(full_name, '^\s+|\s+$', '', 'g') and char_length(full_name) between 2 and 120),
   email text,
   phone text,
   phone_digits text generated always as (regexp_replace(coalesce(phone, ''), '\D', '', 'g')) stored,
@@ -24,7 +24,7 @@ create table public.contacts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
-  constraint contacts_email_or_phone check (email is not null or phone is not null)
+  constraint contacts_email_or_phone check (nullif(btrim(email), '') is not null or nullif(btrim(phone), '') is not null)
 );
 
 create table public.notes (

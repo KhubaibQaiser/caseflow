@@ -50,7 +50,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`)
-- `tests/`: integration and e2e suites land with the BE and FE tracks (e2e goes in `tests/e2e/`)
+- `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); e2e lands with the FE track in `tests/e2e/`
 
 ## CI
 
