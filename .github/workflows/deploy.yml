@@ -76,8 +76,8 @@ jobs:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
           set_env() { printf %s "$2" | pnpm dlx "$VERCEL_CLI" env add "$1" --environment production --force --yes "${@:3}"; }
-          set_env NEXT_PUBLIC_SUPABASE_URL "$SUPABASE_URL"
-          set_env NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
+          set_env SUPABASE_URL "$SUPABASE_URL"
+          set_env SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
           set_env SUPABASE_SECRET_KEY "$SUPABASE_SECRET_KEY" --sensitive
 
       - run: pnpm dlx "$VERCEL_CLI" pull --yes --environment=production
