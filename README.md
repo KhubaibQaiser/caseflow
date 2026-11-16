@@ -156,3 +156,14 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - Revocation lag: `getClaims()` checks the JWT signature, not the user record, so a banned or deleted user keeps access until the access token expires (up to 1 hour). Roles are read live from `profiles`, and RLS applies on every query.
 - The proxy only URL-encodes `next`. T10's `safeNext` must reject values starting with `//` or `/\`.
 - Auth responses carry `Cache-Control: private, no-store` from `@supabase/ssr` (proxy and redirects).
+
+## Contact form (T17)
+
+- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`); T22 only swaps the data source.
+- The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 220 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
+- Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
+- Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
+- Conflict: the banner triggers `router.refresh()`. Reload latest resets to the refreshed values; Overwrite resubmits the typed values with the refreshed `updatedAt`. Both wait for the refresh.
+- `unauthorized` pushes `/login?reason=expired&next=<page>`; `push` keeps the form's history entry.
+- The unsaved guard is `beforeunload` plus the Cancel dialog. In-app links (sidebar) are not intercepted; Next has no hook for that.
+- `/dev/contact-form?outcome=conflict|slow|fail` is a dev fixture with a scripted save (404 in production).
