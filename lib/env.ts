@@ -19,3 +19,6 @@ export function supabaseEnv() {
 }
 
 export const secretKey = () => read(Secret).SUPABASE_SECRET_KEY;
+
+// Off until T22 wires real auth into the app.
+export const authEnforced = () => process.env.AUTH_ENFORCED === 'true';
