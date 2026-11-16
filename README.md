@@ -58,7 +58,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 - `checks`: format check, typecheck, lint (including the colour-literal check), unit tests, build.
 - `integration-e2e`: local Supabase (CLI 3.2), `db reset`, seed when `scripts/seed.ts` exists, integration tests, and e2e when `tests/e2e` exists.
-- `gitleaks`: secret scan over full history.
+- `gitleaks`: secret scan of each PR's or push's commits.
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
 
