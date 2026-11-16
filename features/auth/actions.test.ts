@@ -1,0 +1,171 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const m = vi.hoisted(() => ({
+  signInWithPassword: vi.fn(),
+  setSession: vi.fn(),
+  signOut: vi.fn(),
+  createSignInClient: vi.fn(),
+  cookieSet: vi.fn(),
+  headers: new Headers(),
+}));
+
+vi.mock('next/navigation', () => ({
+  redirect: (to: string) => {
+    throw new Error(`REDIRECT ${to}`);
+  },
+}));
+vi.mock('next/headers', () => ({
+  cookies: async () => ({ set: m.cookieSet }),
+  headers: async () => m.headers,
+}));
+vi.mock('@/lib/supabase/admin', () => ({
+  createSignInClient: (ip: string | null) => {
+    m.createSignInClient(ip);
+    return { auth: { signInWithPassword: m.signInWithPassword } };
+  },
+}));
+vi.mock('@/lib/supabase/server', () => ({
+  createServerSupabase: async () => ({
+    auth: { setSession: m.setSession, signOut: m.signOut },
+  }),
+}));
+
+import { signInAction, signOutAction } from './actions';
+
+const form = (o: Record<string, string>) => {
+  const f = new FormData();
+  for (const [k, v] of Object.entries(o)) f.set(k, v);
+  return f;
+};
+const good = {
+  email: ' Ana@Firm.test ',
+  password: 'pw',
+  tz: 'America/Chicago',
+};
+const authError = (status: number, code: string) =>
+  Object.assign(new Error(code), { name: 'AuthApiError', status, code });
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  m.headers = new Headers({ 'x-forwarded-for': '203.0.113.9, 10.0.0.1' });
+  m.setSession.mockResolvedValue({ error: null });
+  m.signOut.mockResolvedValue({ error: null });
+});
+
+describe('signInAction', () => {
+  it('returns every field error at once and never calls Supabase', async () => {
+    const r = await signInAction(null, form({ email: 'nope', password: '' }));
+    expect(r).toMatchObject({
+      ok: false,
+      error: {
+        code: 'validation',
+        fieldErrors: {
+          email: 'Enter a valid email address.',
+          password: 'Enter your password.',
+        },
+      },
+    });
+    expect(m.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('maps wrong credentials to the exact copy', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(400, 'invalid_credentials'),
+    });
+    expect(await signInAction(null, form(good))).toEqual({
+      ok: false,
+      error: {
+        code: 'invalid_credentials',
+        message: 'Email or password is incorrect.',
+      },
+    });
+  });
+
+  it('maps a 429 to rate_limited with retryAfter and minutes', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(429, 'over_request_rate_limit'),
+    });
+    expect(await signInAction(null, form(good))).toEqual({
+      ok: false,
+      error: {
+        code: 'rate_limited',
+        message: 'Too many attempts. Try again in 5 minutes.',
+        retryAfter: 300,
+      },
+    });
+  });
+
+  it('maps anything else to server', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(500, 'unexpected_failure'),
+    });
+    const r = await signInAction(null, form(good));
+    expect(r).toMatchObject({ ok: false, error: { code: 'server' } });
+  });
+
+  it('forwards the first x-forwarded-for entry and sends the normalised email', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(400, 'invalid_credentials'),
+    });
+    await signInAction(null, form(good));
+    expect(m.createSignInClient).toHaveBeenCalledWith('203.0.113.9');
+    expect(m.signInWithPassword).toHaveBeenCalledWith({
+      email: 'ana@firm.test',
+      password: 'pw',
+    });
+  });
+
+  it('sets the session and tz cookie, then redirects to a safe next', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: { access_token: 'a', refresh_token: 'r' } },
+      error: null,
+    });
+    await expect(
+      signInAction(null, form({ ...good, next: '/contacts?q=x' })),
+    ).rejects.toThrow('REDIRECT /contacts?q=x');
+    expect(m.setSession).toHaveBeenCalledWith({
+      access_token: 'a',
+      refresh_token: 'r',
+    });
+    expect(m.cookieSet).toHaveBeenCalledWith('tz', 'America/Chicago', {
+      path: '/',
+      maxAge: 31_536_000,
+      sameSite: 'lax',
+    });
+  });
+
+  it.each(['//evil.com', '/\\evil.com', 'https://x', ''])(
+    'falls back to /contacts for next=%j',
+    async (next) => {
+      m.signInWithPassword.mockResolvedValue({
+        data: { session: { access_token: 'a', refresh_token: 'r' } },
+        error: null,
+      });
+      await expect(signInAction(null, form({ ...good, next }))).rejects.toThrow(
+        'REDIRECT /contacts',
+      );
+    },
+  );
+
+  it('stores UTC when tz is invalid', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: { access_token: 'a', refresh_token: 'r' } },
+      error: null,
+    });
+    await expect(
+      signInAction(null, form({ ...good, tz: 'Not/AZone' })),
+    ).rejects.toThrow('REDIRECT');
+    expect(m.cookieSet).toHaveBeenCalledWith('tz', 'UTC', expect.anything());
+  });
+});
+
+describe('signOutAction', () => {
+  it('clears this session only, then redirects to /login', async () => {
+    await expect(signOutAction()).rejects.toThrow('REDIRECT /login');
+    expect(m.signOut).toHaveBeenCalledWith({ scope: 'local' });
+  });
+});

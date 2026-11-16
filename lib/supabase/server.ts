@@ -3,6 +3,7 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseEnv } from '@/lib/env';
+import { sessionCookieOptions } from './cookie-options';
 import type { Database } from './database.types';
 
 // Request-scoped, carries the viewer's JWT so RLS applies. There is no browser client.
@@ -12,6 +13,7 @@ export async function createServerSupabase(): Promise<
   const store = await cookies();
   const { url, key } = supabaseEnv();
   return createServerClient<Database>(url, key, {
+    cookieOptions: sessionCookieOptions(),
     cookies: {
       getAll: () => store.getAll(),
       // The cache headers go out from proxy.ts; a Server Component cannot set headers.

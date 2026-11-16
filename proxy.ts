@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { authEnforced, supabaseEnv } from '@/lib/env';
+import { sessionCookieOptions } from '@/lib/supabase/cookie-options';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Logged in or not, nothing more. Authorization lives in getViewer and Postgres RLS.
@@ -20,6 +21,7 @@ export async function proxy(request: NextRequest) {
   let authHeaders: Record<string, string> = {};
   const { url: apiUrl, key } = supabaseEnv();
   const supabase = createServerClient(apiUrl, key, {
+    cookieOptions: sessionCookieOptions(),
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(list, headers) {

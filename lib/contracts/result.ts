@@ -31,3 +31,15 @@ export function fail(
 ): Result<never> {
   return { ok: false, error: { code, message, ...extra } };
 }
+
+// First message per field; the issue path's head is the form field name.
+export function zodFieldErrors(error: {
+  issues: { path: PropertyKey[]; message: string }[];
+}): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const i of error.issues) {
+    const k = String(i.path[0] ?? 'form');
+    out[k] ??= i.message;
+  }
+  return out;
+}

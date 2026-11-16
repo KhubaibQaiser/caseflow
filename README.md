@@ -65,6 +65,11 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
   - `Toaster` (sonner) is mounted in the root layout; call `toast.success('Contact saved')`; `toast.error(msg, { action: { label: 'Retry', onClick } })` stays until acted on or dismissed
 - `components/shell`: the app shell (`Sidebar` 196px on desktop, icon rail 768-1023px, `TabBar` plus `MobileTopBar` below 768px, `PageHeader`, `ForbiddenState`, `TimezoneSync`); `app/(app)/layout.tsx` renders it around every screen, 404 and error boundary
 - `lib/auth`: `PermissionsProvider`, `usePermission(p)`, `<Can p>`; `viewer.ts` is a fake viewer until T22 (`fake-role` cookie picks admin or viewer; production is always admin)
+- `lib/data/mutations.ts`: server-only writes returning `Result<T>`; PostgREST codes map to `forbidden`, `validation`, `unauthorized`, `not_found`; `updateContact` is `where updated_at = expected` and returns `conflict` when the row moved
+- `features/contacts/actions.ts`: Server Actions (create, update, move, reschedule, add note). Each runs `assertPermission`, then Zod with today in the `tz` cookie, then the write, then `revalidatePath`; Zod issues become `fieldErrors` (`contactMethod` for the email/phone rule); an expired session returns `unauthorized`. No delete or undo in v1
+- `features/auth/actions.ts`: `signInAction` validates, signs in through the secret-key client with `Sb-Forwarded-For` (ADR 0004), sets the session and `tz` cookie, redirects to `safeNext(next)` or `/contacts`; a 429 returns `rate_limited` (`retryAfter` in seconds, default 300). `signOutAction` clears this session only
+- `lib/supabase/cookie-options.ts`: session cookies are HttpOnly, SameSite=Lax, Secure when `VERCEL_ENV` is production (server client and proxy)
+- `features/auth/safe-next.ts`: accepts only same-origin paths (one leading `/`; no `//`, `\`, scheme or control characters)
 - `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`, query RPCs)
 - `app/(app)/[...missing]`: catches unknown URLs and calls `notFound()`, so the 404 renders in the `(app)` segment (inside the app shell once it exists); `app/not-found.tsx` is the standalone fallback
