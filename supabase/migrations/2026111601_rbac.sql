@@ -41,4 +41,5 @@ alter table public.role_permissions enable row level security;
 create policy profiles_select on public.profiles for select to authenticated using (true);
 create policy role_permissions_select on public.role_permissions for select to authenticated using (true);
 
-revoke insert, update, delete, truncate on public.profiles, public.role_permissions from anon, authenticated;
+revoke all on public.profiles, public.role_permissions from anon;
+revoke insert, update, delete, truncate on public.profiles, public.role_permissions from authenticated;

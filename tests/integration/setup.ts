@@ -7,9 +7,19 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 type Cfg = { url: string; anon: string; secret: string };
 let cfg: Cfg | undefined;
 
+// resetData() deletes firm data: refuse anything but the local stack.
+export function assertLocalUrl(url: string): string {
+  const host = new URL(url).hostname;
+  if (host !== '127.0.0.1' && host !== 'localhost') {
+    throw new Error(`Refusing to run integration tests against non-local host: ${host}`);
+  }
+  return url;
+}
+
 function config(): Cfg {
   if (cfg) return cfg;
   const e = process.env;
+  if (e.SUPABASE_URL) assertLocalUrl(e.SUPABASE_URL);
   if (e.SUPABASE_URL && e.SUPABASE_PUBLISHABLE_KEY && e.SUPABASE_SECRET_KEY) {
     return (cfg = {
       url: e.SUPABASE_URL,
@@ -30,7 +40,7 @@ function config(): Cfg {
   const anon = kv.PUBLISHABLE_KEY ?? kv.ANON_KEY;
   const secret = kv.SECRET_KEY ?? kv.SERVICE_ROLE_KEY;
   if (!url || !anon || !secret) throw new Error('Local Supabase is not running (supabase start)');
-  return (cfg = { url, anon, secret });
+  return (cfg = { url: assertLocalUrl(url), anon, secret });
 }
 
 const opts = { auth: { persistSession: false, autoRefreshToken: false } };

@@ -1,8 +1,13 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { ROLE_PERMISSIONS } from '@/lib/contracts/permissions';
-import { adminClient, resetData, seedContact, viewerClient } from './setup';
+import { adminClient, assertLocalUrl, resetData, seedContact, viewerClient } from './setup';
 
 beforeEach(resetData);
+
+it('refuses non-local Supabase URLs', () => {
+  expect(() => assertLocalUrl('https://abc.supabase.co')).toThrow();
+  expect(assertLocalUrl('http://127.0.0.1:54321')).toBeTruthy();
+});
 
 describe('RBAC and RLS', () => {
   it('viewer can read but not insert, update or note', async () => {
