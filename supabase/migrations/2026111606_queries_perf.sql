@@ -1,7 +1,11 @@
 -- Same results as 2026111605, computed once per call instead of once per row per helper.
 -- contact_flags parses the filters a single time and returns each live contact's per-group
 -- match flags; search_contacts and contact_facets only combine them.
--- contact_matches, follow_up_hit and in_set stay as the reference predicate but are no longer called.
+
+-- Replaced by contact_flags / filter_set.
+drop function public.contact_matches(public.contacts, jsonb, date, text, text);
+drop function public.follow_up_hit(public.contacts, text, date, date, date);
+drop function public.in_set(jsonb, text);
 
 -- NULL means "no filter" (as in_set: empty or non-array); otherwise the string members, maybe none.
 create function public.filter_set(arr jsonb) returns text[]

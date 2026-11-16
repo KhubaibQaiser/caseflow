@@ -250,38 +250,11 @@ export type Database = {
           status_ok: boolean;
         }[];
       };
-      contact_matches: {
-        Args: {
-          c: Omit<
-            Database['public']['Tables']['contacts']['Row'],
-            Database['public']['Tables']['contacts']['ComputedFields']
-          >;
-          f: Json;
-          skip?: string;
-          today: string;
-          tz: string;
-        };
-        Returns: boolean;
-      };
       filter_set: { Args: { arr: Json }; Returns: string[] };
-      follow_up_hit: {
-        Args: {
-          c: Omit<
-            Database['public']['Tables']['contacts']['Row'],
-            Database['public']['Tables']['contacts']['ComputedFields']
-          >;
-          hi: string;
-          k: string;
-          lo: string;
-          today: string;
-        };
-        Returns: boolean;
-      };
       has_permission: {
         Args: { p: Database['public']['Enums']['app_permission'] };
         Returns: boolean;
       };
-      in_set: { Args: { arr: Json; v: string }; Returns: boolean };
       norm_filters: { Args: { f: Json }; Returns: Json };
       ping: { Args: Record<PropertyKey, never>; Returns: boolean };
       safe_date: { Args: { s: string }; Returns: string };
