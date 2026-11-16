@@ -41,7 +41,8 @@ function Results({
   const offset = (page - 1) * pageSize;
   return (
     <>
-      <Toolbar facets={facets} isPending={isPending} />
+      {/* With no contacts at all there is nothing to search or filter. */}
+      {total > 0 && <Toolbar facets={facets} isPending={isPending} />}
       <p role="status" className="sr-only">
         {matching.toLocaleString('en-US')}{' '}
         {matching === 1 ? 'contact' : 'contacts'}
