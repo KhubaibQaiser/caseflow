@@ -46,6 +46,8 @@ function config(): Cfg {
   return (cfg = { url: assertLocalUrl(url), anon, secret });
 }
 
+export const localConfig = config;
+
 const opts = { auth: { persistSession: false, autoRefreshToken: false } };
 export const PASSWORD = 'it-Passw0rd!local';
 
