@@ -87,9 +87,9 @@ export const ContactRowSchema = z.object({
   matterType: z.enum(MATTER_TYPES),
   referralSource: z.enum(REFERRAL_SOURCES).nullable(),
   status: z.enum(STATUSES),
-  followUpOn: z.string().nullable(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  followUpOn: z.string().regex(DATE).nullable(),
+  createdAt: z.iso.datetime({ offset: true }),
+  updatedAt: z.iso.datetime({ offset: true }),
   urgency: z.enum(['overdue', 'today', 'later', 'none']),
   daysOverdue: z.number().nullable(),
 });
