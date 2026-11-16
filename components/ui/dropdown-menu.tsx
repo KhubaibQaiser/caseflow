@@ -46,7 +46,7 @@ export function DropdownMenuItem({
   return (
     <RadixMenu.Item
       className={cn(
-        'text-13 text-ink data-highlighted:bg-canvas flex min-h-8 cursor-pointer items-center gap-2 rounded-[5px] px-2 outline-none select-none focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 data-disabled:cursor-not-allowed data-disabled:opacity-45',
+        'text-13 text-ink data-highlighted:bg-canvas focus-visible:outline-accent flex min-h-8 cursor-pointer items-center gap-2 rounded-[5px] px-2 outline-none select-none focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid data-disabled:cursor-not-allowed data-disabled:opacity-45',
         'forced-colors:data-highlighted:bg-[Highlight] forced-colors:data-highlighted:text-[HighlightText] forced-colors:data-highlighted:forced-color-adjust-none',
         className,
       )}
