@@ -234,6 +234,7 @@ export type Database = {
         Args: { p: Database['public']['Enums']['app_permission'] };
         Returns: boolean;
       };
+      seed_firm: { Args: { actor?: string; n?: number }; Returns: undefined };
       seed_insert_contact: { Args: { c: Json }; Returns: string };
     };
     Enums: {

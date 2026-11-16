@@ -202,4 +202,12 @@ describe('RBAC and RLS', () => {
       (await anon.rpc('has_permission', { p: 'contacts.read' })).error,
     ).not.toBeNull();
   });
+
+  it('denies seed_firm to anon and authenticated callers', async () => {
+    const a = await adminClient();
+    for (const c of [anonClient(), a.client]) {
+      const r = await c.rpc('seed_firm', { n: 1 });
+      expect(r.error).not.toBeNull();
+    }
+  });
 });
