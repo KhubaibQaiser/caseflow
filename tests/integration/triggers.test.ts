@@ -161,6 +161,26 @@ describe('contact triggers', () => {
     expect(await activities(id)).toHaveLength(0);
   });
 
+  it('seeding keeps a backdated created_at', async () => {
+    const svc = serviceClient();
+    const id = await rpc<string>(svc, 'seed_insert_contact', {
+      c: {
+        full_name: 'Old Timer',
+        phone: '5125550197',
+        matter_type: 'family',
+        created_at: '2024-03-01T12:00:00Z',
+      },
+    });
+    const { data } = await svc
+      .from('contacts')
+      .select('created_at')
+      .eq('id', id)
+      .single();
+    expect(new Date(data?.created_at).toISOString()).toBe(
+      '2024-03-01T12:00:00.000Z',
+    );
+  });
+
   it('delete guard rejects a caller without contacts.delete', async () => {
     const { c } = await newContact();
     // service role has no auth.uid(), so has_permission is false and RLS is bypassed
