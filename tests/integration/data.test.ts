@@ -8,11 +8,12 @@ vi.mock('@/lib/supabase/server', () => ({
 vi.mock('@/lib/dates/server', () => ({
   getRequestTimeZone: async () => 'UTC',
 }));
-vi.mock('next/navigation', () => ({
-  redirect: (to: string) => {
+const redirect = vi.hoisted(() =>
+  vi.fn((to: string) => {
     throw new Error(`REDIRECT ${to}`);
-  },
-}));
+  }),
+);
+vi.mock('next/navigation', () => ({ redirect }));
 
 import {
   assertPermission,
@@ -68,6 +69,7 @@ async function seed(c: Record<string, unknown>): Promise<string> {
 
 let adminId: string;
 beforeEach(async () => {
+  redirect.mockClear();
   await resetData();
   const a = await adminClient();
   current = a.client;
@@ -199,6 +201,7 @@ describe('viewer edge cases', () => {
     );
     const r = await assertPermission('contacts.read');
     expect(r.ok).toBe(false);
+    expect(redirect).not.toHaveBeenCalled();
   });
 
   it('throws (not null) when the profiles query errors', async () => {
