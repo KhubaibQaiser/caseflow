@@ -62,6 +62,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
   - Overlays wrap Radix (dialog, sheet, popover, dropdown menu, tooltip); they animate on `data-state` and stand still under reduced motion
   - `DatePicker` (react-day-picker in a popover, opened by a field or your own button via `trigger`) reads and writes `'YYYY-MM-DD'` via `lib/dates`
   - `Toaster` (sonner) is mounted in the root layout; call `toast.success('Contact saved')`; `toast.error(msg, { action: { label: 'Retry', onClick } })` stays until acted on or dismissed
+- `components/shell`: the app shell (`Sidebar` 196px on desktop, icon rail 768-1023px, `TabBar` plus `MobileTopBar` below 768px, `PageHeader`, `ForbiddenState`, `TimezoneSync`); `app/(app)/layout.tsx` renders it around every screen, 404 and error boundary
+- `lib/auth`: `PermissionsProvider`, `usePermission(p)`, `<Can p>`; `viewer.ts` is a fake viewer until T22 (`fake-role` cookie picks admin or viewer; production is always admin)
 - `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`)
 - `app/(app)/[...missing]`: catches unknown URLs and calls `notFound()`, so the 404 renders in the `(app)` segment (inside the app shell once it exists); `app/not-found.tsx` is the standalone fallback
@@ -73,6 +75,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 - `checks`: format check, typecheck, lint (including the colour-literal check), unit tests, build.
 - `integration-e2e`: local Supabase (CLI 3.2), `db reset`, seed when `scripts/seed.ts` exists, integration tests, and e2e when `tests/e2e` exists.
+- `checks` also runs `pnpm size` after the build: gzipped first-load JS per route (root chunks plus the chunks in each route's client-reference manifest) must stay at or under 180 kB. `/dev/*` is exempt. Shell routes are about 173 kB, `/` about 164 kB; the Next runtime alone is about 131 kB. Anything heavy that isn't needed on first paint is lazy (the button tooltip, the mobile Account sheet).
 - `gitleaks`: secret scan of each PR's or push's commits.
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
@@ -100,6 +103,13 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 - `docs/DECISIONS.md` and `docs/adr/`: decisions and ADRs
 - `DESIGN.md`: design system
 - `AGENTS.md`: rules for agents and contributors
+
+## RBAC in the UI
+
+- The role badge is always visible: sidebar account block, and the Account tab on mobile.
+- Write entry points a Viewer would only bounce off ("New contact", mobile "New") are hidden with `<Can p="contacts.write">`.
+- In-context write actions stay visible, `aria-disabled`, with the reason as a tooltip: "Viewers can't edit contacts. Ask an admin." (`Button disabledReason`).
+- A Viewer on a write URL gets `forbidden()` (403, inside the shell) or `ForbiddenState`: "You can't {action}. Your role is Viewer, which is read-only." Needs `experimental.authInterrupts`. `/dev/forbidden` shows it.
 
 ## Why no drag and drop
 
