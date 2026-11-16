@@ -24,7 +24,7 @@ create table public.contacts (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   deleted_at timestamptz,
-  constraint contacts_email_or_phone check (nullif(btrim(email), '') is not null or nullif(btrim(phone), '') is not null)
+  constraint contacts_email_or_phone check (coalesce(email ~ '\S', false) or coalesce(phone ~ '\S', false))
 );
 
 create table public.notes (
