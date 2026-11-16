@@ -18,6 +18,10 @@ describe('cn', () => {
     expect(cn('text-13', 'text-xs')).toBe('text-xs');
   });
 
+  it('merges the raised shadow token', () => {
+    expect(cn('shadow-raised', 'shadow-none')).toBe('shadow-none');
+  });
+
   it('merges radius tokens', () => {
     expect(cn('rounded-ctl', 'rounded-pill')).toBe('rounded-pill');
   });
