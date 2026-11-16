@@ -12,15 +12,22 @@ import { cn } from '@/utils/cn';
 
 import { useListQuery } from '../url-state';
 import { CLEAR_ALL, activeFilters } from './active-filters';
+import { listFrame } from './frame';
 import { SEARCH_ID } from './toolbar';
 
 /** Hidden for roles that can't write: it would only lead to the forbidden page (spec 8.10). */
-export function NewContactLink({ className }: { className?: string }) {
+export function NewContactLink({
+  className,
+  variant = 'primary',
+}: {
+  className?: string;
+  variant?: 'primary' | 'ghost';
+}) {
   return (
     <Can p="contacts.write">
       <ButtonLink
         href="/contacts/new"
-        variant="primary"
+        variant={variant}
         className={cn('gap-1.5', className)}
       >
         <Plus aria-hidden className="size-4" />
@@ -30,11 +37,9 @@ export function NewContactLink({ className }: { className?: string }) {
   );
 }
 
-const frame = 'border-line bg-surface rounded-surface border py-10';
-
 export function FirstRun() {
   return (
-    <div className={frame}>
+    <div className={listFrame}>
       <Can
         p="contacts.write"
         fallback={
@@ -47,7 +52,8 @@ export function FirstRun() {
         <EmptyState
           icon={UsersRound}
           title="No contacts yet."
-          action={<NewContactLink />}
+          // The header already has the primary New contact; one primary per screen.
+          action={<NewContactLink variant="ghost" />}
         />
       </Can>
     </div>
@@ -62,7 +68,7 @@ export function Filtered() {
     ...activeFilters(query).map((f) => `${f.label}: ${f.value}`),
   ].join(' · ');
   return (
-    <div className={frame}>
+    <div className={listFrame}>
       <EmptyState
         icon={SearchX}
         title="No contacts match these filters."

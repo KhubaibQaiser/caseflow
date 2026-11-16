@@ -1,11 +1,21 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Suspense, lazy, useEffect, useRef, useTransition } from 'react';
 
+import { PageHeader } from '@/components/shell/page-header';
 import { ErrorState } from '@/components/ui/error-state';
+import { listFrame } from '@/features/contacts/list/frame';
 
 import { reasonClass, useOffline } from '../../error-content';
 import type { ReasonClass } from '../../error-content';
+
+// Lazy, so the route's first load doesn't carry a second copy of the toolbar for a screen that rarely shows.
+const ErrorToolbar = lazy(() =>
+  import('@/features/contacts/list/error-toolbar').then((m) => ({
+    default: m.ErrorToolbar,
+  })),
+);
 
 const REASON: Record<ReasonClass, string> = {
   network: 'Check your connection and retry.',
@@ -13,6 +23,20 @@ const REASON: Record<ReasonClass, string> = {
   unexpected: 'Something went wrong showing them.',
 };
 
+// Next only resets this boundary on a new pathname. When the committed URL moves to a new list
+// (not the typed, still-debounced one), retry so the boundary renders that list.
+function RetryOnChange({ retry }: { retry: () => void }) {
+  const url = useSearchParams()?.toString() ?? '';
+  const last = useRef(url);
+  useEffect(() => {
+    if (url === last.current) return;
+    last.current = url;
+    retry();
+  }, [url, retry]);
+  return null;
+}
+
+// The page keeps its header and toolbar (with the applied chips), so the filters visibly survive.
 // Never error.message: it can carry server detail.
 export default function ContactsError({
   error,
@@ -24,17 +48,25 @@ export default function ContactsError({
   const offline = useOffline();
   const [retrying, startTransition] = useTransition();
   return (
-    <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
+    <div className="flex flex-col gap-3">
       <title>Contacts didn&apos;t load · Caseflow</title>
-      <ErrorState
-        page
-        title="Contacts didn't load."
-        // The URL holds every filter, so a retry comes back to the same list.
-        description={`${REASON[reasonClass(error, offline)]} Your filters are kept.`}
-        // retry() re-fetches the segment's server data, unlike reset() (spec 8.8, Next 16 error.js).
-        onRetry={() => startTransition(() => retry())}
-        retrying={retrying}
-      />
+      <PageHeader title="Contacts" />
+      {/* min-h holds the toolbar's row while its code loads. */}
+      <div className="md:min-h-[34px]">
+        <Suspense fallback={null}>
+          <ErrorToolbar />
+        </Suspense>
+      </div>
+      <RetryOnChange retry={() => startTransition(() => retry())} />
+      <div className={listFrame}>
+        <ErrorState
+          title="Contacts didn't load."
+          description={`${REASON[reasonClass(error, offline)]} Your filters are kept.`}
+          // retry() re-fetches the segment's server data, unlike reset() (spec 8.8, Next 16 error.js).
+          onRetry={() => startTransition(() => retry())}
+          retrying={retrying}
+        />
+      </div>
     </div>
   );
 }

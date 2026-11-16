@@ -23,7 +23,7 @@ const VIEWS = [
 export function QuickViews({
   counts,
 }: {
-  counts: ContactFacets['quickViews'];
+  counts?: ContactFacets['quickViews'];
 }) {
   const [query, setQuery] = useListQuery();
   return (
@@ -31,7 +31,7 @@ export function QuickViews({
       <ul className="bg-track m-0 inline-flex list-none gap-0.5 rounded-lg p-[3px]">
         {VIEWS.map((v) => {
           const patch = { fu: v.fu, fuFrom: null, fuTo: null };
-          const n = counts[v.count];
+          const n = counts?.[v.count];
           return (
             <li key={v.label}>
               <a
@@ -52,19 +52,23 @@ export function QuickViews({
                   event.preventDefault();
                   setQuery(patch);
                 }}
+                // The checked segment's ink-2 outline is deliberate: it gives the state 3:1 non-text contrast (WCAG 1.4.11).
                 className="text-13 text-ink-2 hover:text-ink aria-[current=true]:border-ink-2 aria-[current=true]:bg-surface aria-[current=true]:text-ink aria-[current=true]:shadow-raised flex min-h-7 items-center gap-1.5 rounded-[5px] border border-transparent px-2.5 font-medium whitespace-nowrap no-underline transition-colors duration-150 forced-colors:aria-[current=true]:border-[Highlight]"
               >
-                {v.label}{' '}
-                <span
-                  className={cn(
-                    'tnum',
-                    v.count === 'overdue' && n > 0
-                      ? 'text-overdue font-semibold'
-                      : 'text-ink-2',
-                  )}
-                >
-                  {n.toLocaleString('en-US')}
-                </span>
+                {v.label}
+                {n !== undefined && ' '}
+                {n !== undefined && (
+                  <span
+                    className={cn(
+                      'tnum',
+                      v.count === 'overdue' && n > 0
+                        ? 'text-overdue font-semibold'
+                        : 'text-ink-2',
+                    )}
+                  >
+                    {n.toLocaleString('en-US')}
+                  </span>
+                )}
               </a>
             </li>
           );
