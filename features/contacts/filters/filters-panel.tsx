@@ -52,7 +52,7 @@ export function FiltersPanel(props: FiltersPanelProps) {
   const [query, setQuery] = useListQuery();
   const applied = pickDraft(query);
   const draft = useFilterDraft(applied);
-  const { open, onOpenChange } = props;
+  const { open, onOpenChange, returnFocusTo } = props;
 
   // A fresh draft each time the panel opens, and whenever the URL changes under it (chip removed, back button).
   const stamp = `${open}|${JSON.stringify(applied)}`;
@@ -75,6 +75,21 @@ export function FiltersPanel(props: FiltersPanelProps) {
     onOpenChange(false);
   };
   const cancel = () => onOpenChange(false);
+
+  // The side panel lingers for a beat as it closes: the second click of a double-click on Apply lands on it,
+  // not on the table behind (which would steal focus from the Filters button).
+  const [shown, setShown] = useState(open);
+  if (open && !shown) setShown(true);
+  useEffect(() => {
+    if (open) return;
+    const t = setTimeout(() => {
+      // A click on the lingering panel moved focus into it; hand it back before it unmounts.
+      if (document.activeElement?.closest('#filters-panel'))
+        returnFocusTo?.current?.focus();
+      setShown(false);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [open, returnFocusTo]);
 
   const blocked = !draft.valid
     ? MESSAGES[draft.errors.fu ?? 'reversed']
@@ -118,7 +133,7 @@ export function FiltersPanel(props: FiltersPanelProps) {
           closeLabel="Close filters"
           onCloseAutoFocus={(e) => {
             e.preventDefault();
-            props.returnFocusTo?.current?.focus();
+            returnFocusTo?.current?.focus();
           }}
           footer={footer}
         >
@@ -126,9 +141,10 @@ export function FiltersPanel(props: FiltersPanelProps) {
         </Sheet>
       </Dialog>
     );
-  if (!open) return null;
+  if (!open && !shown) return null;
   return (
     <Aside
+      closing={!open}
       title={title}
       actions={clearAll}
       footer={footer}
@@ -141,6 +157,7 @@ export function FiltersPanel(props: FiltersPanelProps) {
 }
 
 function Aside({
+  closing,
   title,
   actions,
   footer,
@@ -148,6 +165,7 @@ function Aside({
   onClose,
   focusOnOpen,
 }: {
+  closing: boolean;
   title: ReactNode;
   actions: ReactNode;
   footer: ReactNode;
@@ -178,7 +196,9 @@ function Aside({
       id="filters-panel"
       aria-label="Filters"
       tabIndex={-1}
-      className="bg-panel border-line rounded-tl-surface shadow-raised absolute inset-y-0 right-0 z-20 flex w-64 flex-col border-t border-l outline-none max-lg:hidden"
+      aria-hidden={closing || undefined}
+      data-closing={closing || undefined}
+      className="bg-panel border-line rounded-tl-surface shadow-raised absolute inset-y-0 right-0 z-20 flex w-64 flex-col border-t border-l transition-opacity duration-150 outline-none data-closing:opacity-0 motion-reduce:transition-none max-lg:hidden"
     >
       <header className="border-line bg-panel flex items-center justify-between gap-3 border-b py-2.5 pr-2.5 pl-4">
         <h2 className="text-ink m-0 text-sm font-semibold">{title}</h2>
