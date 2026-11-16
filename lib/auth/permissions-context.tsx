@@ -9,6 +9,7 @@ export type ShellViewer = Pick<Viewer, 'displayName' | 'role' | 'permissions'>;
 
 const ViewerContext = createContext<ShellViewer | null>(null);
 
+// UI only; the server and RLS enforce permissions.
 export function PermissionsProvider({
   viewer,
   children,
