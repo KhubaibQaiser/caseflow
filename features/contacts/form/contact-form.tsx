@@ -120,6 +120,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
   const form = useForm<Values, unknown, ContactInput>({
     resolver,
     mode: 'onTouched',
+    shouldFocusError: false, // the error summary takes focus
     defaultValues: valuesOf(initial),
   });
   const {
