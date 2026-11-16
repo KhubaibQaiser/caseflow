@@ -1,6 +1,7 @@
 import {
   createLoader,
   createParser,
+  type LoaderInput,
   type inferParserType,
   parseAsArrayOf,
   parseAsNumberLiteral,
@@ -25,20 +26,34 @@ export const SORT_KEYS = [
   'status',
 ] as const;
 
-const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const date = z.iso.date();
 const FOLLOW_UP_VALUES = [...FOLLOW_UP_FILTERS, 'custom'] as const;
 
-export const FiltersSchema = z.object({
-  q: z.string().trim().max(100).optional(),
-  status: z.array(z.enum(STATUSES)).optional(),
-  matterType: z.array(z.enum(MATTER_TYPES)).optional(),
-  referralSource: z.array(z.enum(REFERRAL_SOURCES)).optional(),
-  followUp: z.enum(FOLLOW_UP_VALUES).optional(),
-  followUpFrom: z.string().regex(DATE).optional(),
-  followUpTo: z.string().regex(DATE).optional(),
-  createdFrom: z.string().regex(DATE).optional(),
-  createdTo: z.string().regex(DATE).optional(),
-});
+export const FiltersSchema = z
+  .object({
+    q: z.string().trim().max(100).optional(),
+    status: z.array(z.enum(STATUSES)).optional(),
+    matterType: z.array(z.enum(MATTER_TYPES)).optional(),
+    referralSource: z.array(z.enum(REFERRAL_SOURCES)).optional(),
+    followUp: z.enum(FOLLOW_UP_VALUES).optional(),
+    followUpFrom: date.optional(),
+    followUpTo: date.optional(),
+    createdFrom: date.optional(),
+    createdTo: date.optional(),
+  })
+  .superRefine((f, ctx) => {
+    const bad = (path: string, message: string) =>
+      ctx.addIssue({ code: 'custom', path: [path], message });
+    const custom = f.followUp === 'custom';
+    if (!custom && (f.followUpFrom || f.followUpTo))
+      bad('followUp', 'Follow-up dates need followUp "custom"');
+    if (custom && !f.followUpFrom && !f.followUpTo)
+      bad('followUp', 'Custom follow-up needs a from or to date');
+    if (f.followUpFrom && f.followUpTo && f.followUpFrom > f.followUpTo)
+      bad('followUpTo', 'Follow-up "to" is before "from"');
+    if (f.createdFrom && f.createdTo && f.createdFrom > f.createdTo)
+      bad('createdTo', 'Created "to" is before "from"');
+  });
 export type Filters = z.infer<typeof FiltersSchema>;
 
 // nuqs's array parser yields [] for all-invalid input; treat that as "not set".
@@ -54,7 +69,7 @@ const literalList = <const T extends readonly string[]>(values: T) => {
 };
 
 const isoDate = createParser<string>({
-  parse: (v) => (DATE.test(v) ? v : null),
+  parse: (v) => (date.safeParse(v).success ? v : null),
   serialize: (v) => v,
 });
 
@@ -82,10 +97,26 @@ export const listQueryParsers = {
   size: parseAsNumberLiteral(PAGE_SIZES).withDefault(DEFAULT_PAGE_SIZE),
 };
 
-export const loadListQuery = createLoader(listQueryParsers);
+const load = createLoader(listQueryParsers);
 export type ListQuery = inferParserType<typeof listQueryParsers>;
 
-export function toFilters(q: ListQuery): Filters {
+// Invalid combinations fall back like any other bad param: dates without
+// 'custom' go, a reversed range goes, and 'custom' with no bound goes.
+function normalize(q: ListQuery): ListQuery {
+  const n = { ...q };
+  if (n.fu !== 'custom') n.fuFrom = n.fuTo = null;
+  if (n.fuFrom && n.fuTo && n.fuFrom > n.fuTo) n.fuFrom = n.fuTo = null;
+  if (n.fu === 'custom' && !n.fuFrom && !n.fuTo) n.fu = null;
+  if (n.createdFrom && n.createdTo && n.createdFrom > n.createdTo)
+    n.createdFrom = n.createdTo = null;
+  return n;
+}
+
+export const loadListQuery = (input: LoaderInput): ListQuery =>
+  normalize(load(input));
+
+export function toFilters(input: ListQuery): Filters {
+  const q = normalize(input);
   const f: Filters = {};
   const text = q.q?.trim().slice(0, 100).trim();
   if (text) f.q = text;

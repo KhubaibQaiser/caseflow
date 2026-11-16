@@ -89,8 +89,11 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 
 ## Decisions that differ from the spec
 
-- Filters use a flat follow-up range (`followUpFrom`/`followUpTo`) instead of the nested form in section 7.4.
 - Soft-deleted contacts are readable through the raw API and the app's queries filter them out; the spec (section 6) wants RLS to hide them.
 - The focus style adds a 2px accent outline to the spec ring for 3:1 contrast.
 - Control borders are darker than the mockups (`#7F8D87`) for 3:1 contrast.
 - Closed contacts with a follow-up date sort after open dated contacts.
+
+## Audit and activity (database triggers)
+
+Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at`, so clients cannot forge them. Soft delete needs `contacts.delete`, enforced in the database. Every contact change and every note writes an activity row. Seeding skips logging only when there is no signed-in user, through the service-role `seed_insert_contact`.
