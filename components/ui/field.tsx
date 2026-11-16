@@ -50,7 +50,10 @@ export function Field({
       <label htmlFor={id} className="text-13 text-ink font-semibold">
         {label}
         {required && (
-          <span className="text-ink-2 ml-1.5 text-xs font-medium">
+          <span
+            aria-hidden="true"
+            className="text-ink-2 ml-1.5 text-xs font-medium"
+          >
             Required
           </span>
         )}

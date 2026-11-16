@@ -13,11 +13,13 @@ type ButtonProps = ComponentProps<'button'> & {
   disabledReason?: string;
 };
 
+// Hover and press affordances only on buttons that will act (literal classes so Tailwind sees them).
 const VARIANT = {
-  primary: 'border-transparent bg-accent text-on-accent hover:bg-accent-hover',
+  primary:
+    'border-transparent bg-accent text-on-accent enabled:not-aria-disabled:hover:bg-accent-hover',
   ghost:
-    'border-line bg-surface text-ink hover:border-lead-border hover:bg-canvas active:bg-track',
-  link: 'border-transparent px-0.5 text-accent underline-offset-3 hover:underline',
+    'border-line bg-surface text-ink enabled:not-aria-disabled:hover:border-lead-border enabled:not-aria-disabled:hover:bg-canvas enabled:not-aria-disabled:active:bg-track',
+  link: 'border-transparent px-0.5 text-accent underline-offset-3 enabled:not-aria-disabled:hover:underline',
 };
 
 const SIZE = { sm: 'h-[30px] px-2.5', md: 'h-[34px] px-3.5' };
@@ -47,7 +49,7 @@ export function Button({
         else onClick?.(event);
       }}
       className={cn(
-        'rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 active:translate-y-px',
+        'rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 enabled:not-aria-disabled:active:translate-y-px',
         'disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:opacity-45',
         'aria-busy:cursor-progress',
         VARIANT[variant],

@@ -197,12 +197,12 @@ export function Gallery() {
           </Button>
           <Button
             variant="ghost"
-            disabledReason="Your role is Viewer, which is read-only."
+            disabledReason="Viewers can't edit contacts. Ask an admin."
           >
             Edit
           </Button>
           <span className="text-ink-2 text-xs">
-            Edit stays focusable and explains why.
+            Edit stays focusable; the reason is a title until the tooltip lands.
           </span>
         </Row>
       </Section>
@@ -213,7 +213,7 @@ export function Gallery() {
       >
         <FormDemo />
         <div className="grid max-w-[720px] gap-3 sm:grid-cols-2">
-          <Field id="demo-phone" label="Phone" hint="Digits only is fine.">
+          <Field id="demo-phone" label="Phone" hint="Any format works.">
             <Input type="tel" defaultValue="(512) 555-0100" />
           </Field>
           <Field id="demo-locked" label="Workspace">
@@ -231,6 +231,14 @@ export function Gallery() {
             hint="Counter appears past 800 characters."
           >
             <Textarea maxLength={1000} defaultValue={LONG_SUMMARY} rows={5} />
+          </Field>
+          <Field
+            id="demo-summary-invalid"
+            label="Note"
+            required
+            error="Write a note before saving."
+          >
+            <Textarea maxLength={2000} />
           </Field>
         </div>
       </Section>
@@ -334,7 +342,7 @@ export function Gallery() {
           <EmptyState
             icon={Users}
             title="No contacts yet."
-            description="Add the first enquiry to start the pipeline."
+            description="Add the first contact to start the pipeline."
             action={<Button variant="primary">New contact</Button>}
           />
           <EmptyState

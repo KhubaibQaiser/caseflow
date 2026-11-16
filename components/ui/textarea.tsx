@@ -8,7 +8,11 @@ import { cn } from '@/utils/cn';
 import { useFieldControl } from './field';
 import { controlClass } from './input';
 
-/** Shows an `n / max` counter once the text passes 80% of maxLength. */
+/**
+ * Shows an `n / max` counter once the text passes 80% of maxLength.
+ * Uncontrolled, it counts keystrokes; pass a controlled `value` (e.g. RHF `watch`)
+ * to keep it right after a programmatic `reset()`.
+ */
 export function Textarea({
   className,
   maxLength,
