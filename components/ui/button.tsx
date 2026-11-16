@@ -1,9 +1,12 @@
 'use client';
 
+import { useId, useState } from 'react';
 import type { ComponentProps } from 'react';
 import LoaderCircle from 'lucide-react/icons/loader-circle';
 
 import { cn } from '@/utils/cn';
+
+import { Tooltip } from './tooltip';
 
 type ButtonProps = ComponentProps<'button'> & {
   variant: 'primary' | 'ghost' | 'link';
@@ -41,40 +44,78 @@ export function Button({
   pendingLabel,
   disabledReason,
   onClick,
+  onPointerDown,
+  onKeyDown,
   className,
   children,
   type = 'button',
   ...rest
 }: ButtonProps) {
+  const reasonId = useId();
+  const [reasonOpen, setReasonOpen] = useState(false);
   // aria-disabled (not disabled) keeps the button focusable so the reason can be read.
   const blocked = pending || disabledReason !== undefined;
-  return (
+  // The open tooltip describes the button itself; the hidden copy covers it while closed.
+  const describedBy = [
+    disabledReason !== undefined && !reasonOpen && reasonId,
+    rest['aria-describedby'],
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const button = (
     <button
       {...rest}
       type={type}
       aria-busy={pending || undefined}
       aria-disabled={disabledReason !== undefined || rest['aria-disabled']}
-      title={disabledReason ?? rest.title}
+      // The tooltip carries the reason; a native title on top would show it twice.
+      title={disabledReason === undefined ? rest.title : undefined}
+      aria-describedby={describedBy || undefined}
+      // A wrapping menu trigger opens on pointerdown and keydown, ignoring aria-disabled; drop them while blocked.
+      // The tooltip attaches its own handlers outside these, so tap and focus still show the reason.
+      onPointerDown={blocked ? undefined : onPointerDown}
+      onKeyDown={blocked ? undefined : onKeyDown}
       onClick={(event) => {
+        // preventDefault also stops the tooltip closing itself on click, so a tap shows the reason.
         if (blocked) event.preventDefault();
         else onClick?.(event);
+        if (disabledReason !== undefined) setReasonOpen(true);
       }}
       className={cn(
-        'rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 enabled:not-aria-disabled:not-aria-busy:active:translate-y-px',
-        'disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed aria-disabled:opacity-45',
+        'group rounded-ctl text-13 inline-flex min-h-6 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-semibold whitespace-nowrap transition-colors duration-150 enabled:not-aria-disabled:not-aria-busy:active:translate-y-px',
+        // aria-disabled dims the content, not the button, so the focus outline and ring keep full strength.
+        'disabled:cursor-not-allowed disabled:opacity-45 aria-disabled:cursor-not-allowed',
+        variant === 'primary' && 'aria-disabled:bg-accent/45',
         'aria-busy:cursor-progress',
         VARIANT[variant],
         variant !== 'link' && SIZE[size],
         className,
       )}
     >
-      {pending && (
-        <LoaderCircle
-          aria-hidden
-          className="size-4 animate-spin motion-reduce:animate-none"
-        />
+      <span className="inline-flex items-center justify-center gap-1.5 group-aria-disabled:opacity-45">
+        {pending && (
+          <LoaderCircle
+            aria-hidden
+            className="size-4 animate-spin motion-reduce:animate-none"
+          />
+        )}
+        {pending && pendingLabel ? pendingLabel : children}
+      </span>
+      {disabledReason !== undefined && (
+        <span id={reasonId} hidden>
+          {disabledReason}
+        </span>
       )}
-      {pending && pendingLabel ? pendingLabel : children}
     </button>
+  );
+  if (disabledReason === undefined) return button;
+  return (
+    <Tooltip
+      content={disabledReason}
+      open={reasonOpen}
+      onOpenChange={setReasonOpen}
+    >
+      {button}
+    </Tooltip>
   );
 }
