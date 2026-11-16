@@ -53,10 +53,10 @@ jobs:
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
-          set_env() { printf %s "$2" | pnpm dlx "$VERCEL_CLI" env add "$1" --environment production --force --yes; }
+          set_env() { printf %s "$2" | pnpm dlx "$VERCEL_CLI" env add "$1" --environment production --force --yes "${@:3}"; }
           set_env NEXT_PUBLIC_SUPABASE_URL "$SUPABASE_URL"
           set_env NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY "$SUPABASE_PUBLISHABLE_KEY"
-          set_env SUPABASE_SECRET_KEY "$SUPABASE_SECRET_KEY"
+          set_env SUPABASE_SECRET_KEY "$SUPABASE_SECRET_KEY" --sensitive
 
       - run: pnpm dlx "$VERCEL_CLI" pull --yes --environment=production
       - run: pnpm dlx "$VERCEL_CLI" build --prod

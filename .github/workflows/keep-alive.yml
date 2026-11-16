@@ -15,7 +15,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
-      - name: Query a table and call the ping RPC
+      - name: Query a table
         run: |
           check() {
             code=$(curl -s -o /dev/null -w '%{http_code}' "$@" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
@@ -23,4 +23,4 @@ jobs:
             [ "$code" = 200 ]
           }
           check "$SUPABASE_URL/rest/v1/role_permissions?select=role&limit=1"
-          check -X POST -H 'Content-Type: application/json' -d '{}' "$SUPABASE_URL/rest/v1/rpc/ping"
+          # T8's PR adds the rpc/ping call back.
