@@ -28,6 +28,8 @@ supabase start
 pnpm dev
 ```
 
+M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or the local env file.
+
 ## Scripts
 
 - `pnpm dev`, `pnpm build`, `pnpm start`: run Next.js
@@ -37,8 +39,8 @@ pnpm dev
 - `pnpm test:integration`: integration tests
 - `pnpm e2e`: Playwright end-to-end tests
 - `pnpm format`, `pnpm format:check`: Prettier
-- `pnpm seed`: seed the local database
-- `pnpm db:types`: regenerate Supabase types from the local stack
+- `pnpm seed`: seed the local database (available once the BE track lands)
+- `pnpm db:types`: regenerate Supabase types from the local stack (available once the BE track lands)
 
 ## Project structure
 
@@ -47,8 +49,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `lib/contracts`: Zod schemas and types shared by browser and server (contact, filters, list query, facets, permissions, results)
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
 - `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
-- `supabase/`: local stack config and migrations
-- `tests/`: integration and e2e suites (`tests/e2e/`)
+- `supabase/`: local stack config; migrations arrive with the BE track
+- `tests/`: integration and e2e suites land with the BE and FE tracks (e2e goes in `tests/e2e/`)
 
 ## Docs
 
