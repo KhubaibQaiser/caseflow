@@ -124,3 +124,13 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 ## Query RPCs
 
 `search_contacts` (rows, `total`, `matching`) and `contact_facets` (counts per filter group, each leaving out its own group) share one predicate, `contact_matches`. They run as the caller, so RLS applies, and they are callable by `authenticated` only. Filters are normalised in SQL first: bad values are ignored, an unknown `tz` falls back to UTC, and page and size are clamped. "Today" and the created-date filter use the `tz` argument. `ping()` returns true for the anon keep-alive job.
+
+## Data layer, viewer and proxy
+
+- `lib/data/supabase.ts` has the same signatures as `lib/data/fake.ts`; T22 flips `lib/data/index.ts`. It runs on the request-scoped client, so RLS applies.
+- RPC replies are snake_case. They are mapped to camelCase and parsed with the contract schemas. A bad row throws `DataError` (message only, no row data).
+- `getContact` returns `null` when the contact is missing or deleted. Notes and activities are newest first (ties by `id`); the timeline hides `deleted` and `restored`.
+- `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
+- `getViewer()` verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and throws `ForbiddenError` otherwise (`forbidden()` is still experimental). `assertPermission` returns a `Result` for actions.
+- `proxy.ts` only checks sign-in: refreshes the session, sends anonymous requests to `/login?next=…` (plus `reason=expired` if an `sb-` cookie exists), and sends signed-in users from `/login` to `/contacts`. `/dev/*` is a 404 when `VERCEL_ENV=production`.
+- There is no browser Supabase client. Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (all server-only).
