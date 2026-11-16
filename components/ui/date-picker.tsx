@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import type { ReactElement } from 'react';
 import { DayPicker } from 'react-day-picker';
 import type { ChevronProps } from 'react-day-picker';
 import CalendarDays from 'lucide-react/icons/calendar-days';
@@ -21,8 +22,10 @@ type DatePickerProps = {
   onChange(value: string | null): void;
   /** Earliest pickable day, 'YYYY-MM-DD'. */
   min?: string;
-  /** Names the trigger and the calendar; match the visible field label. */
+  /** Names the calendar, and the field trigger as "label: value"; match the visible field label. */
   label: string;
+  /** A button to open the calendar instead of the field (e.g. Reschedule). It keeps its own name. */
+  trigger?: ReactElement;
 };
 
 const navButton =
@@ -33,8 +36,14 @@ function Chevron({ orientation }: ChevronProps) {
   return <Icon aria-hidden className="size-4" />;
 }
 
-/** A field-styled trigger that opens a month calendar. Values are date-only strings, never ISO timestamps. */
-export function DatePicker({ value, onChange, min, label }: DatePickerProps) {
+/** A month calendar in a popover, opened by a field (default) or your own button. Values are date-only strings, never ISO timestamps. */
+export function DatePicker({
+  value,
+  onChange,
+  min,
+  label,
+  trigger,
+}: DatePickerProps) {
   const [open, setOpen] = useState(false);
   const panel = useRef<HTMLDivElement>(null);
   const field = useFieldControl();
@@ -53,22 +62,24 @@ export function DatePicker({ value, onChange, min, label }: DatePickerProps) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
-          type="button"
-          {...field}
-          // A required button isn't valid ARIA; the Field's label already says Required.
-          aria-required={undefined}
-          aria-label={`${label}: ${display}`}
-          className={cn(
-            controlClass,
-            'data-[state=open]:border-accent flex h-9 cursor-pointer items-center justify-between gap-2 text-left',
-          )}
-        >
-          <span className={cn('tnum truncate', !value && 'text-ink-2')}>
-            {display}
-          </span>
-          <CalendarDays aria-hidden className="text-ink-2 size-4 shrink-0" />
-        </button>
+        {trigger ?? (
+          <button
+            type="button"
+            {...field}
+            // A required button isn't valid ARIA; the Field's label already says Required.
+            aria-required={undefined}
+            aria-label={`${label}: ${display}`}
+            className={cn(
+              controlClass,
+              'data-[state=open]:border-accent flex h-9 cursor-pointer items-center justify-between gap-2 text-left',
+            )}
+          >
+            <span className={cn('tnum truncate', !value && 'text-ink-2')}>
+              {display}
+            </span>
+            <CalendarDays aria-hidden className="text-ink-2 size-4 shrink-0" />
+          </button>
+        )}
       </PopoverTrigger>
       <PopoverContent
         ref={panel}
