@@ -51,6 +51,38 @@ describe('Button', () => {
     expect(onClick).not.toHaveBeenCalled();
   });
 
+  it('shows the disabled reason on keyboard focus', async () => {
+    const user = userEvent.setup();
+    const reason = "Viewers can't edit contacts. Ask an admin.";
+    render(
+      <Button variant="ghost" disabledReason={reason}>
+        Edit
+      </Button>,
+    );
+    const button = screen.getByRole('button', { name: 'Edit' });
+    expect(button).not.toHaveAttribute('title');
+
+    await user.tab();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(reason);
+    expect(button).toHaveAccessibleDescription(reason);
+  });
+
+  it('shows the disabled reason on tap', async () => {
+    const user = userEvent.setup();
+    const reason = "Viewers can't edit contacts. Ask an admin.";
+    render(
+      <Button variant="ghost" disabledReason={reason}>
+        Edit
+      </Button>,
+    );
+
+    await user.pointer({
+      keys: '[TouchA]',
+      target: screen.getByRole('button', { name: 'Edit' }),
+    });
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(reason);
+  });
+
   it('does not submit its form while blocked', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn((e: FormEvent) => e.preventDefault());
