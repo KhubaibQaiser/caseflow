@@ -18,7 +18,7 @@ jobs:
       - name: Query a table
         run: |
           check() {
-            code=$(curl -s -o /dev/null -w '%{http_code}' "$@" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
+            code=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' "$@" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
             echo "$code"
             [ "$code" = 200 ]
           }
