@@ -1,15 +1,13 @@
 import Link from 'next/link';
 
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
-import type { ContactRow } from '@/lib/contracts/contact';
-import { followUpView } from '@/lib/dates/labels';
 import { cn } from '@/utils/cn';
 
 import { matterLabel, telHref } from './columns';
+import type { ListRow } from './list-rows';
 
 type ContactCardsProps = {
-  rows: ContactRow[];
-  today: string;
+  rows: ListRow[];
   /** Rows before this page, for each card's position in the whole set. */
   offset: number;
   matching?: number;
@@ -22,7 +20,6 @@ type ContactCardsProps = {
  */
 export function ContactCards({
   rows,
-  today,
   offset,
   matching,
   className,
@@ -52,7 +49,7 @@ export function ContactCards({
           >
             {r.fullName}
           </Link>
-          <UrgencyPill {...followUpView(r, today)} />
+          <UrgencyPill {...r.followUp} />
           <span className="text-ink-2 col-span-2 flex min-w-0 items-center gap-2">
             <span className="truncate">{matterLabel(r)}</span>
             <StatusPill status={r.status} />

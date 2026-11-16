@@ -1,6 +1,5 @@
 'use client';
 
-import type { ContactRow } from '@/lib/contracts/contact';
 import type { ContactFacets } from '@/lib/contracts/facets';
 
 import { ListTransition, useListQuery } from '../url-state';
@@ -8,19 +7,18 @@ import { nextSort } from './columns';
 import { ContactCards } from './contact-cards';
 import { ContactsTable } from './contacts-table';
 import { Filtered, FirstRun } from './empty-states';
+import type { ListRow } from './list-rows';
 import { Pagination } from './pagination';
 import { Toolbar } from './toolbar';
 
 type ContactsViewProps = {
-  rows: ContactRow[];
+  rows: ListRow[];
   total: number;
   matching: number;
   facets: ContactFacets;
   /** The page these rows are (already clamped on the server). */
   page: number;
   pageSize: number;
-  today: string;
-  tz: string;
 };
 
 export function ContactsView(props: ContactsViewProps) {
@@ -38,8 +36,6 @@ function Results({
   facets,
   page,
   pageSize,
-  today,
-  tz,
 }: ContactsViewProps) {
   const [query, setQuery, isPending] = useListQuery();
   const offset = (page - 1) * pageSize;
@@ -69,13 +65,10 @@ function Results({
               sort={query.sort}
               dir={query.dir}
               onSort={(key) => setQuery(nextSort(query, key))}
-              today={today}
-              tz={tz}
             />
             <ContactCards
               className="md:hidden"
               rows={rows}
-              today={today}
               offset={offset}
               matching={matching}
             />

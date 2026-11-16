@@ -10,20 +10,19 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import ArrowDown from 'lucide-react/icons/arrow-down';
 import ArrowUp from 'lucide-react/icons/arrow-up';
 import Link from 'next/link';
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import type { ReactNode } from 'react';
 
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
-import type { ContactRow } from '@/lib/contracts/contact';
-import { followUpView, waitingLabel } from '@/lib/dates/labels';
 import { cn } from '@/utils/cn';
 
 import { SORT_OPTIONS, matterLabel, sourceLabel } from './columns';
 import type { SortDir, SortKey } from './columns';
+import type { ListRow } from './list-rows';
 
 const ROW_HEIGHT = 36;
 const features = tableFeatures({ rowSortingFeature });
-const helper = createColumnHelper<typeof features, ContactRow>();
+const helper = createColumnHelper<typeof features, ListRow>();
 
 const muted = (text: string) => <span className="text-ink-2">{text}</span>;
 
@@ -45,74 +44,69 @@ const SORT_BY_COLUMN: Record<string, SortKey> = {
   waiting: 'waiting',
 };
 
-function makeColumns(today: string, tz: string) {
-  return helper.columns([
-    helper.accessor('fullName', {
-      id: 'name',
-      header: 'Name',
-      cell: ({ row: { original: r } }) => (
-        <Link
-          href={`/contacts/${r.id}`}
-          title={r.fullName}
-          className="text-ink block truncate font-semibold no-underline hover:underline"
-        >
-          {r.fullName}
-        </Link>
-      ),
-    }),
-    helper.accessor('matterType', {
-      id: 'matter',
-      header: 'Matter',
-      enableSorting: false,
-      cell: ({ row }) => matterLabel(row.original),
-    }),
-    helper.accessor('status', {
-      id: 'status',
-      header: 'Status',
-      cell: ({ getValue }) => <StatusPill status={getValue()} />,
-    }),
-    helper.accessor('followUpOn', {
-      id: 'followUp',
-      header: 'Follow-up',
-      cell: ({ row }) => <UrgencyPill {...followUpView(row.original, today)} />,
-    }),
-    helper.accessor('phone', {
-      id: 'phone',
-      header: 'Phone',
-      enableSorting: false,
-      cell: ({ getValue }) => getValue() ?? muted('No phone'),
-    }),
-    helper.accessor('email', {
-      id: 'email',
-      header: 'Email',
-      enableSorting: false,
-      cell: ({ getValue }) => {
-        const email = getValue();
-        return email ? (
-          <span
-            title={email}
-            className="text-ink-2 block max-w-[180px] truncate"
-          >
-            {email}
-          </span>
-        ) : (
-          muted('No email')
-        );
-      },
-    }),
-    helper.accessor('referralSource', {
-      id: 'source',
-      header: 'Source',
-      enableSorting: false,
-      cell: ({ row }) => muted(sourceLabel(row.original)),
-    }),
-    helper.accessor('createdAt', {
-      id: 'waiting',
-      header: 'Waiting',
-      cell: ({ getValue }) => muted(waitingLabel(getValue(), today, tz)),
-    }),
-  ]);
-}
+const columns = helper.columns([
+  helper.accessor('fullName', {
+    id: 'name',
+    header: 'Name',
+    cell: ({ row: { original: r } }) => (
+      <Link
+        href={`/contacts/${r.id}`}
+        title={r.fullName}
+        className="text-ink block truncate font-semibold no-underline hover:underline"
+      >
+        {r.fullName}
+      </Link>
+    ),
+  }),
+  helper.accessor('matterType', {
+    id: 'matter',
+    header: 'Matter',
+    enableSorting: false,
+    cell: ({ row }) => matterLabel(row.original),
+  }),
+  helper.accessor('status', {
+    id: 'status',
+    header: 'Status',
+    cell: ({ getValue }) => <StatusPill status={getValue()} />,
+  }),
+  helper.accessor('followUpOn', {
+    id: 'followUp',
+    header: 'Follow-up',
+    cell: ({ row }) => <UrgencyPill {...row.original.followUp} />,
+  }),
+  helper.accessor('phone', {
+    id: 'phone',
+    header: 'Phone',
+    enableSorting: false,
+    cell: ({ getValue }) => getValue() ?? muted('No phone'),
+  }),
+  helper.accessor('email', {
+    id: 'email',
+    header: 'Email',
+    enableSorting: false,
+    cell: ({ getValue }) => {
+      const email = getValue();
+      return email ? (
+        <span title={email} className="text-ink-2 block max-w-[180px] truncate">
+          {email}
+        </span>
+      ) : (
+        muted('No email')
+      );
+    },
+  }),
+  helper.accessor('referralSource', {
+    id: 'source',
+    header: 'Source',
+    enableSorting: false,
+    cell: ({ row }) => muted(sourceLabel(row.original)),
+  }),
+  helper.accessor('createdAt', {
+    id: 'waiting',
+    header: 'Waiting',
+    cell: ({ row }) => muted(row.original.waiting),
+  }),
+]);
 
 // Waiting shows days, which run opposite to the created date it sorts by.
 function shownDirection(key: SortKey, dir: SortDir) {
@@ -124,7 +118,7 @@ function shownDirection(key: SortKey, dir: SortDir) {
 const pinned = 'sticky left-0 z-[1]';
 
 type ContactsTableProps = {
-  rows: ContactRow[];
+  rows: ListRow[];
   /** Rows across every page, for aria-rowcount. */
   matching: number;
   /** Rows before this page, for aria-rowindex. */
@@ -132,8 +126,6 @@ type ContactsTableProps = {
   sort: SortKey;
   dir: SortDir;
   onSort(key: SortKey): void;
-  today: string;
-  tz: string;
   className?: string;
 };
 
@@ -144,11 +136,8 @@ export function ContactsTable({
   sort,
   dir,
   onSort,
-  today,
-  tz,
   className,
 }: ContactsTableProps) {
-  const columns = useMemo(() => makeColumns(today, tz), [today, tz]);
   const sortedColumn = Object.keys(SORT_BY_COLUMN).find(
     (id) => SORT_BY_COLUMN[id] === sort,
   );

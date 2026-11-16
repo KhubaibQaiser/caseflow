@@ -8,6 +8,9 @@ import type { ContactRow } from '@/lib/contracts/contact';
 import type { ContactFacets } from '@/lib/contracts/facets';
 import { ROLE_PERMISSIONS } from '@/lib/contracts/permissions';
 
+import { toListRows } from './list-rows';
+import type { ListRow } from './list-rows';
+
 export const TODAY = '2026-11-17';
 export const TZ = 'UTC';
 
@@ -22,8 +25,8 @@ export const VIEWER: ShellViewer = {
   permissions: [...ROLE_PERMISSIONS.viewer],
 };
 
-export function row(i: number, over: Partial<ContactRow> = {}): ContactRow {
-  return {
+export function row(i: number, over: Partial<ContactRow> = {}): ListRow {
+  const r: ContactRow = {
     id: `c-${i}`,
     fullName: `Person ${i}`,
     email: `person${i}@example.com`,
@@ -38,6 +41,7 @@ export function row(i: number, over: Partial<ContactRow> = {}): ContactRow {
     daysOverdue: null,
     ...over,
   };
+  return toListRows([r], TODAY, TZ)[0]!;
 }
 
 export const rows = (n: number) => Array.from({ length: n }, (_, i) => row(i));

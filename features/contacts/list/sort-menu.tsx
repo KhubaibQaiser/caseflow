@@ -1,8 +1,5 @@
 'use client';
 
-import ArrowUpDown from 'lucide-react/icons/arrow-up-down';
-
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,24 +10,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 import { useListQuery } from '../url-state';
-import { SORT_OPTIONS } from './columns';
+import { SORT_OPTIONS, sortLabel } from './columns';
+import { SortButton } from './sort-button';
 
-/** Below 768px, standing in for the clickable column headers. */
+/** Below 768px, standing in for the clickable column headers. Loaded lazily by the toolbar. */
 export function SortMenu({ className }: { className?: string }) {
   const [query, setQuery] = useListQuery();
-  const current = SORT_OPTIONS.find((o) => o.key === query.sort);
   const value = `${query.sort}:${query.dir}`;
-  // `updated` has no header, so it reads as a plain "Sort" until one is picked.
-  const label = current
-    ? `Sort: ${current.label}, ${query.dir === 'asc' ? current.asc : current.desc}`
-    : 'Sort';
+  const label = sortLabel(query.sort, query.dir);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" aria-label={label} className={className}>
-          <ArrowUpDown aria-hidden className="size-4" />
-          {current ? `Sort: ${current.label}` : 'Sort'}
-        </Button>
+        <SortButton label={label} className={className} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Sort by</DropdownMenuLabel>

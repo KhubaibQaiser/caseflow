@@ -123,6 +123,7 @@ describe('Toolbar sort (mobile)', () => {
 
     const trigger = await screen.findByRole('button', {
       name: 'Sort: Follow-up, soonest first',
+      expanded: false, // the Radix trigger, not the stand-in shown while it loads
     });
     await user.click(trigger);
     await act(async () => {

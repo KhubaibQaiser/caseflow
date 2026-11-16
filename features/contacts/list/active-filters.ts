@@ -1,12 +1,9 @@
-import { format } from 'date-fns';
-
 import {
   MATTER_TYPE_LABEL,
   REFERRAL_SOURCE_LABEL,
   STATUS_LABEL,
 } from '@/lib/contracts/enums';
 import type { ListQuery } from '@/lib/contracts/list-query';
-import { parseDateOnly } from '@/lib/dates/date-only';
 
 import type { ListQueryPatch } from '../url-state';
 
@@ -25,7 +22,17 @@ export const FOLLOW_UP_LABEL = {
 } as const;
 
 // Always with the year: a chip has no "today" to drop it against.
-const day = (d: string) => format(parseDateOnly(d), 'MMM d, yyyy');
+// Intl, not date-fns: this runs in the browser and the bundle is budgeted.
+const DAY = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+const day = (d: string) => {
+  const [y, m, dd] = d.split('-').map(Number);
+  return DAY.format(Date.UTC(y!, m! - 1, dd!));
+};
 function range(from: string | null, to: string | null) {
   if (from && to) return from === to ? day(from) : `${day(from)} – ${day(to)}`;
   if (from) return `From ${day(from)}`;

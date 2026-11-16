@@ -54,3 +54,14 @@ export const nextSort = (
   current.sort === key
     ? { sort: key, dir: current.dir === 'asc' ? 'desc' : 'asc' }
     : { sort: key, dir: 'asc' };
+
+/** The mobile Sort button: short visible text, full name for screen readers. */
+export function sortLabel(sort: SortKey, dir: SortDir) {
+  const o = SORT_OPTIONS.find((x) => x.key === sort);
+  // `updated` has no header, so it reads as a plain "Sort".
+  if (!o) return { text: 'Sort', name: 'Sort' };
+  return {
+    text: `Sort: ${o.label}`,
+    name: `Sort: ${o.label}, ${dir === 'asc' ? o.asc : o.desc}`,
+  };
+}

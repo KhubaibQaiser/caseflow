@@ -4,7 +4,7 @@ import ListFilter from 'lucide-react/icons/list-filter';
 import LoaderCircle from 'lucide-react/icons/loader-circle';
 import Search from 'lucide-react/icons/search';
 import { debounce } from 'nuqs';
-import { useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,13 @@ import { countActiveFilterGroups, toFilters } from '@/lib/contracts/list-query';
 import { useListQuery } from '../url-state';
 import { FilterChips } from './filter-chips';
 import { QuickViews } from './quick-views';
-import { SortMenu } from './sort-menu';
+import { sortLabel } from './columns';
+import { SortButton } from './sort-button';
+
+// Radix menu + floating-ui (~25 kB gzipped) aren't needed for first paint, and only on mobile.
+const SortMenu = lazy(() =>
+  import('./sort-menu').then((m) => ({ default: m.SortMenu })),
+);
 
 export const SEARCH_ID = 'contacts-search';
 
@@ -92,7 +98,16 @@ export function Toolbar({
             </>
           )}
         </Button>
-        <SortMenu className="h-9 flex-1 md:hidden" />
+        <Suspense
+          fallback={
+            <SortButton
+              label={sortLabel(query.sort, query.dir)}
+              className="h-9 flex-1 md:hidden"
+            />
+          }
+        >
+          <SortMenu className="h-9 flex-1 md:hidden" />
+        </Suspense>
       </div>
       <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
         <QuickViews counts={facets.quickViews} />

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 import { ContactCards } from './contact-cards';
 import { ContactsTable } from './contacts-table';
-import { TODAY, TZ, row, rows } from './test-utils';
+import { row, rows } from './test-utils';
 
 const LONG_NAME = `Alexandra ${'Montgomery-'.repeat(10)}Vasquez`.slice(0, 120);
 const LONG_EMAIL = `${'a'.repeat(90)}@example-law-intake.com`;
@@ -17,8 +17,6 @@ const table = (props: Partial<Parameters<typeof ContactsTable>[0]> = {}) => (
     sort="follow_up"
     dir="asc"
     onSort={() => {}}
-    today={TODAY}
-    tz={TZ}
     {...props}
   />
 );
@@ -112,11 +110,7 @@ describe('ContactsTable', () => {
 describe('ContactCards', () => {
   it('truncates long names with title and links the phone', () => {
     render(
-      <ContactCards
-        rows={[row(1, { fullName: LONG_NAME })]}
-        today={TODAY}
-        offset={0}
-      />,
+      <ContactCards rows={[row(1, { fullName: LONG_NAME })]} offset={0} />,
     );
     const link = screen.getByRole('link', { name: LONG_NAME });
     expect(link).toHaveAttribute('title', LONG_NAME);

@@ -9,13 +9,13 @@ import {
   parseAsString,
   parseAsStringLiteral,
 } from 'nuqs/server';
-import { z } from 'zod';
 import {
   FOLLOW_UP_FILTERS,
   MATTER_TYPES,
   REFERRAL_SOURCES,
   STATUSES,
 } from './enums';
+import type { Filters } from './filters';
 
 export const PAGE_SIZES = [25, 50, 100, 250, 500] as const;
 export const DEFAULT_PAGE_SIZE = 250;
@@ -27,35 +27,19 @@ export const SORT_KEYS = [
   'status',
 ] as const;
 
-const date = z.iso.date();
-const FOLLOW_UP_VALUES = [...FOLLOW_UP_FILTERS, 'custom'] as const;
+export const FOLLOW_UP_VALUES = [...FOLLOW_UP_FILTERS, 'custom'] as const;
+export type { Filters };
 
-export const FiltersSchema = z
-  .object({
-    q: z.string().trim().max(100).optional(),
-    status: z.array(z.enum(STATUSES)).optional(),
-    matterType: z.array(z.enum(MATTER_TYPES)).optional(),
-    referralSource: z.array(z.enum(REFERRAL_SOURCES)).optional(),
-    followUp: z.enum(FOLLOW_UP_VALUES).optional(),
-    followUpFrom: date.optional(),
-    followUpTo: date.optional(),
-    createdFrom: date.optional(),
-    createdTo: date.optional(),
-  })
-  .superRefine((f, ctx) => {
-    const bad = (path: string, message: string) =>
-      ctx.addIssue({ code: 'custom', path: [path], message });
-    const custom = f.followUp === 'custom';
-    if (!custom && (f.followUpFrom || f.followUpTo))
-      bad('followUp', 'Follow-up dates need followUp "custom"');
-    if (custom && !f.followUpFrom && !f.followUpTo)
-      bad('followUp', 'Custom follow-up needs a from or to date');
-    if (f.followUpFrom && f.followUpTo && f.followUpFrom > f.followUpTo)
-      bad('followUpTo', 'Follow-up "to" is before "from"');
-    if (f.createdFrom && f.createdTo && f.createdFrom > f.createdTo)
-      bad('createdTo', 'Created "to" is before "from"');
-  });
-export type Filters = z.infer<typeof FiltersSchema>;
+// A real calendar date in YYYY-MM-DD (2026-02-31 fails). No zod here: this module ships to the browser.
+function isIsoDate(v: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]) - 1, Number(m[3])];
+  const t = new Date(Date.UTC(y, mo, d));
+  return (
+    t.getUTCFullYear() === y && t.getUTCMonth() === mo && t.getUTCDate() === d
+  );
+}
 
 // nuqs's array parser yields [] for all-invalid input; treat that as "not set".
 const literalList = <const T extends readonly string[]>(values: T) => {
@@ -70,7 +54,7 @@ const literalList = <const T extends readonly string[]>(values: T) => {
 };
 
 const isoDate = createParser<string>({
-  parse: (v) => (date.safeParse(v).success ? v : null),
+  parse: (v) => (isIsoDate(v) ? v : null),
   serialize: (v) => v,
 });
 

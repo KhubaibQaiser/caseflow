@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { PageHeader } from '@/components/shell/page-header';
 import { ContactsView } from '@/features/contacts/list/contacts-view';
 import { NewContactLink } from '@/features/contacts/list/empty-states';
+import { toListRows } from '@/features/contacts/list/list-rows';
 import {
   clampPage,
   loadListQuery,
@@ -42,14 +43,12 @@ export default async function ContactsPage({
         actions={<NewContactLink className="max-md:hidden" />}
       />
       <ContactsView
-        rows={result.rows}
+        rows={toListRows(result.rows, todayIn(tz), tz)}
         total={result.total}
         matching={result.matching}
         facets={facets}
         page={page}
         pageSize={query.size}
-        today={todayIn(tz)}
-        tz={tz}
       />
     </div>
   );
