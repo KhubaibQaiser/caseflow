@@ -47,21 +47,23 @@ describe('Toaster', () => {
     expect(screen.queryByText("Move didn't save.")).not.toBeInTheDocument();
   });
 
-  it('runs the toast action', async () => {
+  it('runs the Retry action from inside the live region', async () => {
     const user = userEvent.setup();
-    const onUndo = vi.fn();
+    const onRetry = vi.fn();
     render(<Toaster />);
 
     act(() => {
-      toast.success('Marisol Ortega moved to Active', {
-        action: { label: 'Undo', onClick: onUndo },
+      toast.error("Move didn't save.", {
+        action: { label: 'Retry', onClick: onRetry },
       });
     });
-    expect(
-      await screen.findByText('Marisol Ortega moved to Active'),
-    ).toBeInTheDocument();
+    const message = await screen.findByText("Move didn't save.");
+    expect(message.closest('[aria-live]')).toHaveAttribute(
+      'aria-live',
+      'polite',
+    );
 
-    await user.click(screen.getByRole('button', { name: 'Undo' }));
-    expect(onUndo).toHaveBeenCalledOnce();
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    expect(onRetry).toHaveBeenCalledOnce();
   });
 });

@@ -21,12 +21,12 @@ export const toast = Object.assign(
 const TOAST =
   'flex w-(--width) items-center gap-3.5 rounded-surface border border-transparent bg-ink py-2.5 pr-3 pl-3.5 font-sans! text-13 text-surface shadow-raised duration-200! ease-out! focus-visible:outline-2! focus-visible:outline-offset-2! focus-visible:outline-accent! focus-visible:outline-solid!';
 
-/** Mounted once in the root layout. Usage: toast.success('Contact saved'), with `action` for Undo or Retry. */
+/** Mounted once in the root layout. Usage: toast.success('Contact saved'); toast.error(msg, { action: { label: 'Retry', onClick } }). */
 export function Toaster() {
   return (
     <Sonner
       position="bottom-center"
-      // 6s leaves time to reach Undo; hover and focus pause it. Action errors never time out (see `error`).
+      // 6s to read it; hover or Alt+T pauses it (focus alone doesn't). Action errors never time out (see `error`).
       duration={6000}
       gap={8}
       className="font-sans!"

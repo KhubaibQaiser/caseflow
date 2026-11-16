@@ -149,4 +149,52 @@ describe('DatePicker', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(await screen.findByRole('tooltip')).toBeInTheDocument();
   });
+
+  it('disables the previous-month control at min', async () => {
+    const user = userEvent.setup();
+    render(
+      <DatePicker
+        value={null}
+        onChange={vi.fn()}
+        min="2026-11-18"
+        label="Next follow-up"
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: /Next follow-up/ }));
+
+    expect(
+      screen.getByRole('button', { name: /previous month/i }),
+    ).toHaveAttribute('aria-disabled', 'true');
+    expect(
+      screen.getByRole('button', { name: /next month/i }),
+    ).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('does not open from a blocked trigger by keyboard either', async () => {
+    const user = userEvent.setup();
+    render(
+      <DatePicker
+        value="2026-11-20"
+        onChange={vi.fn()}
+        label="Reschedule follow-up"
+        trigger={
+          <Button
+            variant="ghost"
+            size="sm"
+            disabledReason="Viewers can't edit contacts. Ask an admin."
+          >
+            Reschedule
+          </Button>
+        }
+      />,
+    );
+
+    await user.tab();
+    await user.keyboard('{Enter}');
+    await user.keyboard(' ');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(await screen.findByRole('tooltip')).toBeInTheDocument();
+  });
 });
