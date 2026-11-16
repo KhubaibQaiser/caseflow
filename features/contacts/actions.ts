@@ -111,9 +111,8 @@ export async function rescheduleAction(
   const c = await start('contacts.write');
   if (!c.ok) return c;
   if (!Id.safeParse(id).success) return gone();
-  const d = z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Use YYYY-MM-DD.')
+  const d = z.iso
+    .date('Use YYYY-MM-DD.')
     .refine((v) => v >= c.data.today, 'Follow-up date cannot be in the past.')
     .nullable()
     .safeParse(followUpOn);

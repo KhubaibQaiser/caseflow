@@ -106,7 +106,7 @@ async function explainEmptyUpdate(
   if (error) return mapError(error);
   if (!data) return fail('not_found', 'That contact no longer exists.');
   if (
-    expectedUpdatedAt &&
+    expectedUpdatedAt !== undefined &&
     Date.parse(data.updated_at) !== Date.parse(expectedUpdatedAt)
   )
     return fail('conflict', 'This contact was changed since you opened it.');
@@ -125,7 +125,8 @@ async function patch(
     .update(values)
     .eq('id', id)
     .is('deleted_at', null);
-  if (expectedUpdatedAt) q = q.eq('updated_at', expectedUpdatedAt);
+  if (expectedUpdatedAt !== undefined)
+    q = q.eq('updated_at', expectedUpdatedAt);
   const { data, error } = await q.select(COLS).maybeSingle();
   if (error) return mapError(error);
   if (!data) return explainEmptyUpdate(db, id, expectedUpdatedAt);
