@@ -86,6 +86,10 @@ test('@mobile tab bar: sticky, Account shows the role, Viewers get no New', asyn
 }) => {
   await asRole(context, baseURL, 'viewer');
   await page.goto('/no-such-page');
+  expect((await axe(page)).violations).toEqual([]);
+  await page.goto('/dev/forbidden');
+  expect((await axe(page)).violations).toEqual([]);
+  await page.goto('/no-such-page');
 
   const tabs = page.getByRole('navigation', { name: 'Main' });
   await expect(tabs.getByRole('link', { name: 'Contacts' })).toBeVisible();
@@ -107,4 +111,21 @@ test('@mobile tab bar: sticky, Account shows the role, Viewers get no New', asyn
   await expect(
     page.getByRole('link', { name: 'New', exact: true }),
   ).toBeVisible();
+});
+
+test('@mobile a toast clears the tab bar and the safe area', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await asRole(context, baseURL, 'admin');
+  await page.goto('/dev/toast');
+  await page.getByRole('button', { name: 'Show toast' }).click();
+
+  const toast = page.locator('[data-sonner-toast]').first();
+  await expect(toast).toBeVisible();
+  await page.waitForTimeout(500); // let the enter animation settle
+  const toastBox = (await toast.boundingBox())!;
+  const tabBox = (await page.locator('[data-tab-bar]').boundingBox())!;
+  expect(toastBox.y + toastBox.height).toBeLessThanOrEqual(tabBox.y - 8);
 });
