@@ -3,7 +3,7 @@
 import ChevronDown from 'lucide-react/icons/chevron-down';
 import X from 'lucide-react/icons/x';
 import { useEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { ReactNode, RefObject } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -35,6 +35,8 @@ type FiltersPanelProps = {
   facets: ContactFacets;
   /** The pipeline fixes status per column. */
   hideStatus?: boolean;
+  /** The Filters button: the sheet hands focus back to it (it is not a Dialog trigger). */
+  returnFocusTo?: RefObject<HTMLElement | null>;
   /** Move focus into the side panel when it opens. */
   focusOnOpen?: boolean;
 };
@@ -114,6 +116,10 @@ export function FiltersPanel(props: FiltersPanelProps) {
           title={title}
           actions={clearAll}
           closeLabel="Close filters"
+          onCloseAutoFocus={(e) => {
+            e.preventDefault();
+            props.returnFocusTo?.current?.focus();
+          }}
           footer={footer}
         >
           {body}
@@ -150,19 +156,28 @@ function Aside({
   focusOnOpen?: boolean;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const latestClose = useRef(onClose);
+  useEffect(() => {
+    latestClose.current = onClose;
+  });
   useEffect(() => {
     if (focusOnOpen) ref.current?.focus();
   }, [focusOnOpen]);
+  useEffect(() => {
+    const el = ref.current;
+    // A calendar is portaled out of the panel, so its Esc never reaches this listener; it closes only the calendar.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && !e.defaultPrevented) latestClose.current();
+    };
+    el?.addEventListener('keydown', onKey);
+    return () => el?.removeEventListener('keydown', onKey);
+  }, []);
   return (
     <aside
       ref={ref}
       id="filters-panel"
       aria-label="Filters"
       tabIndex={-1}
-      // An open calendar takes its own Esc first (Radix marks the event handled).
-      onKeyDown={(e) => {
-        if (e.key === 'Escape' && !e.defaultPrevented) onClose();
-      }}
       className="bg-panel border-line rounded-tl-surface shadow-raised absolute inset-y-0 right-0 z-20 flex w-64 flex-col border-t border-l outline-none max-lg:hidden"
     >
       <header className="border-line bg-panel flex items-center justify-between gap-3 border-b py-2.5 pr-2.5 pl-4">

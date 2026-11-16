@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useRef, useState, useSyncExternalStore } from 'react';
+import { useCallback, useState, useSyncExternalStore } from 'react';
+import type { RefObject } from 'react';
 
 const DESKTOP = '(min-width: 1024px)';
 
@@ -26,14 +27,17 @@ const remember = (open: boolean) => {
  * Open state for the Filters panel. Desktop remembers it in a cookie (the server renders it as left);
  * the mobile sheet always starts closed. `mounted` turns true on first open so the panel's code loads then.
  */
-export function useFiltersPanel(initialOpen: boolean) {
+export function useFiltersPanel(
+  initialOpen: boolean,
+  /** The Filters button: desktop returns focus to it on close. */
+  button: RefObject<HTMLElement | null>,
+) {
   const desktop = useIsDesktop();
   const [desktopOpen, setDesktopOpen] = useState(initialOpen);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [mounted, setMounted] = useState(initialOpen);
   // The server-rendered panel must not steal focus; one opened by the user should take it.
   const [focusOnOpen, setFocusOnOpen] = useState(false);
-  const button = useRef<HTMLButtonElement>(null);
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -44,9 +48,9 @@ export function useFiltersPanel(initialOpen: boolean) {
       if (next) {
         setMounted(true);
         setFocusOnOpen(true);
-      } else button.current?.focus();
+      } else if (desktop) button.current?.focus(); // the sheet returns focus itself, once it has closed
     },
-    [desktop],
+    [desktop, button],
   );
 
   return {
@@ -54,7 +58,6 @@ export function useFiltersPanel(initialOpen: boolean) {
     setOpen,
     mounted,
     focusOnOpen,
-    button,
   };
 }
 export type FiltersPanelState = ReturnType<typeof useFiltersPanel>;

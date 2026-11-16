@@ -4,13 +4,15 @@ import ListFilter from 'lucide-react/icons/list-filter';
 import LoaderCircle from 'lucide-react/icons/loader-circle';
 import Search from 'lucide-react/icons/search';
 import { debounce } from 'nuqs';
-import { Suspense, lazy, useRef, useState } from 'react';
+import { Suspense, lazy } from 'react';
+import type { RefObject } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ContactFacets } from '@/lib/contracts/facets';
 import { countActiveFilterGroups, toFilters } from '@/lib/contracts/list-query';
 
+import type { FiltersPanelState } from '../filters/use-filters-panel';
 import { useListQuery } from '../url-state';
 import { FilterChips } from './filter-chips';
 import { QuickViews } from './quick-views';
@@ -27,14 +29,18 @@ export const SEARCH_ID = 'contacts-search';
 export function Toolbar({
   facets,
   isPending,
+  panel,
+  filtersButton,
+  onFiltersIntent,
 }: {
   facets: ContactFacets;
   isPending: boolean;
+  panel: FiltersPanelState;
+  filtersButton: RefObject<HTMLButtonElement | null>;
+  /** Hover or focus on the Filters button: start loading the panel's code. */
+  onFiltersIntent?: () => void;
 }) {
   const [query, setQuery] = useListQuery();
-  const filtersButton = useRef<HTMLButtonElement>(null);
-  // ponytail: T15 lifts this to the filters panel (desktop panel, mobile sheet, cookie-remembered).
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const applied = countActiveFilterGroups(toFilters(query));
 
   return (
@@ -80,10 +86,13 @@ export function Toolbar({
         <Button
           ref={filtersButton}
           variant="ghost"
-          aria-expanded={filtersOpen}
+          aria-expanded={panel.open}
+          aria-controls={panel.open ? 'filters-panel' : undefined}
+          onPointerEnter={onFiltersIntent}
+          onFocus={onFiltersIntent}
           // One name in every browser; a flex badge would read "Filters , 2 applied".
           aria-label={applied > 0 ? `Filters, ${applied} applied` : undefined}
-          onClick={() => setFiltersOpen((o) => !o)}
+          onClick={() => panel.setOpen(!panel.open)}
           className="max-md:h-9 max-md:flex-1"
         >
           <ListFilter aria-hidden className="size-4" />

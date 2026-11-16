@@ -1,18 +1,42 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { useRef } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { useFiltersPanel } from '../filters/use-filters-panel';
 import { ListTransition } from '../url-state';
 import { FACETS, VIEWER, wrapper } from './test-utils';
 import { Toolbar } from './toolbar';
 
+afterEach(() => vi.unstubAllGlobals());
+
 const lastUrl = (spy: ReturnType<typeof vi.fn>) =>
   spy.mock.calls.at(-1)![0].searchParams as URLSearchParams;
 
+function WithPanel() {
+  const filtersButton = useRef<HTMLButtonElement>(null);
+  const panel = useFiltersPanel(false, filtersButton);
+  return (
+    <Toolbar
+      facets={FACETS}
+      isPending={false}
+      panel={panel}
+      filtersButton={filtersButton}
+    />
+  );
+}
+
 function renderToolbar(opts: Parameters<typeof wrapper>[0] = {}) {
+  // matchMedia is absent in jsdom; the panel hook reads it.
+  vi.stubGlobal('matchMedia', (media: string) => ({
+    matches: true,
+    media,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
   return render(
     <ListTransition>
-      <Toolbar facets={FACETS} isPending={false} />
+      <WithPanel />
     </ListTransition>,
     { wrapper: wrapper(opts) },
   );

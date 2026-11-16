@@ -12,6 +12,8 @@ type SheetProps = {
   /** Buttons before the close button (e.g. Clear all). */
   actions?: ReactNode;
   closeLabel?: string;
+  /** For a sheet with no <DialogTrigger>: Radix would return focus to nothing. Call preventDefault and focus your opener. */
+  onCloseAutoFocus?: (event: Event) => void;
   children: ReactNode;
   footer: ReactNode;
 };
@@ -22,6 +24,7 @@ export function Sheet({
   title,
   actions,
   closeLabel = 'Close',
+  onCloseAutoFocus,
   children,
   footer,
 }: SheetProps) {
@@ -30,6 +33,7 @@ export function Sheet({
       <DialogScrim />
       <RadixDialog.Content
         aria-describedby={undefined}
+        onCloseAutoFocus={onCloseAutoFocus}
         data-side={side}
         className="bg-panel shadow-raised data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out fixed inset-y-0 right-0 z-50 flex w-[88%] max-w-sm flex-col border-l border-transparent"
       >

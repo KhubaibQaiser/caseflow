@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -13,7 +19,10 @@ function stubViewport(desktop: boolean) {
     removeEventListener: () => {},
   }));
 }
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  cleanup(); // unmount before the stubbed matchMedia goes away
+  vi.unstubAllGlobals();
+});
 
 const lastUrl = (spy: ReturnType<typeof vi.fn>) =>
   spy.mock.calls.at(-1)![0].searchParams as URLSearchParams;
