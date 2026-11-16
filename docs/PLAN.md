@@ -169,7 +169,7 @@ vitest.config.mts (projects: unit = jsdom, integration = node), playwright.confi
   - `SORT_KEYS = ['follow_up','name','waiting','updated','status'] as const`
   - `type Filters = {q?:string; status?:Status[]; matterType?:MatterType[]; referralSource?:ReferralSource[]; followUp?:FollowUpFilter|'custom'; followUpFrom?:string; followUpTo?:string; createdFrom?:string; createdTo?:string}`
   - `listQueryParsers` (nuqs). URL keys: `q, status, matter, source, fu, fuFrom, fuTo, createdFrom, createdTo, sort (default 'follow_up'), dir (default 'asc'), page (default 1), size (default 250, literal of PAGE_SIZES)`. Invalid values fall back to the defaults.
-  - `loadListQuery = createLoader(listQueryParsers)`
+  - `loadListQuery(input: LoaderInput): ListQuery` (sync; wraps `createLoader(listQueryParsers)` and drops invalid combinations)
   - `toFilters(q: ListQuery): Filters`
   - `countActiveFilterGroups(f: Filters): number` (q is excluded)
   - `clampPage(page:number, matching:number, pageSize:number): number`
@@ -625,7 +625,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
   - `Pagination` `{page; pageSize; matching}`. It shows "1–250 of 1,284", a page-size select (`PAGE_SIZES`), and first/prev/numbered pages/…/next/last. Changing the page scrolls the table to the top and focuses its caption.
   - `SortMenu` (mobile).
   - `EmptyStates`: `FirstRun` ("No contacts yet." plus New contact behind `<Can p="contacts.write">`, with the fallback "No contacts yet. An admin can add them.") and `Filtered` ("No contacts match these filters." listing the active filters, plus Clear filters).
-  - **The page:** `loadListQuery(searchParams)`. If `page` is beyond `clampPage`, redirect with the clamped page. It renders the header "Contacts" and "{matching} of {total}", with New contact behind `<Can>`.
+  - **The page:** `loadListQuery(await searchParams)`. If `page` is beyond `clampPage`, redirect with the clamped page. It renders the header "Contacts" and "{matching} of {total}", with New contact behind `<Can>`.
   - **`loading.tsx`:** 12 skeleton rows in the table shape.
   - **`error.tsx`:** `ErrorState` "Contacts didn't load." / "Check your connection and retry. Your filters are kept." Retry does `startTransition(() => { router.refresh(); reset() })`, or the retry API in the pinned Next docs.
 

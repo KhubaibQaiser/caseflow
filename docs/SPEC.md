@@ -194,8 +194,11 @@ Returns:
 ### 7.4 Filters shape (`FiltersSchema`, shared by the URL, the RPCs and the UI)
 - `q?: string` (at most 100 characters)
 - `status?: Status[]`, `matterType?: MatterType[]`, `referralSource?: ReferralSource[]`
-- `followUp?: 'overdue'|'dueToday'|'next7Days'|'none'|{from,to}`
+- `followUp?: 'overdue'|'dueToday'|'next7Days'|'none'|'custom'`, with `followUpFrom?` and `followUpTo?` (a flat range, used only with `'custom'`)
 - `createdFrom?`, `createdTo?` (ISO dates)
+- Dates are real calendar dates in `YYYY-MM-DD` form (`2026-02-31` is rejected). `from` may equal `to` but not follow it.
+- `followUpFrom`/`followUpTo` are rejected unless `followUp` is `'custom'`, and `'custom'` needs at least one of them.
+- In the URL, an invalid combination falls back instead of erroring: the offending dates (or a `'custom'` with no valid bound) are dropped.
 
 Quick views are presets that write `followUp`. The pipeline uses the same filters with `status` ignored, plus a per-column `RPC search_contacts` call with the status fixed, `page_size` 50 and offset paging ("Show 50 more").
 
