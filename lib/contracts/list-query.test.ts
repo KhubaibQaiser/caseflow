@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   clampPage,
   countActiveFilterGroups,
+  FiltersSchema,
   loadListQuery,
   toFilters,
 } from './list-query';
@@ -63,5 +64,32 @@ describe('list query', () => {
       }),
     ).toBe(2);
     expect(countActiveFilterGroups({})).toBe(0);
+  });
+
+  it('toFilters output parses with FiltersSchema', () => {
+    const q = loadListQuery({
+      q: `  ${'a'.repeat(150)}`,
+      status: 'lead',
+      source: 'past_client',
+      fu: 'custom',
+      fuFrom: '2026-11-01',
+      fuTo: '2026-11-30',
+      createdFrom: '2026-01-01',
+      createdTo: '2026-12-31',
+    });
+    const f = toFilters(q);
+    expect(FiltersSchema.parse(f)).toEqual(f);
+    expect(f.q).toBe('a'.repeat(100));
+    expect(toFilters(loadListQuery({ q: '   ' })).q).toBeUndefined();
+  });
+
+  it('FiltersSchema rejects bad values', () => {
+    expect(FiltersSchema.safeParse({ status: ['open'] }).success).toBe(false);
+    expect(FiltersSchema.safeParse({ followUp: 'later' }).success).toBe(false);
+    expect(FiltersSchema.safeParse({ createdFrom: '11/16/2026' }).success).toBe(
+      false,
+    );
+    expect(FiltersSchema.safeParse({ q: 'a'.repeat(101) }).success).toBe(false);
+    expect(FiltersSchema.parse({ q: '  ana  ' })).toEqual({ q: 'ana' });
   });
 });

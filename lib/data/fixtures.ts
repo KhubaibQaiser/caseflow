@@ -1,3 +1,4 @@
+import 'server-only';
 import {
   MATTER_TYPES,
   REFERRAL_SOURCES,
@@ -98,11 +99,16 @@ export function makeFixtureRows(n: number, today: string): ContactRow[] {
     }
     const hasEmail = r() < 0.8;
     const hasPhone = !hasEmail || r() < 0.7;
-    const created = addDaysDateOnly(today, -Math.floor(r() * 180));
-    const updated = addDaysDateOnly(created, Math.floor(r() * 20));
-    const upd = updated > today ? today : updated;
+    // Created on T-2 or earlier (UTC), so it is in the past in every zone where today is T.
+    const created = addDaysDateOnly(today, -2 - Math.floor(r() * 180));
     const hh = String(Math.floor(r() * 24)).padStart(2, '0');
     const mm = String(Math.floor(r() * 60)).padStart(2, '0');
+    const createdAt = `${created}T${hh}:${mm}:00.000Z`;
+    // UTC+14 reaches T first, at T-1 10:00Z; updates never pass that instant.
+    const latest = Date.parse(`${addDaysDateOnly(today, -1)}T10:00:00.000Z`);
+    const updatedAt = new Date(
+      Math.min(Date.parse(createdAt) + Math.floor(r() * 20 * 86400000), latest),
+    ).toISOString();
 
     const overdue = open && followUpOn !== null && followUpOn < today;
     rows.push({
@@ -116,8 +122,8 @@ export function makeFixtureRows(n: number, today: string): ContactRow[] {
       referralSource,
       status,
       followUpOn,
-      createdAt: `${created}T${hh}:${mm}:00.000Z`,
-      updatedAt: `${upd}T${mm}:${hh}:00.000Z`,
+      createdAt,
+      updatedAt,
       urgency:
         followUpOn === null
           ? 'none'

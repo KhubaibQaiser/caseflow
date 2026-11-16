@@ -6,6 +6,7 @@ const baseURL = process.env.BASE_URL ?? 'http://localhost:3000';
 export default defineConfig({
   testDir: './tests/e2e',
   reporter: process.env.CI ? [['html', { open: 'never' }], ['list']] : 'list',
+  forbidOnly: !!process.env.CI,
   webServer: process.env.BASE_URL
     ? undefined
     : {
@@ -23,6 +24,11 @@ export default defineConfig({
       use: { viewport: { width: 1440, height: 900 } },
       grepInvert: /@mobile/,
     },
-    { name: 'mobile', use: { ...devices['iPhone 13'] }, grep: /@mobile/ },
+    {
+      name: 'mobile',
+      // iPhone 13 viewport and UA on Chromium, so CI installs one browser.
+      use: { ...devices['iPhone 13'], browserName: 'chromium' },
+      grep: /@mobile/,
+    },
   ],
 });

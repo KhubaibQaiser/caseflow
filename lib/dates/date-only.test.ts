@@ -25,6 +25,9 @@ describe('date-only helpers', () => {
     const now = new Date('2026-11-16T11:30:00Z');
     expect(todayIn('Pacific/Kiritimati', now)).toBe('2026-11-17');
     expect(todayIn('Pacific/Pago_Pago', now)).toBe('2026-11-16');
+    expect(
+      todayIn('America/Los_Angeles', new Date('2026-11-16T03:00:00Z')),
+    ).toBe('2026-11-15');
   });
 
   it('resolveTimeZone accepts aliases and rejects junk', () => {
