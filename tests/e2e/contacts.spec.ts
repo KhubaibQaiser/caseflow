@@ -11,7 +11,7 @@ const axe = (page: Page) =>
 // Scoped to main: while the page streams in, React parks a hidden copy outside it (role queries skip it, text queries don't).
 const main = (page: Page) => page.getByRole('main');
 const table = (page: Page) => page.getByRole('table');
-// The URL moves first; the old rows stay (dimmed, aria-busy) until the new ones arrive.
+// The URL moves first; the old rows stay (aria-busy, full contrast) until the new ones arrive.
 const settled = (page: Page) =>
   expect(main(page).locator('[aria-busy="true"]')).toHaveCount(0);
 const firstDataRow = (page: Page) => table(page).getByRole('row').nth(1);

@@ -1,5 +1,7 @@
 'use client';
 
+import type { ReactNode } from 'react';
+
 import type { ContactFacets } from '@/lib/contracts/facets';
 
 import { ListTransition, useListQuery } from '../url-state';
@@ -10,6 +12,34 @@ import { Filtered, FirstRun } from './empty-states';
 import type { ListRow } from './list-rows';
 import { Pagination } from './pagination';
 import { Toolbar } from './toolbar';
+
+/**
+ * Old rows stay at full contrast while the next ones load (spec 8.8, 8.11);
+ * a thin bar on the top edge is the signal. It overlays, so nothing shifts.
+ */
+export function BusyRegion({
+  busy,
+  children,
+}: {
+  busy: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      aria-busy={busy || undefined}
+      className="relative flex min-h-0 flex-1 flex-col"
+    >
+      {busy && (
+        <span
+          data-loading-bar
+          aria-hidden="true"
+          className="bg-accent rounded-pill pointer-events-none absolute inset-x-2.5 top-0 z-[4] h-0.5 animate-pulse motion-reduce:animate-none forced-colors:bg-[Highlight]"
+        />
+      )}
+      {children}
+    </div>
+  );
+}
 
 type ContactsViewProps = {
   rows: ListRow[];
@@ -53,11 +83,7 @@ function Results({
         <Filtered />
       ) : (
         <>
-          {/* Old rows stay and dim while the next ones load, so nothing jumps (spec 8.8). */}
-          <div
-            aria-busy={isPending || undefined}
-            className="flex min-h-0 flex-1 flex-col transition-opacity duration-150 aria-busy:opacity-60 motion-reduce:transition-none"
-          >
+          <BusyRegion busy={isPending}>
             <ContactsTable
               className="hidden flex-1 md:block"
               rows={rows}
@@ -73,7 +99,7 @@ function Results({
               offset={offset}
               matching={matching}
             />
-          </div>
+          </BusyRegion>
           <Pagination
             page={query.page}
             pageSize={query.size}
