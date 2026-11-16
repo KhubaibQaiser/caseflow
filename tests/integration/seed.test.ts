@@ -36,6 +36,22 @@ async function n(
   return count ?? 0;
 }
 
+// PostgREST caps a select at 1000 rows: page through all of them.
+async function all(table: string, cols: string) {
+  const out: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await serviceClient()
+      .from(table)
+      .select(cols)
+      .order('id')
+      .range(from, from + 999);
+    if (error) throw new Error(error.message);
+    const page = (data ?? []) as unknown as Record<string, unknown>[];
+    out.push(...page);
+    if (page.length < 1000) return out;
+  }
+}
+
 describe('seed', () => {
   beforeAll(async () => {
     await resetData();
@@ -67,27 +83,22 @@ describe('seed', () => {
   });
 
   it('uses only contract enum values and valid contact info', async () => {
-    const { data, error } = await serviceClient()
-      .from('contacts')
-      .select('status, matter_type, email, phone, created_at')
-      .limit(2500);
-    expect(error).toBeNull();
-    const rows = data ?? [];
-    const floor = Date.now() - 121 * 86_400_000;
-    for (const r of rows) {
-      expect(STATUSES).toContain(r.status);
-      expect(MATTER_TYPES).toContain(r.matter_type);
-      expect(r.email ?? r.phone).toBeTruthy();
-      expect(Date.parse(r.created_at)).toBeGreaterThan(floor);
-    }
-    const closed = rows.filter((r) => r.status === 'closed').length;
-    expect(closed / rows.length).toBeGreaterThan(0.4);
-    expect(closed / rows.length).toBeLessThan(0.56);
-    const { data: acts } = await serviceClient()
-      .from('activities')
-      .select('type')
-      .limit(10);
-    for (const a of acts ?? []) expect(ACTIVITY_TYPES).toContain(a.type);
+    const list = (v: readonly string[]) => `(${v.join(',')})`;
+    expect(await n(head('contacts').not('status', 'in', list(STATUSES)))).toBe(
+      0,
+    );
+    expect(
+      await n(head('contacts').not('matter_type', 'in', list(MATTER_TYPES))),
+    ).toBe(0);
+    expect(
+      await n(head('activities').not('type', 'in', list(ACTIVITY_TYPES))),
+    ).toBe(0);
+    expect(await n(head('contacts').is('email', null).is('phone', null))).toBe(
+      0,
+    );
+    const closed = await n(head('contacts').eq('status', 'closed'));
+    expect(closed / 2500).toBeGreaterThan(0.4);
+    expect(closed / 2500).toBeLessThan(0.56);
   });
 
   it('has about 2% overdue, only among lead and active, and closed never due', async () => {
@@ -110,25 +121,40 @@ describe('seed', () => {
   });
 
   it('gives realistic timestamps and no soft-deleted contacts', async () => {
-    const { data, error } = await serviceClient()
-      .from('contacts')
-      .select('created_at, updated_at, deleted_at')
-      .limit(2500);
-    expect(error).toBeNull();
-    const rows = data ?? [];
-    const now = Date.now();
+    const nowIso = new Date().toISOString();
+    const floor = new Date(Date.now() - 121 * 86_400_000).toISOString();
+    expect(await n(head('contacts').not('deleted_at', 'is', null))).toBe(0);
+    expect(await n(head('contacts').lt('created_at', floor))).toBe(0);
+    expect(await n(head('contacts').gt('updated_at', nowIso))).toBe(0);
+    // column-to-column comparison is not expressible in PostgREST filters
+    const rows = await all('contacts', 'created_at, updated_at, updated_by');
+    expect(rows).toHaveLength(2500);
+    let backwards = 0;
     for (const r of rows) {
-      expect(Date.parse(r.updated_at)).toBeGreaterThanOrEqual(
-        Date.parse(r.created_at),
-      );
-      expect(Date.parse(r.updated_at)).toBeLessThanOrEqual(now);
-      expect(r.deleted_at).toBeNull();
+      if (Date.parse(String(r.updated_at)) < Date.parse(String(r.created_at)))
+        backwards++;
     }
-    expect(new Set(rows.map((r) => r.updated_at)).size).toBeGreaterThan(900);
+    expect(backwards).toBe(0);
+    expect(new Set(rows.map((r) => r.updated_at)).size).toBeGreaterThan(2400);
+    expect(rows.every((r) => r.updated_by !== null)).toBe(true);
   });
 
   it('seeds 0-3 notes per contact', async () => {
-    expect(await n(head('notes'))).toBeGreaterThan(1000);
+    const perContact = new Map<string, number>();
+    for (const r of await all('notes', 'contact_id'))
+      perContact.set(
+        String(r.contact_id),
+        (perContact.get(String(r.contact_id)) ?? 0) + 1,
+      );
+    expect(Math.max(...perContact.values())).toBeLessThanOrEqual(3);
+    expect(perContact.size).toBeGreaterThan(1500);
+  });
+
+  it('gives every contact a unique phone number', async () => {
+    const phones = (await all('contacts', 'phone'))
+      .map((r) => r.phone)
+      .filter((p) => p !== null);
+    expect(new Set(phones).size).toBe(phones.length);
   });
 
   it('lets the admin sign in with SEED_ADMIN_PASSWORD', async () => {

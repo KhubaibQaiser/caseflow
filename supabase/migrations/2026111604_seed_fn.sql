@@ -12,8 +12,8 @@ declare
     'Priya','Arjun','Mei','Wei','Hiroshi','Yuki','Min-jun','Seo-yeon','Fatima','Omar',
     'Aisha','Yusuf','Amara','Chidi','Kwame','Zainab','Mateo','Sofia','Santiago','Valentina',
     'Diego','Camila','Javier','Lucia','Carlos','Ximena','Dmitri','Anastasia','Pavel','Katarina',
-    'Liam','Siobhan','Declan','Niamh','Giovanni','Chiara','Luca','Elena','Tariq','Layla',
-    'Hassan','Noor','Rohan','Ananya','Vikram','Kavya','Tomasz','Ingrid','Anders','Freya'];
+    'Siobhan','Declan','Niamh','Giovanni','Chiara','Luca','Elena','Tariq','Layla',
+    'Hassan','Noor','Rohan','Ananya','Vikram','Kavya','Tomasz','Ingrid','Søren','Freya','Zoë','José'];
   lasts text[] := array[
     'Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez',
     'Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin',
@@ -21,12 +21,13 @@ declare
     'Walker','Young','Allen','King','Wright','Scott','Torres','Nguyen','Hill','Flores',
     'Patel','Shah','Kumar','Singh','Chen','Wang','Zhang','Liu','Kim','Park',
     'Tanaka','Sato','Ali','Hassan','Ahmed','Khan','Okafor','Mensah','Kowalski','Novak',
-    'Petrov','Ivanov','Rossi','Romano','Murphy','OBrien','Larsen','Nielsen','Silva','Costa'];
-  areas text[] := array['212','312','415','512','617','713','206','305','404','602'];
+    'Petrov','Ivanov','Rossi','Romano','Murphy','O''Brien','Larsen','Nielsen','Silva','Costa','Núñez','Müller'];
+  areas text[] := array['212','312','415','512','617','713','206','305','404','602','303','503','702','801','901',
+    '214','216','267','314','347','410','504','612','619','646'];
   summaries text[] := array[
     'Rear-ended at a red light; neck and back pain, treating with a chiropractor.',
     'Slip and fall at a grocery store; wrist fracture, store has not responded.',
-    'Dog bite at a neighbour''s home; needs a medical records review.',
+    'Dog bite at a neighbor''s home; needs a medical records review.',
     'Seeking an uncontested divorce; agreed on custody, dividing the house.',
     'Wants to modify child support after a job loss.',
     'Custody dispute; the other parent plans to relocate out of state.',
@@ -39,7 +40,7 @@ declare
     'Wants a will and a revocable trust; two children, one rental property.',
     'Updating a power of attorney after a parent''s diagnosis.',
     'Probate of a parent''s estate; no will found, three siblings.',
-    'First-offence DUI; hearing set for next month.',
+    'First-offense DUI; hearing set for next month.',
     'Charged with misdemeanor theft; wants to know about diversion.',
     'Record expungement for a decade-old conviction.'];
   notes text[] := array[
@@ -63,12 +64,12 @@ begin
   truncate public.contacts, public.notes, public.activities;
 
   insert into public.contacts
-    (full_name, email, phone, matter_type, referral_source, status, follow_up_on, summary, created_by, created_at, updated_at)
+    (full_name, email, phone, matter_type, referral_source, status, follow_up_on, summary, created_by, updated_by, created_at, updated_at)
   select
     g.fn || ' ' || g.ln,
     case when g.rc >= 0.2 then lower(regexp_replace(g.fn || '.' || g.ln, '[^A-Za-z.]', '', 'g')) || g.i || '@example.test' end,
     case when g.rc < 0.2 or g.rc >= 0.4
-      then format('(%s) 555-01%s', areas[1 + floor(g.rar * array_length(areas, 1))::int], lpad((g.i % 100)::text, 2, '0')) end,
+      then format('(%s) 555-01%s', areas[1 + ((g.i / 100) % 25)], lpad((g.i % 100)::text, 2, '0')) end,
     m.matter,
     case when g.rsrc < 0.1 then null
       else (enum_range(null::public.referral_source))[1 + floor((g.rsrc - 0.1) / 0.9 * 5)::int] end,
@@ -82,6 +83,7 @@ begin
     end,
     summaries[(array_position(enum_range(null::public.matter_type), m.matter) - 1) * 3 + 1 + floor(g.rsum * 3)::int],
     actor,
+    actor,
     now() - g.rca * interval '120 days',
     now() - g.rca * interval '120 days' + g.rup * g.rca * interval '120 days'
   from (
@@ -89,7 +91,7 @@ begin
       firsts[1 + floor(random() * array_length(firsts, 1))::int] as fn,
       lasts[1 + floor(random() * array_length(lasts, 1))::int] as ln,
       random() as rs, random() as rc, random() as rm, random() as rsrc, random() as rf,
-      random() as rd, random() as rca, random() as rup, random() as rsum, random() as rar
+      random() as rd, random() as rca, random() as rup, random() as rsum
     from generate_series(1, n) i
   ) g
   cross join lateral (select (case
