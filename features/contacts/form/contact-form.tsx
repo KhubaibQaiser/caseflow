@@ -1,10 +1,18 @@
 'use client';
 
-import { lazy, Suspense, useRef, useState, useTransition } from 'react';
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 import type { ReactNode } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { usePathname, useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
+import { z } from 'zod';
 import type { Resolver, SubmitHandler } from 'react-hook-form';
 
 import { Button } from '@/components/ui/button';
@@ -81,6 +89,21 @@ type Props = {
   ): Promise<Result<{ id: string }>>;
 };
 
+// What survives a session expiry in history.state: the typed values plus the stamp they were made against.
+const DraftSchema = z.object({
+  values: z.object({
+    fullName: z.string(),
+    email: z.string(),
+    phone: z.string(),
+    matterType: z.string(),
+    referralSource: z.string(),
+    status: z.enum(STATUSES),
+    followUpOn: z.string().nullable(),
+    summary: z.string(),
+  }),
+  stamp: z.string(),
+});
+
 const valuesOf = (c?: ContactDetail): Values => ({
   fullName: c?.fullName ?? '',
   email: c?.email ?? '',
@@ -114,6 +137,8 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
   const [reported, setReported] = useState<Name[]>([]);
   const [attempt, setAttempt] = useState(0);
   const busy = useRef(false);
+  // Frozen at open: a conflict refresh hands us a newer `initial`, but Save must keep proving what the edits were based on.
+  const stamp = useRef(initial?.updatedAt ?? '');
 
   const resolver = zodResolver(
     makeContactInputSchema({ today, previousFollowUpOn: initial?.followUpOn }),
@@ -135,12 +160,25 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
   } = form;
   useUnsavedGuard(isDirty && !leaving, setLeaveTo);
 
+  // Back from the sign-in page after a session expiry: put the typed values (and their stamp) back.
+  useEffect(() => {
+    const draft = DraftSchema.safeParse(window.history.state?.caseflowDraft);
+    if (!draft.success) return;
+    const rest = Object.fromEntries(
+      Object.entries(window.history.state).filter(
+        ([k]) => k !== 'caseflowDraft',
+      ),
+    );
+    window.history.replaceState(rest, '');
+    stamp.current = draft.data.stamp;
+    reset(draft.data.values, { keepDefaultValues: true }); // differs from the defaults, so dirty
+  }, [reset]);
+
   const status = useWatch({ control, name: 'status' });
   const followUpOn = useWatch({ control, name: 'followUpOn' });
   const summary = useWatch({ control, name: 'summary' });
   const err = (n: Name) => errors[n]?.message;
   const contactMethodError = err('contactMethod');
-  const stamp = initial?.updatedAt ?? '';
   const backHref = initial ? `/contacts/${initial.id}` : '/contacts';
 
   const report = (names: Name[]) => {
@@ -152,7 +190,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
     setBanner(null);
     let result: Result<{ id: string }>;
     try {
-      result = await onSubmit(data, stamp);
+      result = await onSubmit(data, stamp.current);
     } catch {
       result = fail('server', 'Network error.');
     }
@@ -165,7 +203,14 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
     }
     const { code, message, fieldErrors } = result.error;
     if (code === 'unauthorized') {
-      // push, not replace: Back returns to this page.
+      // The typed values ride in this entry's history state; Back from sign-in restores them.
+      window.history.replaceState(
+        {
+          ...window.history.state,
+          caseflowDraft: { values: form.getValues(), stamp: stamp.current },
+        },
+        '',
+      );
       router.push(`/login?reason=expired&next=${encodeURIComponent(pathname)}`);
     } else if (code === 'conflict') {
       setBanner({ kind: 'conflict' });
@@ -179,7 +224,9 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
         }
       }
       if (names.length) report(names);
-      else setBanner({ kind: 'failed', message, retry: false });
+      // Errors that name no field (or only unknown ones) would vanish silently otherwise.
+      if (!names.length || names.length < Object.keys(fieldErrors).length)
+        setBanner({ kind: 'failed', message, retry: false });
     } else if (code === 'forbidden' || code === 'not_found') {
       setBanner({ kind: 'failed', message, retry: false });
     } else {
@@ -215,6 +262,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
 
   const reloadLatest = () => {
     reset(valuesOf(initial));
+    stamp.current = initial?.updatedAt ?? '';
     setBanner(null);
     setReported([]);
   };
