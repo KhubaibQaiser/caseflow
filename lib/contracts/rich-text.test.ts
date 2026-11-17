@@ -63,6 +63,7 @@ describe('RichDocSchema allows the editor’s own output', () => {
               target: '_blank',
               rel: 'noopener noreferrer nofollow',
               class: null,
+              title: null,
             }),
           ]),
         ),

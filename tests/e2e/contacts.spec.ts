@@ -2,9 +2,12 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+import { newContact } from './data';
 import { settleAnimations, storage } from './helpers';
 
-// Seeded data: 2,500 contacts. Until T22b flips the data layer the list still runs on the fake (1,200 contacts, one with a 120-character name).
+// Seeded data: 2,500 contacts. Specs that create a contact (this one, the form, detail) share the database, so a total
+// reads "2,5nn" rather than exactly 2,500.
+const TOTAL = '2,5\\d\\d';
 const axe = async (page: Page) => {
   await settleAnimations(page);
   return new AxeBuilder({ page })
@@ -28,18 +31,93 @@ test('the list shows counts, keeps table semantics and passes axe', async ({
   await expect(
     page.getByRole('heading', { level: 1, name: 'Contacts' }),
   ).toBeVisible();
-  await expect(main(page).getByText('1,200 of 1,200')).toBeVisible();
-  await expect(table(page)).toHaveAttribute('aria-rowcount', '1201');
+  await expect(
+    main(page).getByText(new RegExp(`^${TOTAL} of ${TOTAL}$`)),
+  ).toBeVisible();
+  await expect(table(page)).toHaveAttribute('aria-rowcount', /^25\d\d$/);
   await expect(firstDataRow(page)).toHaveAttribute('aria-rowindex', '2');
   await expect(
     page.getByRole('columnheader', { name: 'Follow-up' }),
   ).toHaveAttribute('aria-sort', 'ascending');
-  await expect(main(page).getByText('1–250 of 1,200')).toBeVisible();
+  await expect(
+    main(page).getByText(new RegExp(`^1–250 of ${TOTAL}$`)),
+  ).toBeVisible();
   // The table scrolls inside the page; the window doesn't.
   expect(
     await page.evaluate(() => document.documentElement.scrollHeight),
   ).toBeLessThanOrEqual(900);
   expect((await axe(page)).violations).toEqual([]);
+});
+
+test('search finds a contact by the digits of a phone number', async ({
+  page,
+}) => {
+  await page.goto('/contacts?q=5550148');
+  await settled(page);
+  const count = await table(page).getByRole('link').count();
+  expect(count).toBeGreaterThan(0);
+  await expect(main(page).getByText(new RegExp(`of ${TOTAL}$`))).toBeVisible();
+});
+
+test('a Status filter applies, shows a chip and the count, and survives a reload', async ({
+  page,
+}) => {
+  await page.goto('/contacts');
+  await page.waitForLoadState('networkidle');
+  const button = page.getByRole('button', { name: /^Filters/ });
+  await button.click();
+  const panel = page.getByRole('complementary', { name: 'Filters' });
+  await panel.getByRole('checkbox', { name: /^Closed / }).check();
+  await panel.getByRole('button', { name: 'Apply' }).click();
+  await expect(panel).toBeHidden();
+  await expect(page).toHaveURL(/status=closed/);
+  await settled(page);
+  const chips = page.getByRole('list', { name: 'Applied filters' });
+  await expect(chips).toContainText('Closed');
+  const summary = main(page).getByText(new RegExp(`^[\\d,]+ of ${TOTAL}$`));
+  await expect(summary).not.toHaveText(new RegExp(`^${TOTAL} of`));
+  const shown = await summary.textContent();
+
+  await page.reload();
+  await expect(chips).toContainText('Closed');
+  await expect(main(page).getByText(shown!)).toBeVisible();
+});
+
+test('sorting by Name toggles aria-sort', async ({ page }) => {
+  await page.goto('/contacts');
+  const head = page.getByRole('columnheader', { name: 'Name' });
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('button', { name: 'Name' }).click();
+  await expect(head).toHaveAttribute('aria-sort', 'ascending');
+  await page.getByRole('button', { name: 'Name' }).click();
+  await expect(head).toHaveAttribute('aria-sort', 'descending');
+});
+
+test('page size 50 shows 50 rows, and a filter change goes back to page 1', async ({
+  page,
+}) => {
+  await page.goto('/contacts');
+  await page.waitForLoadState('networkidle');
+  await page
+    .getByRole('combobox', { name: 'Rows per page' })
+    .selectOption('50');
+  await expect(page).toHaveURL(/size=50/);
+  await settled(page);
+  await expect(
+    main(page).getByText(new RegExp(`^1–50 of ${TOTAL}$`)),
+  ).toBeVisible();
+  await page.getByRole('link', { name: 'Page 2' }).click();
+  await expect(page).toHaveURL(/page=2/);
+  await expect(
+    main(page).getByText(new RegExp(`^51–100 of ${TOTAL}$`)),
+  ).toBeVisible();
+
+  await page
+    .getByRole('navigation', { name: 'Quick views' })
+    .getByRole('link', { name: /^Overdue/ })
+    .click();
+  await expect(page).toHaveURL(/fu=overdue/);
+  await expect(page).not.toHaveURL(/page=/);
 });
 
 test('rapid typing shows results for the final query and resets the page', async ({
@@ -48,14 +126,12 @@ test('rapid typing shows results for the final query and resets the page', async
   await page.goto('/contacts?page=3');
   await page
     .getByRole('searchbox', { name: 'Search contacts' })
-    .pressSequentially('ortega', { delay: 40 });
-  await expect(page).toHaveURL(/\/contacts\?q=ortega$/);
-  await expect(
-    page.getByRole('status').filter({ hasText: 'contacts' }),
-  ).not.toHaveText('1,200 contacts');
+    .pressSequentially('ahme', { delay: 40 });
+  await expect(page).toHaveURL(/\/contacts\?q=ahme$/);
+  await settled(page);
   const names = await table(page).getByRole('link').allTextContents();
   expect(names.length).toBeGreaterThan(0);
-  for (const n of names) expect(n.toLowerCase()).toContain('ortega');
+  for (const n of names) expect(n.toLowerCase()).toContain('ahme');
 });
 
 test('back and forward restore each URL state', async ({ page }) => {
@@ -88,12 +164,15 @@ test('a stale page clamps to the last page and bad values are ignored', async ({
   page,
 }) => {
   await page.goto('/contacts?page=999&status=foo');
-  await expect(page).toHaveURL(/\/contacts\?page=5$/);
-  await expect(page.getByRole('link', { name: 'Page 5' })).toHaveAttribute(
-    'aria-current',
-    'page',
-  );
-  await expect(main(page).getByText('1,001–1,200 of 1,200')).toBeVisible();
+  await expect(page).toHaveURL(/\/contacts\?page=1[01]$/);
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Pagination' })
+      .locator('[aria-current="page"]'),
+  ).toHaveText(/^1[01]$/);
+  await expect(
+    main(page).getByText(new RegExp(`^2,\\d{3}–${TOTAL} of ${TOTAL}$`)),
+  ).toBeVisible();
 });
 
 test('a quick view filters, shows a chip, and the chip removes it', async ({
@@ -123,7 +202,9 @@ test('a quick view filters, shows a chip, and the chip removes it', async ({
 test('long names truncate with a tooltip and never widen the table', async ({
   page,
 }) => {
-  await page.goto('/contacts?q=Featherstonehaugh');
+  const token = `Fth${Math.random().toString(36).slice(2, 8)}`;
+  await newContact({ name: token + 'x'.repeat(120 - token.length) });
+  await page.goto(`/contacts?q=${token}`);
   const link = table(page).getByRole('link');
   await expect(link).toHaveCount(1);
   const name = (await link.textContent())!;
@@ -275,7 +356,7 @@ test('mobile shows cards and sorts from a menu @mobile', async ({ page }) => {
   await expect(cards).toBeVisible();
   await expect(cards.getByRole('link').first()).toHaveAttribute(
     'href',
-    /\/contacts\/c-/,
+    /\/contacts\/[0-9a-f-]{36}$/,
   );
 
   await page
@@ -306,7 +387,7 @@ test('a 100-character search never widens the page at 320px', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  const q = 'x'.repeat(100);
+  const q = 'q'.repeat(100);
   await page.goto(`/contacts?q=${q}`);
   await expect(main(page).getByText(`Search: “${q}”`)).toBeVisible();
   expect(
@@ -322,19 +403,19 @@ test('a slow earlier response never replaces the latest results', async ({
   await page.goto('/contacts');
   await page.waitForLoadState('networkidle');
   // Hold the first search's RSC response back until after the second has landed.
-  await page.route(/[?&]q=ortega(&|$)/, async (route) => {
+  await page.route(/[?&]q=ahmed(&|$)/, async (route) => {
     await new Promise((r) => setTimeout(r, 2500));
     await route.continue();
   });
   const box = page.getByRole('searchbox');
-  await box.fill('ortega');
-  await page.waitForTimeout(400); // past the 250ms debounce: the ortega request is in flight
-  await box.fill('kessler');
-  await expect(page).toHaveURL(/q=kessler/);
-  await page.waitForTimeout(3000); // the held ortega response has now arrived
+  await box.fill('ahmed');
+  await page.waitForTimeout(400); // past the 250ms debounce: the ahmed request is in flight
+  await box.fill('okafor');
+  await expect(page).toHaveURL(/q=okafor/);
+  await page.waitForTimeout(3000); // the held ahmed response has now arrived
   await settled(page);
-  await expect(page).toHaveURL(/q=kessler/);
+  await expect(page).toHaveURL(/q=okafor/);
   const names = await table(page).getByRole('link').allTextContents();
   expect(names.length).toBeGreaterThan(0);
-  for (const n of names) expect(n.toLowerCase()).toContain('kessler');
+  for (const n of names) expect(n.toLowerCase()).toContain('okafor');
 });

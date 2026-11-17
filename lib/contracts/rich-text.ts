@@ -25,7 +25,7 @@ const Href = z
   .string()
   .refine(isAllowedHref, 'Link must be http, https or mailto.');
 
-// Tiptap's Link also serialises target, rel and class; accept only its own values and keep just the href.
+// Tiptap's Link also serialises target, rel, class and title; accept only its own values and keep just the href.
 const LinkMark = z.strictObject({
   type: z.literal('link'),
   attrs: z
@@ -34,6 +34,7 @@ const LinkMark = z.strictObject({
       target: z.literal('_blank').nullish(),
       rel: z.literal('noopener noreferrer nofollow').nullish(),
       class: z.null().nullish(),
+      title: z.null().nullish(),
     })
     .transform((a) => ({ href: a.href })),
 });

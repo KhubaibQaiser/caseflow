@@ -3,28 +3,22 @@ import { expect, test } from '@playwright/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import { format } from 'date-fns';
 
-import type { ContactRow } from '@/lib/contracts/contact';
-import { richPlainText, type RichDoc } from '@/lib/contracts/rich-text-core';
-import { parseDateOnly, todayIn } from '@/lib/dates/date-only';
-import { followUpView } from '@/lib/dates/labels';
-import { urgencyOf } from '@/lib/dates/urgency';
+import { parseDateOnly } from '@/lib/dates/date-only';
 
-import { fixtureRows } from './fixture-rows';
+import { inDays, newContact, today } from './data';
 import { storage } from './helpers';
 
-// The page reads the fake data layer and a fake viewer until T22. The fixtures are pure and
-// dated from "today", so the spec rebuilds the same rows the server renders (the tz cookie is UTC).
-const today = todayIn('UTC');
-const rows = fixtureRows(today);
-const idNumber = (r: ContactRow) => Number(r.id.replace(/\D/g, ''));
-// Even ids have two notes, odd ids none (lib/data/fake.ts).
-const withNotes = rows.find(
-  (r) =>
-    idNumber(r) % 2 === 0 && r.status === 'lead' && r.urgency === 'overdue',
-)!;
-const noNotes = rows.find((r) => idNumber(r) % 2 === 1 && r.email)!;
+// Real data: each test makes its own contact (tests/e2e/data.ts) and every save is a real round trip.
+const NOTES = ['Left a voicemail.', 'Sent the intake questionnaire.'];
+const seeded = (over: Parameters<typeof newContact>[0] = {}) =>
+  newContact({
+    status: 'lead',
+    followUpOn: inDays(-3),
+    notes: NOTES,
+    ...over,
+  });
 
-// Auth is the saved Admin session (global-setup); the tz cookie keeps "today" equal to the fixtures'.
+// The tz cookie keeps "today" equal to the seed's (UTC).
 async function setup(context: BrowserContext, baseURL: string | undefined) {
   await context.addCookies([{ name: 'tz', value: 'UTC', url: baseURL! }]);
 }
@@ -49,49 +43,13 @@ const axe = async (page: Page, within?: string) => {
     .analyze();
 };
 
-/**
- * Writes go to Supabase, which T22 wires up. Until then each Server Action POST is answered here:
- * the real reply's framing is kept (it carries the build id) and its payload is swapped for a Result.
- */
-async function stubActions(
-  page: Page,
-  replies: (args: unknown[]) => unknown[],
-) {
-  const queue = [...[]] as unknown[];
-  await page.route('**/contacts/**', async (route) => {
-    const req = route.request();
-    if (req.method() !== 'POST' || !req.headers()['next-action'])
-      return route.continue();
-    const args: unknown[] = JSON.parse(req.postData() ?? '[]');
-    if (queue.length === 0) queue.push(...replies(args));
-    const real = await route.fetch();
-    const head = (await real.text()).split('\n')[0];
-    await route.fulfill({
-      status: 200,
-      headers: { 'content-type': 'text/x-component' },
-      body: `${head}\n1:${JSON.stringify(queue.shift())}\n`,
-    });
-  });
-}
-
-const rowWith = (r: ContactRow, over: Partial<ContactRow>): ContactRow => {
-  const next = { ...r, ...over };
-  return { ...next, ...urgencyOf(next.status, next.followUpOn, today) };
-};
-const note = (doc: RichDoc) => ({
-  id: 'n-new',
-  body: richPlainText(doc),
-  bodyJson: doc,
-  createdAt: new Date().toISOString(),
-  author: { name: 'Alex Morgan', role: 'admin' },
-});
-
 test('detail shows the contact, its follow-up, notes and activity', async ({
   page,
   context,
   baseURL,
 }) => {
   await setup(context, baseURL);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
 
   await expect(
@@ -102,9 +60,7 @@ test('detail shows the contact, its follow-up, notes and activity', async ({
   await expect(
     main.getByRole('navigation', { name: 'Breadcrumb' }),
   ).toContainText(`Contacts/${withNotes.fullName}`);
-  await expect(
-    main.getByText(followUpView(withNotes, today).text),
-  ).toBeVisible();
+  await expect(main.getByText('Overdue · 3d')).toBeVisible();
   await expect(
     main.getByRole('link', { name: withNotes.email! }),
   ).toHaveAttribute('href', `mailto:${withNotes.email}`);
@@ -130,6 +86,7 @@ test('detail shows the contact, its follow-up, notes and activity', async ({
 
 test('a contact with no notes says so', async ({ page, context, baseURL }) => {
   await setup(context, baseURL);
+  const noNotes = await newContact();
   await page.goto(`/contacts/${noNotes.id}`);
   await expect(
     page.getByRole('region', { name: /^Notes/ }).getByText('No notes yet.'),
@@ -143,9 +100,7 @@ test('notes take bold, lists and links, and render them safely', async ({
   baseURL,
 }) => {
   await setup(context, baseURL);
-  await stubActions(page, ([, doc]) => [
-    { ok: true, data: note(doc as RichDoc) },
-  ]);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
 
   // Typed at human speed: ProseMirror applies a mark toggle between keystrokes.
@@ -201,9 +156,7 @@ test('pasting markup keeps only what a note may carry', async ({
   baseURL,
 }) => {
   await setup(context, baseURL);
-  await stubActions(page, ([, doc]) => [
-    { ok: true, data: note(doc as RichDoc) },
-  ]);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
 
   const box = page.getByRole('textbox', { name: 'Add a note' });
@@ -235,9 +188,7 @@ test('adding a note clears the composer, lists it first and announces it', async
   baseURL,
 }) => {
   await setup(context, baseURL);
-  await stubActions(page, ([, body]) => [
-    { ok: true, data: note(body as RichDoc) },
-  ]);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
 
   const box = page.getByRole('textbox', { name: 'Add a note' });
@@ -254,6 +205,19 @@ test('adding a note clears the composer, lists it first and announces it', async
     'Called back, booked a consult.',
   );
   await expect(page.getByRole('article')).toHaveCount(3);
+  // The same note leads the Activity timeline, then survives a reload (it was really saved).
+  const activity = page.getByRole('region', { name: 'Activity' });
+  await expect(
+    activity.getByText('Alex Morgan added a note').first(),
+  ).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('article')).toHaveCount(3);
+  await expect(
+    page
+      .getByRole('region', { name: 'Activity' })
+      .getByRole('listitem')
+      .first(),
+  ).toContainText('Alex Morgan added a note');
 });
 
 test('a failed note save keeps the text, rings the frame, and Save note sends it again', async ({
@@ -262,14 +226,18 @@ test('a failed note save keeps the text, rings the frame, and Save note sends it
   baseURL,
 }) => {
   await setup(context, baseURL);
-  await stubActions(page, ([, body]) => [
-    {
-      ok: false,
-      error: { code: 'server', message: 'Something went wrong. Try again.' },
-    },
-    { ok: true, data: note(body as RichDoc) },
-  ]);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
+  // The connection drops on the first save; the second goes through to the database.
+  let dropped = false;
+  await page.route('**/contacts/**', async (route) => {
+    const req = route.request();
+    if (!dropped && req.method() === 'POST' && req.headers()['next-action']) {
+      dropped = true;
+      return route.abort('connectionreset');
+    }
+    return route.continue();
+  });
 
   const box = page.getByRole('textbox', { name: 'Add a note' });
   await box.fill('Called back');
@@ -301,9 +269,7 @@ test('reschedule saves the picked day and says so', async ({
   baseURL,
 }) => {
   await setup(context, baseURL);
-  await stubActions(page, ([, day]) => [
-    { ok: true, data: rowWith(withNotes, { followUpOn: String(day) }) },
-  ]);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
 
   await page.getByRole('button', { name: 'Reschedule' }).click();
@@ -320,6 +286,12 @@ test('reschedule saves the picked day and says so', async ({
     page.getByRole('main').getByText('Today', { exact: true }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: 'Reschedule' })).toBeFocused();
+  // Saved for real: a reload still shows today, not the old overdue date.
+  await page.reload();
+  await expect(
+    page.getByRole('main').getByText('Today', { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(/^Overdue/)).toHaveCount(0);
 });
 
 test('move changes the status, the toast names it, and Closed mutes the follow-up', async ({
@@ -328,12 +300,7 @@ test('move changes the status, the toast names it, and Closed mutes the follow-u
   baseURL,
 }) => {
   await setup(context, baseURL);
-  await stubActions(page, ([, status]) => [
-    {
-      ok: true,
-      data: rowWith(withNotes, { status: status as ContactRow['status'] }),
-    },
-  ]);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
 
   const trigger = page.getByRole('button', { name: 'Move to…' });
@@ -367,6 +334,7 @@ test('keyboard: Enter opens the move menu on its first item', async ({
   baseURL,
 }) => {
   await setup(context, baseURL);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
   // Enter before hydration would press an inert button.
   await page.waitForLoadState('networkidle');
@@ -399,6 +367,7 @@ test.describe('as a viewer', () => {
     baseURL,
   }) => {
     await setup(context, baseURL);
+    const withNotes = await seeded();
     await page.goto(`/contacts/${withNotes.id}`);
     const main = page.getByRole('main');
 
@@ -477,6 +446,7 @@ test('@mobile one column with a large Call button', async ({
   baseURL,
 }) => {
   await setup(context, baseURL);
+  const withNotes = await seeded();
   await page.goto(`/contacts/${withNotes.id}`);
 
   const call = page.getByRole('link', { name: `Call ${withNotes.fullName}` });
@@ -567,6 +537,7 @@ test.describe('loading boundaries', () => {
     baseURL,
   }) => {
     await setup(context, baseURL);
+    const withNotes = await seeded();
     await page.goto('/contacts');
     await page.waitForLoadState('networkidle');
     const href = `/contacts/${withNotes.id}`;

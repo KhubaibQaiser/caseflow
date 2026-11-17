@@ -164,6 +164,8 @@ const DetailRaw = z.object({
 });
 
 export async function getContact(id: string): Promise<ContactDetail | null> {
+  // A URL segment that isn't a uuid is a missing contact, not a Postgres cast error.
+  if (!z.uuid().safeParse(id).success) return null;
   const [db, tz] = await Promise.all([
     createServerSupabase(),
     getRequestTimeZone(),
