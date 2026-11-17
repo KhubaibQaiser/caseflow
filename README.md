@@ -7,11 +7,11 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
 - App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
-- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22. The filters panel is T15 (done).
+- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22b. The filters panel is T15 (done).
 - FE: the pipeline board at `/pipeline` (T18), also on the fake data layer: optimistic Move to…, per-column paging, mobile tabs.
-- Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` in T22. `/dev/auth` shows every state with canned results (404 in production).
+- Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` (since T22a, PR #23). `/dev/auth` shows every state with canned results (404 in production).
 - Contact detail is done (T16): `/contacts/[id]` (`app/(app)/contacts/[id]`, `features/contacts/detail`). Breadcrumb, header (status, matter, "Enquired Nov 12 · waiting 4d", **Move to…**, **Edit**, a 44px **Call** button below 768px), Follow-up card (**Reschedule** saves on pick; Clear removes the date), Details, Notes and the Activity timeline. `loading.tsx` mirrors the layout, `error.tsx` retries with `retry()`, and `not-found.tsx` reads "This contact doesn't exist." with Back to contacts (it also serves `/contacts/[id]/edit`).
-- Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
+- Next: T22b (real data layer and e2e), T22c (security headers), T22d (concurrency, ADR-0011), then T23-T26 (deploy, hardening, README, hygiene audit).
 - Live URL: not deployed yet.
 
 ## Stack
@@ -67,8 +67,8 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
   - `DatePicker` (react-day-picker in a popover, opened by a field or your own button via `trigger`) reads and writes `'YYYY-MM-DD'` via `lib/dates`
   - `Toaster` (sonner) is mounted in the root layout; call `toast.success('Contact saved')`; `toast.error(msg, { action: { label: 'Retry', onClick } })` stays until acted on or dismissed
 - `components/shell`: the app shell (`Sidebar` 196px on desktop, icon rail 768-1023px, `TabBar` plus `MobileTopBar` below 768px, `PageHeader`, `ForbiddenState`, `TimezoneSync`); `app/(app)/layout.tsx` renders it around every screen, 404 and error boundary
-- `features/contacts/detail`: the detail page parts. `MoveMenu {current, onMove, disabledReason?, className?}` is reusable by the pipeline: the Radix menu (`move-menu-popup.tsx`) and the calendar load on the first click, which keeps the route at about 193 kB gzipped. `Notes` is a rich-text composer (Tiptap, loaded on demand: bold, italic, bullet and numbered lists, links; toolbar buttons with `aria-pressed` and shortcuts) that keeps the typed note on every failure (inline error plus Retry; Cmd/Ctrl+Enter saves once; a note typed when the session ends comes back after sign-in). Notes are stored as Tiptap JSON in `notes.body_json` (Postgres checks it is an object) with `body` as the plain-text mirror (1-2,000 characters). `addNoteAction` validates the document with the strict allowlist in `lib/contracts/rich-text.ts` (nodes, marks, attrs and http/https/mailto links only), derives the text and writes both; `features/contacts/detail/rich-text.tsx` renders the JSON as React elements, never `innerHTML`. `seed_firm` writes real documents (some with lists and links). `Timeline` is a Server Component passed into the client view as a slot, so payload parsing stays off the wire. After a move or reschedule the view shows the action's reply at once, until the revalidated page arrives. A Viewer sees Move, Edit and Reschedule `aria-disabled` with the reason, and the composer replaced
-- `lib/auth`: `PermissionsProvider`, `usePermission(p)`, `<Can p>`; `viewer.ts` is a fake viewer until T22 (`fake-role` cookie picks admin or viewer; production is always admin)
+- `features/contacts/detail`: the detail page parts. `MoveMenu {current, onMove, disabledReason?, className?}` is reusable by the pipeline: the Radix menu (`move-menu-popup.tsx`) and the calendar load on the first click, which keeps the route at about 193 kB gzipped. `Notes` is a rich-text composer (Tiptap, loaded on demand: bold, italic, bullet and numbered lists, links; toolbar buttons with `aria-pressed` and shortcuts) that keeps the typed note on every failure (the error sits below the frame and Save note sends the draft again, with no separate Retry; Cmd/Ctrl+Enter saves once; a note typed when the session ends comes back after sign-in). Notes are stored as Tiptap JSON in `notes.body_json` (Postgres checks it is an object) with `body` as the plain-text mirror (1-2,000 characters). `addNoteAction` validates the document with the strict allowlist in `lib/contracts/rich-text.ts` (nodes, marks, attrs and http/https/mailto links only), derives the text and writes both; `features/contacts/detail/rich-text.tsx` renders the JSON as React elements, never `innerHTML`. `seed_firm` writes real documents (some with lists and links). `Timeline` is a Server Component passed into the client view as a slot, so payload parsing stays off the wire. After a move or reschedule the view shows the action's reply at once, until the revalidated page arrives. A Viewer sees Move, Edit and Reschedule `aria-disabled` with the reason, and the composer replaced
+- `lib/auth`: `PermissionsProvider`, `usePermission(p)`, `<Can p>`; `viewer.ts` resolves the real viewer since T22a (PR #23)
 - `lib/data/mutations.ts`: server-only writes returning `Result<T>`; PostgREST codes map to `forbidden`, `validation`, `unauthorized`, `not_found`; `updateContact` is `where updated_at = expected` and returns `conflict` when the row moved
 - `features/contacts/actions.ts`: Server Actions (create, update, move, reschedule, add note). Each runs `assertPermission`, then Zod with today in the `tz` cookie, then the write, then `revalidatePath`; Zod issues become `fieldErrors` (`contactMethod` for the email/phone rule); an expired session returns `unauthorized`. No delete or undo in v1
 - `features/auth/actions.ts`: `signInAction` validates, signs in through the secret-key client with `Sb-Forwarded-For` (ADR 0004), sets the session and `tz` cookie, redirects to `safeNext(next)` or `/contacts`; a 429 returns `rate_limited` (`retryAfter` in seconds, default 300). `signOutAction` clears this session only
@@ -111,6 +111,15 @@ What `deploy.yml` does, in order:
 - Smoke test (`tests/e2e/smoke.spec.ts`) against the deployed URL, once that file exists.
 
 `keep-alive.yml` pings Supabase daily so the project does not pause.
+
+## Security
+
+- **XSS:** React escapes every value; there is no `innerHTML` or `dangerouslySetInnerHTML`. Rich text, when it lands, is stored and rendered through an allowlist of nodes and marks, never raw HTML.
+- **CSRF:** every write is a Server Action, which is a POST that Next checks against the `Origin` header. Session cookies are HttpOnly and SameSite=Lax (Secure in production), so a cross-site request carries no session on a POST.
+- **CSP:** `proxy.ts` sets a strict, nonce-based policy on every response (`lib/security/csp.ts`): scripts only from `'self'` plus the per-request nonce (`'strict-dynamic'`), `connect-src 'self'` (the browser never talks to Supabase), no framing, no plugins, `form-action 'self'`, and `upgrade-insecure-requests` in production. Styles allow `'unsafe-inline'`: sonner and Radix inject `<style>` at runtime with no nonce hook under Turbopack, and React `style` attributes can't take a nonce. Scripts stay strict. The root layout awaits `connection()`, so every route renders per request and can carry a nonce. In the browser only, Zod runs `jitless` (`lib/contracts/zod-config.ts`) so its `new Function` probe doesn't raise a violation; the server keeps Zod's JIT.
+- **Headers** (`next.config.ts`): `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy` (camera, microphone, geolocation and more denied), `Cross-Origin-Opener-Policy: same-origin`, HSTS (two years, subdomains, no preload) in production only, and no `X-Powered-By`.
+- **Auth layers:** the proxy checks sign-in, `requirePermission` and `assertPermission` check the role on the server, Postgres RLS is the real enforcement, and `usePermission` only shapes the UI.
+- `tests/e2e/csp.spec.ts` loads the main screens and fails on any CSP violation or console error.
 
 ## Docs
 
@@ -158,6 +167,7 @@ Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) 
 ## With more time
 
 - Keyboard shortcuts (after the BRIEF requirements are fully met).
+- A CSP report endpoint (`report-to`); v1 has none, so violations only show in the browser console.
 - Undo for pipeline moves (for later review).
 
 ## Decisions that differ from the spec
@@ -177,7 +187,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 
 ## Data layer, viewer and proxy
 
-- `lib/data/supabase.ts` has the same signatures as `lib/data/fake.ts`; T22 flips `lib/data/index.ts`. It runs on the request-scoped client, so RLS applies.
+- `lib/data/supabase.ts` has the same signatures as `lib/data/fake.ts`; T22b flips `lib/data/index.ts`. It runs on the request-scoped client, so RLS applies.
 - RPC replies are snake_case. They are mapped to camelCase and parsed with the contract schemas. A bad row throws `DataError` (message only, no row data).
 - `getContact` returns `null` when the contact is missing or deleted. Notes and activities are newest first (ties by `id`); the timeline hides `deleted` and `restored`.
 - `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
@@ -197,7 +207,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 
 ## Contact form (T17)
 
-- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`); T22 only swaps the data source.
+- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`); T22b only swaps the data source.
 - The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 220 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
 - Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.

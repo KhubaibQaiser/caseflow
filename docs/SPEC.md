@@ -81,6 +81,7 @@ Every row was decided by Khubaib in the spec interview, unless it is marked *(Cl
 | 18 | Visual direction | **C v5, "Intake Desk", refined:** sage, Figtree only, 36px rows, neutral status pills, warm colours only for urgency, left nav, right filters panel, bottom tab bar on mobile. Critiqued with Impeccable (25/40 before the fixes; contrast findings cleared after). | A "Counsel" (letterhead serif); B "Docket" (Linear-like) | n/a (PRODUCT/DESIGN) |
 | 19 | Test strategy | TDD on critical paths only: Vitest unit tests, integration tests against a local Supabase, Playwright e2e with axe. | Coverage targets | n/a |
 | 20 | RBAC scope | **Two roles: Admin and Viewer.** Four layers: proxy (logged in?) → server `requirePermission` → Postgres RLS (the real enforcement) → client `usePermission` (UI only). The role is read from `profiles`, so changes take effect immediately. | A role claim in the JWT via the custom access token hook (stale for up to 1h; a scaling option); three or four roles | 0003 |
+| 21 | Concurrent edits | **Version checks on every write, plus a server change feed.** Every write is a compare-and-swap (edits on `updated_at`, moves on the status seen, reschedules on the date seen) and returns `conflict` when stale. An append-only change log feeds `GET /api/changes` (Server-Sent Events, resumable with `Last-Event-ID`). LISTEN/NOTIFY is only a wake-up behind a `ChangeFeed` interface, so it works with any backend. See §8.14. | Client polling; Supabase Realtime (vendor-specific); WebSockets (stateful, not for serverless); correctness only (stale screens) | 0011 |
 
 ## 5. Architecture
 
@@ -206,11 +207,12 @@ Returns:
 Quick views are presets that write `followUp`. The pipeline uses the same filters with `status` ignored, plus a per-column `RPC search_contacts` call with the status fixed, `page_size` 50 and offset paging ("Show 50 more").
 
 ### 7.5 Server Actions (each returns `Result<T> = {ok:true,data:T} | {ok:false,error:{code,message,fieldErrors?}}`; codes include `forbidden`, `unauthorized`, `conflict`, `validation`, `not_found`, `server`)
-- `createContact(input)` and `updateContact(id, input, expectedUpdatedAt)`.
-  - `updateContact` uses **optimistic concurrency**: it returns `conflict` if the row changed since the form opened. The firm workspace is shared, and reviewers are signed in as the same admin.
-- `moveContact(id, toStatus)` returns the updated row.
+- `createContactAction(raw)` and `updateContactAction(id, raw, expectedUpdatedAt)`.
+  - `updateContactAction` uses **optimistic concurrency**: it returns `conflict` if the row changed since the form opened. The firm workspace is shared, and reviewers are signed in as the same admin.
+- `moveContactAction(id, status, expectedStatus)` returns the updated row. It returns `conflict` if the contact is no longer in `expectedStatus`, for example "Already moved to Closed by Sam". *(ADR-0011. The `expectedStatus` parameter lands in T22d; until then the last write wins.)*
+- `rescheduleAction(id, followUpOn, expectedFollowUpOn)` likewise returns `conflict` if the follow-up date is no longer the one the user saw. *(ADR-0011. `expectedFollowUpOn` lands in T22d.)*
 - ~~`deleteContact(id)` (soft) and `restoreContact(id)`, which backs Undo.~~ Out of scope for v1.
-- `addNote(contactId, body)`.
+- `addNoteAction(contactId, body)`.
 
 Each one calls `requirePermission(...)` first (contacts.write or notes.write; Postgres enforces the same rules again), re-validates with the same Zod schema, check the follow-up date against the user's time zone, and call `revalidatePath` on the affected routes.
 
@@ -246,11 +248,11 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 ### 8.2 App shell
 - **Desktop (≥ 1024px):** a left sidebar 196px wide with the Caseflow mark, Contacts and Pipeline (`aria-current`), and an account block at the bottom: display name, a **role badge** ("Admin", or "Viewer · read-only" with a lock icon) and Sign out.
 - **Tablet (768–1023px):** the sidebar collapses to an icon rail with tooltips.
-- **Mobile (< 768px):** a top bar (mark plus a primary "New" button) and a **sticky bottom tab bar** (Contacts, Pipeline, Account), respecting the safe-area inset.
+- **Mobile (< 768px):** a top bar with the mark only (no "+ New") and a **sticky bottom tab bar** (Contacts, Pipeline, Account), respecting the safe-area inset.
 - **Accessibility:** a skip link ("Skip to content"); landmarks (`nav`, `main`, `aside`); and route changes are announced by **Next.js's built-in route announcer**, so we add no second announcer and screen readers don't hear each navigation twice. Every page sets a distinct `<title>`.
 
 ### 8.3 Contacts list (`/contacts`)
-- **Header:** "Contacts" and "**1,284 of 2,437**" (matching of total), and the primary "New contact" button.
+- **Header:** "Contacts" and "**1,284 of 2,437**" (matching of total), and the primary "New contact" button. On mobile the button sits at the right of the page title, in the same row. The title truncates and the button does not shrink.
 - **Toolbar:**
   - Search, debounced 250ms, with a pending spinner inside the field while the transition runs. Esc clears it.
   - The Filters button, with a badge for the number of applied filter groups and `aria-expanded`.
@@ -280,9 +282,9 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - **Left column:**
   - The Follow-up card first: an urgency pill and the date, with a **Reschedule** button opening a date popover that saves straight away.
   - The Details list (phone as a `tel:` link, email as a `mailto:` link, matter type, source, summary at 68ch).
-  - **Notes:** a composer (a rich-text editor with a small toolbar: bold, italic, bullet and numbered lists, links; at most 2,000 characters of text with a counter near the limit, Save disabled while empty or pending, Cmd/Ctrl+Enter submits) above a list of notes, newest first.
+  - **Notes:** a composer (a rich-text editor with a small toolbar: bold, italic, bullet and numbered lists, links; at most 2,000 characters of text with a counter near the limit, Save disabled while empty or pending, Cmd/Ctrl+Enter submits) above a list of notes, newest first. If a save fails, the draft is kept and the error reads "Note not saved. Check your connection and save again." The single Save button retries the draft; there is no separate Retry.
 - **Right column:** the **activity timeline**, with entries such as "Status changed Lead → Active" and "Follow-up set to Sat, Nov 14". Each timestamp is a `<time>` element with the full date in a tooltip.
-- **Mobile:** a single column with a large **Call** button.
+- **Mobile:** a single column with a large **Call** button. The breadcrumb "Contacts" link is the way back.
 - **Not found:** if the id is unknown, a page reads "This contact doesn't exist." with a link back to Contacts.
 
 ### 8.5 Create and edit forms (`/contacts/new`, `/contacts/[id]/edit`)
@@ -296,7 +298,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - The Save button shows a pending label and can't be pressed twice.
   - The server repeats the same validation and returns field errors, which are mapped back onto the fields.
   - **If the save fails, everything the user typed stays in the form,** with a retryable error.
-  - An **edit conflict** shows "This contact was changed since you opened it." with "Reload latest" and "Overwrite" buttons.
+  - An **edit conflict** shows "This contact was changed since you opened it." with a "Reload latest" button only. There is no Overwrite. The save stamp stays frozen until the user reloads, and a draft keeps its stamp.
 - **Unsaved changes:** a `beforeunload` guard while the form is dirty, and Cancel asks for confirmation when dirty.
 - After saving, the user goes to the detail page and a toast says "Contact saved".
 
@@ -324,7 +326,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 | Screen | Loading | Empty | Error |
 |---|---|---|---|
 | Contacts | Route `loading.tsx` with table-shaped skeleton rows. While filters change, the old rows dim (`aria-busy`) and nothing jumps. | First-run (no contacts at all): "No contacts yet." with New contact. Filtered: "No contacts match these filters." listing the active filters, with Clear filters. | `error.tsx`: "Contacts didn't load." plus the reason class, a Retry button (`startTransition(() => { router.refresh(); reset() })`, or the retry API the pinned Next 16 docs recommend, because `reset()` alone doesn't re-fetch server data), and "Your filters are kept." |
-| Detail | Skeletons shaped like the header, panels and timeline | No notes: "No notes yet." with an **Add note** button (admins) that moves focus to the composer; focus never moves on load. No activity beyond creation is still shown. | Error boundary with Retry. Not found is handled separately (§8.4). |
+| Detail | Skeletons shaped like the header, panels and timeline | No notes: "No notes yet." with an **Add note** button (admins) that moves focus to the composer; focus never moves on load. No activity beyond creation is still shown. | Error boundary with Retry. A failed note save keeps the draft with "Note not saved. Check your connection and save again." and the Save button retries it. Not found is handled separately (§8.4). |
 | Form | A skeleton for edit while the contact loads. Pending state on submit. | n/a | Inline field errors, the summary, a save-failed banner (input kept), the conflict banner |
 | Pipeline | Three skeleton columns | Per column: "No Lead contacts." Filtered: same pattern as the list. | Error boundary with Retry. A failed move rolls back with a toast. |
 | Login | Pending button ("Signing in…") | n/a | Field errors ("Enter a valid email address.", "Enter your password."), wrong credentials ("Email or password is incorrect.", never saying which), rate limited ("Too many attempts. Try again in N minutes."), server error with retry. All announced through `aria-live`. Mockup: `design/mockups/login-rbac-v1.html`. |
@@ -341,7 +343,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - Double-clicking Save, Move or Apply runs once.
 - A stale or invalid URL (`?page=999`, `?status=foo`) clamps to the last page or ignores the bad value.
 - ~~Deleting a contact while on its detail page goes back to the list, with a toast offering Undo.~~ Out of scope for v1.
-- Two reviewers signed in as the admin and editing the same contact triggers the conflict banner. For a move, the last write wins.
+- Two reviewers signed in as the admin and editing the same contact triggers the conflict banner. A concurrent move or reschedule returns `conflict`, shows a toast ("Already moved to Closed by Sam") and refreshes the screen once T22d lands (ADR-0011). Until then, the last write wins.
 - A role or permission that changes mid-session: the next server action returns `forbidden`, the optimistic change is rolled back, and a toast says what wasn't allowed. The next navigation re-renders with the new permissions.
 - A Viewer opening `/contacts/new`, `/contacts/[id]/edit`, or calling an action directly gets the forbidden page or a `forbidden` result, and the database rejects it as well.
 - An edit conflict, then Reload, restores the form from the server values.
@@ -354,7 +356,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 ### 8.10 RBAC in the UI (mockup: `design/mockups/login-rbac-v1.html`)
 - **The role is always visible:** a badge in the sidebar account block, and on mobile under the Account tab.
 - **In-context write actions are visible but disabled, with the reason.** This covers Edit, Move to…, the pipeline card menus and Reschedule. They use `aria-disabled="true"` (so they stay focusable) and show a tooltip on hover or focus: "Viewers can't edit contacts. Ask an admin."
-- **Entry points that would only lead to a forbidden page are hidden:** the "New contact" buttons and the mobile "New" button. The empty state's "New contact" call to action is replaced with "No contacts yet. An admin can add them."
+- **Entry points that would only lead to a forbidden page are hidden:** the "New contact" buttons, including the one beside the mobile page title. The empty state's "New contact" call to action is replaced with "No contacts yet. An admin can add them."
 - **The notes composer is replaced** for Viewers with "Viewers can read notes but can't add them."
 - **The forbidden page** (`app/forbidden.tsx`, or the pinned Next 16 equivalent, otherwise a shared component) is rendered when `requirePermission` fails on a page.
 - **A server `forbidden` result** gives a toast naming the action ("You don't have permission to move contacts.") and rolls back any optimistic change.
@@ -388,6 +390,15 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - **Radii:** 6 (controls), 10 (surfaces), 999 (pills). **Shadows:** only on floating layers (menus, panel, toast). **Spacing:** a 4px base.
 - **States per component:** default, hover, focus-visible, active, disabled, loading, error, all built in M2 and shown in the dev gallery at `/dev/components` (guarded so it isn't reachable in production).
 - **Browser surfaces:** `::selection`, caret colour, scrollbars, focus rings and underline offset are all themed from the tokens.
+
+### 8.14 Live updates (ADR-0011; built in T22d)
+Every screen that shows contact data listens to `GET /api/changes` and applies changes from other users.
+- **Pipeline:** cards move between columns and counts update. An in-flight optimistic move is reconciled with the incoming change.
+- **Contacts list:** rows update in place. While the user is typing or paging, the list holds still and shows "N updates · Refresh".
+- **Detail:** the header, follow-up, notes and timeline update.
+- **Edit form:** a proactive banner says "Changed by X · Reload latest". It never overwrites what the user typed.
+- **Facet counts** update with the rest.
+- The client reconnects with `Last-Event-ID` after a timeout, so no change is missed.
 
 ## 9. Testing (critical paths only, test-first)
 - **Unit (Vitest):**
@@ -468,9 +479,10 @@ ETAs are focused agent hours. "Wall" is elapsed time with the tracks running in 
 | **M3d FE pipeline** | Board, Move to… menu, optimistic move, per-column paging, mobile tabs | 1.5h | M2 |
 | **M5a OPS CI** | `ci.yml` (checks, integration and e2e with Supabase in Docker, gitleaks), Dependabot, PR template, branch protection | 1h | M0 |
 | **M5b OPS deploy** | `deploy.yml` (migrate, deploy, smoke test), the `seed` workflow, keep-alive cron, Vercel and Supabase configuration | 1h | M5a + Khubaib's accounts |
-| **M4 Integration** | Swap fixtures for real data, e2e suite green, first production deploy | 1.5h | M1b, M1c, M3*, M5b |
+| **M4 Integration** | Swap fixtures for real data, e2e suite green, first production deploy. In PLAN.md this is T22a (auth go-live, done), T22b (real data and e2e), T22c (security headers), T22d (concurrency, ADR-0011), then T23 | 1.5h | M1b, M1c, M3*, M5b |
 | **M6 Hardening** | The edge-case pass, Impeccable `polish` on each screen then `audit`, a manual VoiceOver pass, mobile at 320px, the performance budget | 1.5h | M4 |
 | **M7 Docs and submit** | README (one page), final review, a submission checklist (live link, repo access, history) | 0.75h | M6 |
+| **T26 Hygiene audit** | The last task, after M7 and all features. Recommend only: arbitrary Tailwind values, dead and duplicate code, security and performance findings go to Khubaib, and nothing changes without his answer | n/a | M7 |
 | *Stretch S1* | Dark mode, Lighthouse CI | 1h | M6 |
 | *Stretch S2* | A third role (Attorney: close/reopen only), PR previews against a staging project | 1.5h | M7 |
 

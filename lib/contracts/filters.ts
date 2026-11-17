@@ -1,3 +1,4 @@
+import './zod-config';
 import { z } from 'zod';
 
 import { MATTER_TYPES, REFERRAL_SOURCES, STATUSES } from './enums';

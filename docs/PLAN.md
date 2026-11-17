@@ -34,9 +34,9 @@
 ## Review Focus
 
 1. **Long content** (120-character names, long emails, a 1,000-character summary) must truncate with a `title` tooltip in the table, cards and detail header, and must never widen the layout. Test: T14 Step 1.
-2. **Typing fast in search, or pressing back and forward through URL states,** must leave the screen showing results for the latest query only. Test: T22 `contacts.spec.ts` "rapid typing shows results for the final query".
+2. **Typing fast in search, or pressing back and forward through URL states,** must leave the screen showing results for the latest query only. Test: T22b `contacts.spec.ts` "rapid typing shows results for the final query".
 3. **Double-clicking Save, Apply, Move or Save note** must send exactly one request. Tests: T17 Step 1, T18 Step 1, T16 Step 1.
-4. **A session that dies mid-action** must redirect to `/login?reason=expired&next=…` and keep the form input in the browser history. Test: T22 `auth.spec.ts` "expired session on save redirects with next".
+4. **A session that dies mid-action** must redirect to `/login?reason=expired&next=…` and keep the form input in the browser history. Test: T22a `auth.spec.ts` "expired session on save redirects with next" (shipped in PR #23).
 5. **The page falls out of range after filtering** (on page 5, then a filter leaves one page): any change to filters, search, sort or page size resets `page` to 1, and an out-of-range `page` clamps to the last page on the server. Tests: T2 `clampPage`, T14 Step 1.
 
 ---
@@ -49,11 +49,11 @@ then in parallel worktrees:
   BE:  T5 → T6 → T7 → T8 → T9 → T10
   FE:  T11 → T12 → T12b → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
   OPS: T20 → T21
-then: T22 (integration and e2e) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission)
+then: T22a (auth go-live, done) → T22b (real data layer and e2e) → T22c (security headers) → T22d (concurrency, ADR-0011) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission) → T26 (hygiene audit, recommend only)
 stretch: S1 dark mode · S2 Attorney role + staging previews
 ```
 
-The FE track builds against `lib/data/fake.ts` (same signatures as the real data layer) and against actions passed in as props. T22 deletes the fake and wires the real implementations.
+The FE track builds against `lib/data/fake.ts` (same signatures as the real data layer) and against actions passed in as props. T22b deletes the fake and wires the real implementations.
 
 ## File map
 
@@ -273,7 +273,7 @@ it('followUpView', () => {
   - Also: `::selection`, `caret-color`, scrollbar and `:focus-visible` (a 3px ring) themed.
 - **Figtree** through `next/font/google` (weights 400–700, `display:'swap'`, variable `--font-sans`). `font-variant-numeric: tabular-nums` utility class `.tnum`.
 - **`getRequestTimeZone(): Promise<string>`** reads the `tz` cookie and applies `resolveTimeZone`.
-- **`lib/data/index.ts`** re-exports these signatures from `./fake` (switched to `./supabase` in T22):
+- **`lib/data/index.ts`** re-exports these signatures from `./fake` (switched to `./supabase` in T22b):
   - `searchContacts(q: ListQuery): Promise<{rows: ContactRow[]; total: number; matching: number}>`
   - `getContactFacets(f: Filters): Promise<ContactFacets>`
   - `getPipelineColumn(status: Status, f: Filters, offset: number, limit?: number): Promise<{rows: ContactRow[]; matching: number}>`
@@ -484,7 +484,7 @@ it('viewer can call both RPCs', async () => {})
 - Create: `lib/data/mutations.ts`, `features/contacts/actions.ts`, `features/auth/actions.ts`
 - Test: `tests/integration/mutations.test.ts`, `features/auth/actions.test.ts`
 
-**Interfaces (produces; FE components receive these as props until T22):**
+**Interfaces (produces; FE components receive these as props until T22b):**
 - **`lib/data/mutations.ts`.** Each takes `(db: SupabaseClient<Database>, …)` and returns a `Result`:
   - `insertContact(db, input: ContactInput): Result<{id}>`
   - `updateContact(db, id, input, expectedUpdatedAt: string): Result<ContactRow>`. It runs `update … where id=$1 and updated_at=$2`. With 0 rows: if the row exists, return `conflict` ("This contact was changed since you opened it."), otherwise `not_found`.
@@ -599,7 +599,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 ### Task 13: App shell, permissions context and forbidden state
 
 **Files:**
-- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22), `app/forbidden.tsx`
+- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22a), `app/forbidden.tsx`
 - Test: `lib/auth/permissions-context.test.tsx`, `components/shell/timezone-sync.test.tsx`
 
 **Interfaces (produces):**
@@ -706,10 +706,10 @@ it('viewer sees no New contact button', () => {})
 **Interfaces:**
 - **Consumes:** `getContact` (T4), the action signatures from T10 (passed as props: `onMove`, `onReschedule`, `onAddNote`), `<Can>` and `usePermission` (T13).
 - **Produces:**
-  - `MoveMenu` `{current: Status; onMove(s): Promise<Result<ContactRow>>; disabledReason?: string}`. It's a DropdownMenu listing the other two statuses as pills. Reused by the pipeline.
+  - `MoveMenu` (shipped as its own PR, #24, so detail and pipeline could run in parallel) `{current: Status; onMove(s): Promise<Result<ContactRow>>; disabledReason?: string}`. It's a DropdownMenu listing the other two statuses as pills. Reused by the pipeline.
   - `Notes` `{notes: Note[]; onAdd(body): Promise<Result<Note>>}`:
     - The composer's Save is disabled while the text is empty or a save is pending. Cmd/Ctrl+Enter submits.
-    - **On failure the text is kept**, with an inline error and Retry. On success the field clears and the new note is announced.
+    - **On failure the text is kept**, with an inline error: "Note not saved. Check your connection and save again." The one Save button retries the kept draft; there is no separate Retry (Khubaib, 2026-11-17). On success the field clears and the new note is announced.
     - For viewers, the composer is replaced with "Viewers can read notes but can't add them."
   - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}". It renders no copy for `deleted` or `restored` (unreachable in v1). Each uses a `<time dateTime>` with the full timestamp in a title.
   - `FollowUpCard`: an urgency pill, the date, and **Reschedule** (a DatePicker in a Popover, saving on select).
@@ -738,7 +738,7 @@ it('viewer sees no New contact button', () => {})
     - Fieldsets: Person, Matter, Intake (layout from `screens-v1.html`).
     - On submit errors, `ErrorSummary` takes focus and links to each field; `contactMethod` errors render under the email/phone pair.
     - **Server `fieldErrors` are applied with `setError`.**
-    - A `conflict` result shows `ConflictBanner` with "Reload latest" (`router.refresh()` plus a form reset to the server values) and "Overwrite" (resubmit with the new `updatedAt`).
+    - A `conflict` result shows `ConflictBanner` with "Reload latest" (`router.refresh()` plus a form reset to the server values) only. ~~"Overwrite" (resubmit with the new `updatedAt`)~~ is superseded: Reload latest only (Khubaib, 2026-11-17). The save stamp stays frozen until reload.
     - Other failures show "Save failed. Your changes are still here." with Retry, keeping the input.
     - Success navigates to `/contacts/{id}` and shows the toast "Contact saved".
   - `useUnsavedGuard(isDirty)`: a `beforeunload` handler. Cancel asks for confirmation with a Dialog ("Discard changes?") when the form is dirty.
@@ -790,7 +790,7 @@ it('viewer sees no New contact button', () => {})
 - Test: `features/auth/login-form.test.tsx`
 
 **Interfaces:**
-- **Consumes:** `signInAction` (T10; a stub action returning fixtures until T22), `SignInSchema` (T2).
+- **Consumes:** `signInAction` (T10; a stub action returning fixtures until T22a), `SignInSchema` (T2).
 - **Produces:** `LoginForm` `{action; reason?: 'expired'; next?: string}`:
   - `useActionState(action, null)`.
   - Hidden inputs `tz` (`Intl…timeZone`) and `next`.
@@ -857,20 +857,24 @@ it('viewer sees no New contact button', () => {})
 
 ## Integration, deploy, hardening and submission
 
-### Task 22: Wire the real data layer and the e2e suite
+### Task 22a: Auth go-live (done, PR #23)
+
+Shipped:
+- The real viewer, and `forbidden()` for a signed-in user without permission.
+- The "No access" screen for a user with no profile.
+- Auth on by default.
+- A POST-only next-action passthrough in the proxy.
+- Back after session expiry, with the return marker.
+- The real client IP for the sign-in throttle.
+
+### Task 22b: Wire the real data layer and the full e2e suite
 
 **Files:**
-- Modify: `lib/data/index.ts` (re-export from `./supabase`); the pages and layouts that pass the T10 actions as props; `app/(app)/layout.tsx` (`getViewer()` instead of the fake viewer)
+- Modify: `lib/data/index.ts` (re-export from `./supabase`); the pages and layouts that pass the T10 actions as props
 - Delete: `lib/data/fake.ts` (keep `fixtures.ts` only for component tests)
-- Create: `tests/e2e/{auth,contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts`, `tests/e2e/helpers.ts` (`signInAs(page, 'admin'|'viewer')`)
+- Create: `tests/e2e/{detail,viewer,mobile,a11y,smoke}.spec.ts`. Extend the existing `contacts.spec.ts`, `contact-form.spec.ts` and `pipeline.spec.ts`. T22a already shipped `auth.spec.ts`, `helpers.ts` (`signInAs`, storage state) and the global-setup storage state; reuse them.
 
 - [ ] **Step 1: Write the failing e2e specs** (local Supabase, seeded):
-  - **`auth.spec.ts`:**
-    - field errors
-    - wrong password gives "Email or password is incorrect."
-    - Admin sign-in lands on `/contacts`
-    - sign out
-    - "expired session on save redirects with next" (corrupt the `sb-*` cookie, click Save on the edit form, expect `/login?reason=expired&next=%2Fcontacts%2F…`)
   - **`contacts.spec.ts`:**
     - search "5550148" finds the row
     - filter Status, Apply (the panel closes), then the chip and the count "N of 2,500"
@@ -881,15 +885,58 @@ it('viewer sees no New contact button', () => {})
     - `?page=999` clamps to the last page
   - **`contact-form.spec.ts`:** empty submit gives the summary and focus; fill and save lands on the detail page with the toast; edit summary and save.
   - **`detail.spec.ts`:** add a note, then it appears in the notes and the timeline ("Alex Morgan added a note"); Reschedule updates the pill.
-  - **`pipeline.spec.ts`:** moving a Lead card to Active moves it with the toast; after a reload the state persists; "Show 50 more" appends 50 cards.
+  - **`pipeline.spec.ts`:** (real actions, replacing the Playwright route stubs for move, add note and reschedule) moving a Lead card to Active moves it with the toast; after a reload the state persists; "Show 50 more" appends 50 cards.
   - **`viewer.spec.ts`:** Edit and Move are `aria-disabled` with tooltip text; the composer is replaced; there's no New contact button; `/contacts/new` shows "You can't add contacts".
   - **`mobile.spec.ts` (`@mobile`):** the tab bar is visible; the cards render; the Filters sheet opens, traps focus and closes on Esc.
   - **`a11y.spec.ts`:** axe has **no serious or critical violations** on `/login`, `/contacts`, `/contacts/[id]`, `/contacts/new`, `/contacts/[id]/edit` and `/pipeline`, as both Admin and Viewer.
   - **`smoke.spec.ts`:** the Viewer signs in on `BASE_URL` and the contacts table has rows. It's read-only.
-- [ ] **Step 2: Run** `pnpm e2e`. Expected: FAIL (fake data, stubbed actions).
-- [ ] **Step 3: Wire it up.** Switch `lib/data/index.ts`, pass the real actions into the components, use the real `getViewer` in the layout, delete `fake.ts`, and run `pnpm db:types`.
+- [ ] **Step 2: Run** `pnpm e2e`. Expected: FAIL (fake data, route-stubbed actions).
+- [ ] **Step 3: Wire it up.** Switch `lib/data/index.ts`, pass the real actions into the components, delete `fake.ts` (keep `fixtures.ts` for component tests), remove the route stubs, and run `pnpm db:types`. The real viewer, No access, `forbidden()` and auth-on-by-default are already done in T22a.
 - [ ] **Step 4: Run** `pnpm test && pnpm test:integration && pnpm e2e`. Expected: all PASS, including the axe checks.
 - [ ] **Step 5: Commit** in two parts: the specs (`"Add end-to-end and accessibility specs"`), then `"Wire Supabase data layer and Server Actions into the screens"`. Merge with a merge commit.
+
+### Task 22c: Security headers (in progress)
+
+**Files:**
+- Create: `lib/security/csp.ts` (builds the policy), `tests/e2e/csp.spec.ts`
+- Modify: `proxy.ts` (sets the CSP on every response path), `next.config.ts`, `app/layout.tsx` (`await connection()` so every route is dynamic and gets a nonce)
+
+**Interfaces (produces):**
+- A nonce-based Content-Security-Policy set in `proxy.ts`, with `strict-dynamic`.
+- `style-src 'unsafe-inline'` is accepted, because sonner and Radix inject styles at runtime.
+- Zod runs in `jitless` mode in the browser only, so it needs no `unsafe-eval`.
+- Static headers in `next.config.ts`: `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy` (camera, microphone, geolocation, payment, usb and interest-cohort denied), `Cross-Origin-Opener-Policy: same-origin`, and HSTS only when `VERCEL_ENV=production`. `poweredByHeader` is off.
+
+- [ ] **Step 1: Write the failing e2e** `csp.spec.ts`: load every screen and fail on any CSP violation report in the console.
+- [ ] **Step 2: Add** `lib/security/csp.ts`, set the nonce CSP in `proxy.ts`, add `await connection()` to the root layout, and add the static headers in `next.config.ts`.
+- [ ] **Step 3: Run** `pnpm e2e`. Expected: PASS, with no violations.
+- [ ] **Step 4: Commit** `"Add nonce CSP and static security headers"`. Merge with a merge commit.
+
+### Task 22d: Concurrency per ADR-0011 (after T22b, its own PR)
+
+Needs ADR-0011 accepted by Khubaib. Read it first. Spec: §7.5, §8.9, §8.14.
+
+**Files:**
+- Create: `supabase/migrations/<ts>_change_log.sql`, `lib/changes/feed.ts` (`ChangeFeed` interface), `lib/changes/postgres.ts`, `app/api/changes/route.ts`, `features/changes/use-changes.ts`
+- Modify: `lib/data/mutations.ts`, `features/contacts/actions.ts` (expected values), the list, detail, pipeline and edit-form screens
+- Test: `tests/integration/changes.test.ts`, `tests/e2e/concurrency.spec.ts`
+
+**Interfaces (produces):**
+- `setStatus(db, id, status, expectedStatus)` and `setFollowUp(db, id, followUpOn, expectedFollowUp)` return `conflict` when stale. `moveContactAction` and `rescheduleAction` take the same extra argument.
+- A change log table: monotonic sequence id, contact id, what changed, actor, new version. Each write inserts its row in the same transaction.
+- `ChangeFeed`: `since(cursor)` and `subscribe(onWake)`. LISTEN/NOTIFY is only the wake-up. Rows are always read from the log.
+- `GET /api/changes`: Server-Sent Events, catch-up from `Last-Event-ID`.
+
+- [ ] **Step 1: Write the failing tests.**
+  - A stale move, reschedule and edit each return `conflict`.
+  - Reconnecting with `Last-Event-ID` delivers every missed change once.
+  - A dropped NOTIFY still delivers on the next wake-up.
+  - e2e with two sessions: a move shows on the other board, an in-flight optimistic move reconciles, the list shows "N updates · Refresh" while the user types, and the edit form shows "Changed by X · Reload latest".
+- [ ] **Step 2: Run them.** Expected: FAIL.
+- [ ] **Step 3: Add** the migration, the expected-value checks, the feed and the route.
+- [ ] **Step 4: Wire** the client hook into the pipeline, list, detail, edit form and facet counts.
+- [ ] **Step 5: Run** `pnpm test && pnpm test:integration && pnpm e2e`. Expected: PASS.
+- [ ] **Step 6: Commit** in small steps (migration, checks, feed, route, screens). Merge with a merge commit.
 
 ### Task 23: First production deploy
 
@@ -921,6 +968,19 @@ it('viewer sees no New contact button', () => {})
   - The history is meaningful (`git log --oneline | wc -l` is more than 30, with no squashes).
   - The ADR statuses have been reviewed by Khubaib.
 - [ ] **Step 4: Commit** `"Add README"`. Push. Hand the live URL and repo URL to Khubaib.
+
+### Task 26: Hygiene audit (last task)
+
+Runs after T25 and every feature. **Recommend only.** Change nothing without Khubaib's answer.
+
+- [ ] **Step 1: Scan** for:
+  - non-standard Tailwind: arbitrary values such as `h-[48px]` where a scale step or a token exists
+  - dead code
+  - duplicate code
+  - security concerns
+  - performance improvements
+- [ ] **Step 2: Present every finding to Khubaib** with its file, the evidence and a recommendation.
+- [ ] **Step 3: Apply only the findings he approves**, one small commit each. Skip the rest.
 
 ### Stretch
 
