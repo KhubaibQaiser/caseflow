@@ -6,7 +6,7 @@ Use Supabase (Postgres, Auth, RLS) as the backend, kept awake by a daily GitHub 
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 
