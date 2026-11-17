@@ -206,7 +206,9 @@ export default function NoteEditor({
     },
     onUpdate: ({ editor: e }) => {
       // Tiptap only emits the nodes and marks enabled above; the server validates the shape again.
-      const doc = e.getJSON() as unknown as RichDoc;
+      // ProseMirror attrs are prototype-less objects, which a Server Action argument cannot carry
+      // (React sends them as "$T" placeholders), so round-trip to plain JSON.
+      const doc = JSON.parse(JSON.stringify(e.getJSON())) as RichDoc;
       latest.current.onChange({ doc, text: richPlainText(doc).trim() });
     },
   });

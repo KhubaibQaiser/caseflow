@@ -375,3 +375,34 @@ describe('Notes formatting', () => {
     ).toHaveLength(0);
   });
 });
+
+describe('Notes document handed to the action', () => {
+  it('is plain JSON a Server Action can carry (no prototype-less objects)', async () => {
+    const u = userEvent.setup();
+    const onAdd = vi.fn().mockResolvedValue(ok(saved('x')));
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
+    const box = await composer();
+    await u.click(box);
+    await u.keyboard('hello');
+    await u.keyboard('{Control>}a{/Control}');
+    await u.click(screen.getByRole('button', { name: 'Link' }));
+    await u.type(
+      screen.getByRole('textbox', { name: 'Link address' }),
+      'example.com{Enter}',
+    );
+    await waitFor(() => expect(box).toHaveFocus());
+    await u.keyboard('{Control>}{Enter}{/Control}');
+
+    const doc = onAdd.mock.calls[0]![0];
+    const walk = (v: unknown): void => {
+      if (v && typeof v === 'object') {
+        expect([Object.prototype, Array.prototype]).toContain(
+          Object.getPrototypeOf(v),
+        );
+        Object.values(v).forEach(walk);
+      }
+    };
+    walk(doc);
+    expect(JSON.stringify(doc)).toContain('"href":"https://example.com"');
+  });
+});

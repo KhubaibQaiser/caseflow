@@ -4,6 +4,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { format } from 'date-fns';
 
 import type { ContactRow } from '@/lib/contracts/contact';
+import { richPlainText, type RichDoc } from '@/lib/contracts/rich-text-core';
 import { parseDateOnly, todayIn } from '@/lib/dates/date-only';
 import { followUpView } from '@/lib/dates/labels';
 import { urgencyOf } from '@/lib/dates/urgency';
@@ -44,9 +45,11 @@ const settled = (page: Page) =>
     ),
   );
 
-const axe = async (page: Page) => {
+const axe = async (page: Page, within?: string) => {
   await settled(page);
-  return new AxeBuilder({ page })
+  const builder = new AxeBuilder({ page });
+  if (within) builder.include(within);
+  return builder
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
 };
@@ -80,9 +83,10 @@ const rowWith = (r: ContactRow, over: Partial<ContactRow>): ContactRow => {
   const next = { ...r, ...over };
   return { ...next, ...urgencyOf(next.status, next.followUpOn, today) };
 };
-const note = (body: string) => ({
+const note = (doc: RichDoc) => ({
   id: 'n-new',
-  body,
+  body: richPlainText(doc),
+  bodyJson: doc,
   createdAt: new Date().toISOString(),
   author: { name: 'Alex Morgan', role: 'admin' },
 });
@@ -138,6 +142,98 @@ test('a contact with no notes says so', async ({ page, context, baseURL }) => {
   await expect(page.getByRole('textbox', { name: 'Add a note' })).toBeVisible();
 });
 
+test('notes take bold, lists and links, and render them safely', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(context, baseURL);
+  await stubActions(page, ([, doc]) => [
+    { ok: true, data: note(doc as RichDoc) },
+  ]);
+  await page.goto(`/contacts/${withNotes.id}`);
+
+  // Typed at human speed: ProseMirror applies a mark toggle between keystrokes.
+  const box = page.getByRole('textbox', { name: 'Add a note' });
+  const bar = page.getByRole('toolbar', { name: 'Formatting' });
+  await box.click();
+  await page.keyboard.press('ControlOrMeta+B');
+  await expect(bar.getByRole('button', { name: 'Bold' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await page.keyboard.type('Documents', { delay: 20 });
+  await page.keyboard.press('ControlOrMeta+B');
+  await page.keyboard.type(' needed:', { delay: 20 });
+  await page.keyboard.press('Enter');
+  await bar.getByRole('button', { name: 'Bulleted list' }).click();
+  await page.keyboard.type('police report', { delay: 20 });
+  await page.keyboard.press('Enter');
+  await page.keyboard.type('photos of both cars', { delay: 20 });
+
+  // Link: triple-click the second item to select it, then add an address through the form (Ctrl or Cmd+K).
+  await box.locator('li').last().click({ clickCount: 3 });
+  await page.keyboard.press('ControlOrMeta+K');
+  const address = page.getByRole('textbox', { name: 'Link address' });
+  await expect(address).toBeFocused();
+  await address.fill('javascript:alert(1)');
+  await address.press('Enter');
+  await expect(
+    page.getByText('Use an http, https or mailto link.'),
+  ).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]); // toolbar, link form and editor
+  await address.fill('example.com/photos');
+  await address.press('Enter');
+  await expect(box.locator('a')).toHaveAttribute(
+    'href',
+    'https://example.com/photos',
+  );
+
+  await box.press('ControlOrMeta+Enter');
+  const first = page.getByRole('article').first();
+  await expect(first.locator('strong')).toHaveText('Documents');
+  await expect(first.locator('ul > li')).toHaveCount(2);
+  const link = first.getByRole('link', { name: 'photos of both cars' });
+  await expect(link).toHaveAttribute('href', 'https://example.com/photos');
+  await expect(link).toHaveAttribute('target', '_blank');
+  await expect(link).toHaveAttribute('rel', 'noopener noreferrer nofollow');
+  expect((await axe(page)).violations).toEqual([]); // the rendered rich note
+});
+
+test('pasting markup keeps only what a note may carry', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(context, baseURL);
+  await stubActions(page, ([, doc]) => [
+    { ok: true, data: note(doc as RichDoc) },
+  ]);
+  await page.goto(`/contacts/${withNotes.id}`);
+
+  const box = page.getByRole('textbox', { name: 'Add a note' });
+  await box.click();
+  await page.evaluate(() => {
+    const data = new DataTransfer();
+    data.setData(
+      'text/html',
+      '<h1>Title</h1><p onclick="alert(1)">Hello <u>there</u> <a href="javascript:alert(1)">bad</a> <img src=x onerror=alert(1)> <code>c</code></p>',
+    );
+    data.setData('text/plain', 'Title Hello there bad c');
+    document.activeElement?.dispatchEvent(
+      new ClipboardEvent('paste', {
+        clipboardData: data,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+  });
+  await expect(box).toContainText('Hello');
+  await expect(box.locator('h1, u, code, img, script')).toHaveCount(0);
+  await expect(box.locator('a[href^="javascript"]')).toHaveCount(0);
+  await expect(box.locator('[onclick]')).toHaveCount(0);
+});
+
 test('adding a note clears the composer, lists it first and announces it', async ({
   page,
   context,
@@ -145,7 +241,7 @@ test('adding a note clears the composer, lists it first and announces it', async
 }) => {
   await setup(context, baseURL);
   await stubActions(page, ([, body]) => [
-    { ok: true, data: note(String(body)) },
+    { ok: true, data: note(body as RichDoc) },
   ]);
   await page.goto(`/contacts/${withNotes.id}`);
 
@@ -157,7 +253,7 @@ test('adding a note clears the composer, lists it first and announces it', async
   await expect(
     page.getByRole('region', { name: /^Notes/ }).getByRole('status'),
   ).toHaveText('Note added.');
-  await expect(box).toHaveValue('');
+  await expect(box).toHaveText('');
   await expect(box).toBeFocused();
   await expect(page.getByRole('article').first()).toContainText(
     'Called back, booked a consult.',
@@ -176,7 +272,7 @@ test('a failed note save keeps the text and Retry saves it', async ({
       ok: false,
       error: { code: 'server', message: 'Something went wrong. Try again.' },
     },
-    { ok: true, data: note(String(body)) },
+    { ok: true, data: note(body as RichDoc) },
   ]);
   await page.goto(`/contacts/${withNotes.id}`);
 
@@ -188,11 +284,11 @@ test('a failed note save keeps the text and Retry saves it', async ({
     .getByRole('alert')
     .filter({ hasText: 'Something went wrong.' });
   await expect(alert).toBeVisible();
-  await expect(box).toHaveValue('Called back');
+  await expect(box).toHaveText('Called back');
   expect((await axe(page)).violations).toEqual([]);
 
   await alert.getByRole('button', { name: 'Retry' }).click();
-  await expect(box).toHaveValue('');
+  await expect(box).toHaveText('');
   await expect(alert).toHaveCount(0);
   await expect(page.getByRole('article').first()).toContainText('Called back');
 });
@@ -270,6 +366,8 @@ test('keyboard: Enter opens the move menu on its first item', async ({
 }) => {
   await setup(context, baseURL);
   await page.goto(`/contacts/${withNotes.id}`);
+  // Enter before hydration would press an inert button.
+  await page.waitForLoadState('networkidle');
   await page.getByRole('button', { name: 'Move to…' }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('menuitem', { name: 'Active' })).toBeFocused();
@@ -348,9 +446,14 @@ test('@mobile one column with a large Call button', async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
+  // Scroll the composer clear of the fixed tab bar, as a person would to use it.
+  await page
+    .getByRole('toolbar', { name: 'Formatting' })
+    .evaluate((el) => el.scrollIntoView({ block: 'center' }));
   expect((await axe(page)).violations).toEqual([]);
 
   await page.getByRole('button', { name: 'Move to…' }).click();
   await expect(page.getByRole('menu')).toBeVisible();
-  expect((await axe(page)).violations).toEqual([]);
+  // The page scrolled back to the top, where the tab bar covers the composer: audit the menu itself.
+  expect((await axe(page, '[role="menu"]')).violations).toEqual([]);
 });

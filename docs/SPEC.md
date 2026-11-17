@@ -141,8 +141,9 @@ GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-aliv
 - **Indexes:** `(status, follow_up_on)`, `(created_at)`, a partial index `where deleted_at is null`. **No trigram indexes** *(Claude's call)*: at about 2.5k rows, `ilike '%q%'` takes about 1ms. README scale path: add `pg_trgm` GIN indexes past about 50k rows.
 
 **`notes`**
-- `id`, `contact_id → contacts on delete cascade`, `author_id → profiles`, `body text` (1–2,000 characters), `created_at`
+- `id`, `contact_id → contacts on delete cascade`, `author_id → profiles`, `body text` (the plain-text mirror, 1–2,000 characters), `body_json jsonb not null` (a Tiptap document, `jsonb_typeof = 'object'`), `created_at`
 - Add-only in v1.
+- **Rich text:** a note is a Tiptap JSON document limited to paragraphs, bold, italic, links (http, https, mailto), bullet and numbered lists and hard breaks. The server validates it with a strict Zod allowlist (`lib/contracts/rich-text.ts`), derives the plain text and writes both columns; the page renders the JSON into React elements (no `innerHTML`).
 - **RLS:** select needs `contacts.read`; insert needs `notes.write` and `author_id = auth.uid()`.
 
 **`activities`**
@@ -279,7 +280,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - **Left column:**
   - The Follow-up card first: an urgency pill and the date, with a **Reschedule** button opening a date popover that saves straight away.
   - The Details list (phone as a `tel:` link, email as a `mailto:` link, matter type, source, summary at 68ch).
-  - **Notes:** a composer (textarea, at most 2,000 characters with a counter near the limit, Save disabled while empty or pending, Cmd/Ctrl+Enter submits) above a list of notes, newest first.
+  - **Notes:** a composer (a rich-text editor with a small toolbar: bold, italic, bullet and numbered lists, links; at most 2,000 characters of text with a counter near the limit, Save disabled while empty or pending, Cmd/Ctrl+Enter submits) above a list of notes, newest first.
 - **Right column:** the **activity timeline**, with entries such as "Status changed Lead → Active" and "Follow-up set to Sat, Nov 14". Each timestamp is a `<time>` element with the full date in a tooltip.
 - **Mobile:** a single column with a large **Call** button.
 - **Not found:** if the id is unknown, a page reads "This contact doesn't exist." with a link back to Contacts.
