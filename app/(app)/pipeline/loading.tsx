@@ -29,7 +29,7 @@ export default function PipelineLoading() {
       </span>
       <HeaderSkeleton titleWidth="w-24" />
       {/* Tabs first on a phone, as on the board. */}
-      <Skeleton className="h-9 w-full rounded-lg md:hidden" />
+      <Skeleton className="h-10.5 w-full rounded-lg md:hidden" />
       <ToolbarSkeleton />
       <div className="grid min-h-0 flex-1 gap-3.5 md:grid-cols-3">
         {[0, 1, 2].map((c) => (
