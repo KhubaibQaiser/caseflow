@@ -13,6 +13,9 @@ import type { PipelineSort } from '@/lib/contracts/pipeline-sort';
 import type { Result } from '@/lib/contracts/result';
 import { cn } from '@/utils/cn';
 
+import { useDelayedFlag } from '@/components/use-delayed-flag';
+
+import { CardSkeleton } from './card-skeleton';
 import { PipelineCard } from './pipeline-card';
 import { PAGE_SIZE } from './rows';
 import { SortControl } from './sort-control';
@@ -32,6 +35,8 @@ type ColumnProps = {
   /** Resolves true once the next rows are in, false when the request failed. */
   onLoadMore(): Promise<boolean>;
   disabledReason?: string;
+  /** This column's rows are being replaced (its sort or the filters changed). Cards give way to a skeleton after 300ms. */
+  reloading?: boolean;
   className?: string;
 };
 
@@ -48,8 +53,10 @@ export function Column({
   onMove,
   onLoadMore,
   disabledReason,
+  reloading = false,
   className,
 }: ColumnProps) {
+  const skeleton = useDelayedFlag(reloading);
   const label = STATUS_LABEL[status];
   const list = useRef<HTMLUListElement>(null);
   const inflight = useRef(false);
@@ -122,7 +129,13 @@ export function Column({
         data-scroller
         className="flex min-h-0 flex-1 flex-col gap-2 md:overflow-y-auto"
       >
-        {rows.length === 0 ? (
+        {skeleton ? (
+          <div className="flex flex-col gap-2">
+            {Array.from({ length: Math.min(rows.length || 1, 6) }, (_, i) => (
+              <CardSkeleton key={i} i={i} />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
           <div className="max-md:border-line max-md:bg-surface rounded-surface max-md:border">
             <EmptyState
               icon={Inbox}

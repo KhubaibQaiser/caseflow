@@ -9,8 +9,10 @@ import { STATUSES } from '@/lib/contracts/enums';
 import type { Status } from '@/lib/contracts/enums';
 import type { ContactFacets } from '@/lib/contracts/facets';
 import type { Filters } from '@/lib/contracts/filters';
+import { toFilters } from '@/lib/contracts/list-query';
 import {
   PIPELINE_SORT_PARAM,
+  PIPELINE_SORTS,
   DEFAULT_PIPELINE_SORT,
 } from '@/lib/contracts/pipeline-sort';
 import type {
@@ -82,7 +84,7 @@ function Results({
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams()?.toString();
-  const [, setQuery, isPending] = useListQuery();
+  const [query, setQuery, isPending] = useListQuery();
   const filtersButton = useRef<HTMLButtonElement>(null);
   const panel = useFiltersPanel(filtersOpen, filtersButton);
   const canMove = usePermission('contacts.write');
@@ -138,6 +140,14 @@ function Results({
 
   const matching = STATUSES.reduce((n, s) => n + columns[s].matching, 0);
   const none = facets.total === 0;
+  // Filters change every column; a sort change only its own.
+  const refiltered =
+    isPending && JSON.stringify(toFilters(query)) !== JSON.stringify(filters);
+  // Not parsePipelineSorts: its zod schema would add ~30 kB to this route.
+  const requested = (s: Status): PipelineSort => {
+    const v = query[PIPELINE_SORT_PARAM[s]];
+    return PIPELINE_SORTS.find((x) => x === v) ?? DEFAULT_PIPELINE_SORT;
+  };
 
   const showBoard = !none && matching > 0;
 
@@ -158,7 +168,6 @@ function Results({
       {!none && (
         <Toolbar
           facets={facets}
-          isPending={isPending}
           panel={panel}
           hideSort
           filtersButton={filtersButton}
@@ -185,6 +194,9 @@ function Results({
                     rows={columns[s].rows}
                     matching={columns[s].matching}
                     sort={sorts[s]}
+                    reloading={
+                      refiltered || (isPending && requested(s) !== sorts[s])
+                    }
                     onSortChange={(sort) => setSort(s, sort)}
                     exhausted={!hasMore(columns[s])}
                     emptyReason={emptyReason(s, filters)}
