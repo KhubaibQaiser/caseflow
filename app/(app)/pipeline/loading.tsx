@@ -29,19 +29,20 @@ export default function PipelineLoading() {
         <Skeleton className="h-5 w-24" />
         <Skeleton className="w-20" />
       </div>
+      {/* Tabs first on a phone, as on the board. */}
+      <Skeleton className="h-9 w-full rounded-lg md:hidden" />
       <div className="flex flex-col gap-2.5 md:flex-row md:items-center md:gap-2">
         <Skeleton className="rounded-ctl h-10 w-full md:h-[34px] md:w-80" />
         <Skeleton className="rounded-ctl h-9 w-full md:h-[34px] md:w-24" />
         <Skeleton className="h-[34px] w-64 rounded-lg" />
       </div>
-      <Skeleton className="h-9 w-full rounded-lg md:hidden" />
       <div className="grid min-h-0 flex-1 gap-3.5 md:grid-cols-3">
         {[0, 1, 2].map((c) => (
           <div
             key={c}
-            className={`bg-track rounded-surface flex-col gap-2 overflow-hidden p-2.5 ${c === 0 ? 'flex' : 'hidden md:flex'}`}
+            className={`md:bg-track md:rounded-surface flex-col gap-2 overflow-hidden md:p-2.5 ${c === 0 ? 'flex' : 'hidden md:flex'}`}
           >
-            <div className="flex items-center gap-2 px-1 py-0.5">
+            <div className="flex items-center gap-2 px-1 py-0.5 max-md:hidden">
               <Skeleton className="h-3 w-12" />
               <Skeleton className="h-3 w-8" />
             </div>

@@ -219,12 +219,7 @@ test('an empty column says so, and the filters carry over', async ({
   await expect(panel).toBeVisible();
   await expect(panel.getByText('Matter type')).toBeVisible();
   await expect(panel.getByText('Status', { exact: true })).toHaveCount(0);
-  // The toolbar's "Filters, 1 applied" label drops the visible "Filters 1" text (T15, same on the list); not this task's to change.
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .disableRules(['label-content-name-mismatch'])
-    .analyze();
-  expect(results.violations).toEqual([]);
+  expect((await axe(page)).violations).toEqual([]);
 });
 
 test('a status in the URL is dropped, not shown as a dead chip', async ({
@@ -307,4 +302,26 @@ test('@mobile a 120-character name never widens the page, in any column', async 
     ).toBe(true);
   }
   expect(seen).toBeGreaterThan(0);
+});
+
+test('@mobile the Move menu stays clear of the sticky tab bar near the screen foot', async ({
+  page,
+}) => {
+  await board(page, '/pipeline');
+  const button = cards(page, 'Lead')
+    .nth(4)
+    .getByRole('button', { name: /Move to/ });
+  // Put the trigger just above the tab bar, where a menu has no room below it.
+  await button.evaluate((el) => {
+    const bar = document
+      .querySelector('[data-tab-bar]')!
+      .getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    window.scrollBy(0, r.bottom - (bar.top - 8));
+  });
+  await button.click();
+  const menu = await page.getByRole('menu').boundingBox();
+  const bar = await page.locator('[data-tab-bar]').boundingBox();
+  expect(menu!.y + menu!.height).toBeLessThanOrEqual(bar!.y);
+  expect(menu!.y).toBeGreaterThanOrEqual(0);
 });
