@@ -267,12 +267,12 @@ describe('FiltersPanel follow-up and date rules', () => {
     await user.click(screen.getByRole('radio', { name: /Custom range/ }));
     const apply = screen.getByRole('button', { name: 'Apply' });
     expect(apply).toHaveAttribute('aria-disabled', 'true');
+    // The reason is the button's description until a click opens its tooltip.
+    const reasonId = apply.getAttribute('aria-describedby')!;
     await user.click(apply);
     expect(onUrlUpdate).not.toHaveBeenCalled();
     expect(onOpenChange).not.toHaveBeenCalled();
-    const reason = document.getElementById(
-      apply.getAttribute('aria-describedby')!,
-    );
+    const reason = document.getElementById(reasonId);
     expect(reason).toHaveTextContent('Pick a follow-up date.');
   });
 

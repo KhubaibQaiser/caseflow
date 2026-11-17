@@ -3,8 +3,7 @@
 import ListFilter from 'lucide-react/icons/list-filter';
 import LoaderCircle from 'lucide-react/icons/loader-circle';
 import Search from 'lucide-react/icons/search';
-import { debounce } from 'nuqs';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -43,6 +42,23 @@ export function Toolbar({
   onFiltersIntent?: () => void;
 }) {
   const [query, setQuery] = useListQuery();
+  // The box is local; the URL gets one write, 250ms after the last key. nuqs's own debounce times each key
+  // separately, so q and the page reset could land apart (an extra server render with a stale page).
+  const [text, setText] = useState(query.q ?? '');
+  const [seenQ, setSeenQ] = useState(query.q);
+  if (seenQ !== query.q) {
+    // q changed from outside the box (chip, Clear filters, back/forward).
+    setSeenQ(query.q);
+    setText(query.q ?? '');
+  }
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const commit = (q: string) => {
+    clearTimeout(timer.current);
+    // Whitespace alone never takes: the box mirrors the URL, so it empties.
+    if (!q.trim()) setText('');
+    setQuery({ q: q.trim() ? q : null, page: null }, { history: 'replace' });
+  };
   const applied = countActiveFilterGroups(toFilters(query));
 
   return (
@@ -62,19 +78,18 @@ export function Toolbar({
           spellCheck={false}
           maxLength={100}
           placeholder="Search name, email, phone…"
-          value={query.q ?? ''}
-          // The box updates at once; the URL (and the server) follow 250ms after the last key.
-          onChange={(e) =>
-            setQuery(
-              // Whitespace alone searches nothing, so it stays out of the URL.
-              { q: e.target.value.trim() ? e.target.value : null },
-              { history: 'replace', limitUrlUpdates: debounce(250) },
-            )
-          }
+          value={text}
+          onChange={(e) => {
+            const next = e.target.value;
+            setText(next);
+            clearTimeout(timer.current);
+            timer.current = setTimeout(() => commit(next), 250);
+          }}
           onKeyDown={(e) => {
-            if (e.key !== 'Escape' || !query.q) return;
+            if (e.key !== 'Escape' || !text) return;
             e.preventDefault();
-            setQuery({ q: null }, { history: 'replace' });
+            setText('');
+            commit('');
           }}
           className="h-10 pr-8 pl-8 md:h-[34px] [&::-webkit-search-cancel-button]:appearance-none"
         />
