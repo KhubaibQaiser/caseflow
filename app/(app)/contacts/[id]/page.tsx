@@ -6,6 +6,7 @@ import {
   moveContactAction,
   rescheduleAction,
 } from '@/features/contacts/actions';
+import { Timeline } from '@/features/contacts/detail/timeline';
 import { ContactDetailView } from '@/features/contacts/detail/contact-detail';
 import { getContact } from '@/lib/data';
 import { todayIn } from '@/lib/dates/date-only';
@@ -20,6 +21,7 @@ export default async function ContactPage({
     getRequestTimeZone(),
   ]);
   if (!contact) notFound();
+  const today = todayIn(tz);
   return (
     <div className="flex flex-col gap-3.5">
       <title>{`${contact.fullName} · Caseflow`}</title>
@@ -31,11 +33,14 @@ export default async function ContactPage({
       />
       <ContactDetailView
         contact={contact}
-        today={todayIn(tz)}
+        today={today}
         tz={tz}
         onMove={moveContactAction.bind(null, id)}
         onReschedule={rescheduleAction.bind(null, id)}
         onAddNote={addNoteAction.bind(null, id)}
+        timeline={
+          <Timeline activities={contact.activities} today={today} tz={tz} />
+        }
       />
     </div>
   );

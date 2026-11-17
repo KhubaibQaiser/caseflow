@@ -26,6 +26,8 @@ type DatePickerProps = {
   label: string;
   /** A button to open the calendar instead of the field (e.g. Reschedule). It keeps its own name. */
   trigger?: ReactElement;
+  /** Start with the calendar open: for a picker mounted lazily by the click that should open it. */
+  defaultOpen?: boolean;
 };
 
 const navButton =
@@ -43,8 +45,9 @@ export function DatePicker({
   min,
   label,
   trigger,
+  defaultOpen = false,
 }: DatePickerProps) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const panel = useRef<HTMLDivElement>(null);
   const field = useFieldControl();
   const selected = value ? parseDateOnly(value) : undefined;

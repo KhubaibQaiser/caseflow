@@ -16,7 +16,7 @@ describe('MoveMenu', () => {
     render(<MoveMenu current="lead" onMove={vi.fn()} />);
     await user.click(trigger());
 
-    const items = screen.getAllByRole('menuitem');
+    const items = await screen.findAllByRole('menuitem');
     expect(items.map((i) => i.textContent)).toEqual(['Active', 'Closed']);
   });
 
@@ -27,9 +27,9 @@ describe('MoveMenu', () => {
     const user = userEvent.setup();
     render(<MoveMenu current={current} onMove={vi.fn()} />);
     await user.click(trigger());
-    expect(screen.getAllByRole('menuitem').map((i) => i.textContent)).toEqual(
-      labels,
-    );
+    expect(
+      (await screen.findAllByRole('menuitem')).map((i) => i.textContent),
+    ).toEqual(labels);
   });
 
   it('moves with the keyboard and calls onMove once', async () => {
@@ -39,6 +39,10 @@ describe('MoveMenu', () => {
 
     await user.tab();
     await user.keyboard('{Enter}');
+    // Opened with the keyboard: the first item has focus once the menu code lands.
+    expect(
+      await screen.findByRole('menuitem', { name: 'Active' }),
+    ).toHaveFocus();
     await user.keyboard('{ArrowDown}{Enter}');
 
     expect(onMove).toHaveBeenCalledExactlyOnceWith('closed');
@@ -57,7 +61,7 @@ describe('MoveMenu', () => {
     );
     render(<MoveMenu current="lead" onMove={onMove} />);
     await user.click(trigger());
-    await user.click(screen.getByRole('menuitem', { name: 'Active' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Active' }));
 
     const busy = screen.getByRole('button', { name: /Moving/ });
     expect(busy).toHaveAttribute('aria-busy', 'true');

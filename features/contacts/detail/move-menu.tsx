@@ -1,20 +1,15 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 import ChevronDown from 'lucide-react/icons/chevron-down';
 
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { StatusPill } from '@/components/ui/pill';
 import type { ContactRow } from '@/lib/contracts/contact';
-import { STATUSES, type Status } from '@/lib/contracts/enums';
+import type { Status } from '@/lib/contracts/enums';
 import type { Result } from '@/lib/contracts/result';
+
+const load = () => import('./move-menu-popup');
+const Popup = lazy(load);
 
 type MoveMenuProps = {
   current: Status;
@@ -33,6 +28,8 @@ export function MoveMenu({
   className,
 }: MoveMenuProps) {
   const [pending, setPending] = useState(false);
+  // How the first click happened; null until then, and the menu code isn't loaded.
+  const [opened, setOpened] = useState<'pointer' | 'keyboard' | null>(null);
   // State lags a render behind a fast second select; the ref doesn't.
   const inflight = useRef(false);
 
@@ -48,28 +45,35 @@ export function MoveMenu({
     }
   }
 
+  const trigger = (busy: boolean, onClick?: (detail: number) => void) => (
+    <Button
+      variant="ghost"
+      pending={busy}
+      pendingLabel="Moving…"
+      disabledReason={disabledReason}
+      className={className}
+      onClick={onClick && ((event) => onClick(event.detail))}
+      onPointerEnter={() => void load()}
+      onFocus={() => void load()}
+    >
+      Move to…
+      <ChevronDown aria-hidden className="size-4" />
+    </Button>
+  );
+
+  if (disabledReason !== undefined || opened === null)
+    return trigger(pending, (detail) =>
+      // detail is 0 for a click made with Enter or Space.
+      setOpened(detail === 0 ? 'keyboard' : 'pointer'),
+    );
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          pending={pending}
-          pendingLabel="Moving…"
-          disabledReason={disabledReason}
-          className={className}
-        >
-          Move to…
-          <ChevronDown aria-hidden className="size-4" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Move to</DropdownMenuLabel>
-        {STATUSES.filter((s) => s !== current).map((s) => (
-          <DropdownMenuItem key={s} onSelect={() => void move(s)}>
-            <StatusPill status={s} />
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Suspense fallback={trigger(true)}>
+      <Popup
+        current={current}
+        trigger={trigger(pending)}
+        onSelect={(to) => void move(to)}
+        keyboard={opened === 'keyboard'}
+      />
+    </Suspense>
   );
 }

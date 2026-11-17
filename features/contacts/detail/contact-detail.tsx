@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 
 import { toast } from '@/components/ui/toaster';
 import type { ContactDetail, ContactRow, Note } from '@/lib/contracts/contact';
@@ -13,7 +14,6 @@ import { ContactHeader } from './contact-header';
 import { DetailsList } from './details-list';
 import { FollowUpCard } from './follow-up-card';
 import { Notes } from './notes';
-import { Timeline } from './timeline';
 
 type ContactDetailViewProps = {
   contact: ContactDetail;
@@ -23,6 +23,8 @@ type ContactDetailViewProps = {
   onMove(to: Status): Promise<Result<ContactRow>>;
   onReschedule(followUpOn: string | null): Promise<Result<ContactRow>>;
   onAddNote(body: string): Promise<Result<Note>>;
+  /** The activity timeline, rendered on the server so its parsing never ships to the browser. */
+  timeline: ReactNode;
 };
 
 /** The page body. Moves and reschedules show at once from the action's reply; the revalidated page replaces them. */
@@ -33,6 +35,7 @@ export function ContactDetailView({
   onMove,
   onReschedule,
   onAddNote,
+  timeline,
 }: ContactDetailViewProps) {
   const report = useReportFailure();
   // Valid only while the server copy it was derived from is still the one rendered.
@@ -80,7 +83,7 @@ export function ContactDetailView({
           <DetailsList contact={live} />
           <Notes notes={contact.notes} onAdd={onAddNote} tz={tz} />
         </div>
-        <Timeline activities={contact.activities} today={today} tz={tz} />
+        {timeline}
       </div>
     </>
   );

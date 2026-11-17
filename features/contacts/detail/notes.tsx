@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
@@ -18,13 +17,12 @@ import { Panel } from './panel';
 
 const MAX = 2000;
 const DRAFT_KEY = 'caseflowNoteDraft';
-const DraftState = z.looseObject({ [DRAFT_KEY]: z.string() });
 
 // Browser-only and pure, so the lazy initial state survives StrictMode's double call.
 function readDraft(): string {
   if (typeof window === 'undefined') return '';
-  const draft = DraftState.safeParse(window.history.state);
-  return draft.success ? draft.data[DRAFT_KEY] : '';
+  const draft: unknown = window.history.state?.[DRAFT_KEY];
+  return typeof draft === 'string' ? draft : '';
 }
 
 type Failure = { message: string; retry: boolean };

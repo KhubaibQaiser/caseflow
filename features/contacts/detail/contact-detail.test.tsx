@@ -27,6 +27,7 @@ const props = (
   onMove: vi.fn(),
   onReschedule: vi.fn(),
   onAddNote: vi.fn(),
+  timeline: null,
   ...over,
 });
 
@@ -49,7 +50,7 @@ describe('ContactDetailView', () => {
     expect(screen.getByText('Overdue · 2d')).toBeVisible();
 
     await user.click(screen.getByRole('button', { name: 'Move to…' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Closed' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Closed' }));
 
     expect(onMove).toHaveBeenCalledExactlyOnceWith('closed');
     expect(
@@ -69,7 +70,7 @@ describe('ContactDetailView', () => {
     renderAs('admin', <ContactDetailView {...props({ onMove })} />);
 
     await user.click(screen.getByRole('button', { name: 'Move to…' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Active' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Active' }));
 
     expect(toast.error).toHaveBeenCalledWith(
       'Something went wrong. Try again.',
@@ -84,7 +85,7 @@ describe('ContactDetailView', () => {
     renderAs('admin', <ContactDetailView {...props({ onMove })} />);
 
     await user.click(screen.getByRole('button', { name: 'Move to…' }));
-    await user.click(screen.getByRole('menuitem', { name: 'Active' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Active' }));
 
     expect(toast.error).toHaveBeenCalledWith(
       "You don't have permission to move contacts.",
@@ -94,16 +95,14 @@ describe('ContactDetailView', () => {
   it('shows the new follow-up straight away and says so', async () => {
     const user = userEvent.setup();
     const c = contact();
-    const onReschedule = vi
-      .fn()
-      .mockResolvedValue(
-        ok({
-          ...c,
-          followUpOn: '2026-11-20',
-          urgency: 'later',
-          daysOverdue: null,
-        }),
-      );
+    const onReschedule = vi.fn().mockResolvedValue(
+      ok({
+        ...c,
+        followUpOn: '2026-11-20',
+        urgency: 'later',
+        daysOverdue: null,
+      }),
+    );
     renderAs('admin', <ContactDetailView {...props({ onReschedule })} />);
 
     await user.click(screen.getByRole('button', { name: 'Reschedule' }));

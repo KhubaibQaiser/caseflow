@@ -1,9 +1,8 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { Suspense, lazy, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/ui/date-picker';
 import { UrgencyPill } from '@/components/ui/pill';
 import { usePermission } from '@/lib/auth/permissions-context';
 import type { ContactRow } from '@/lib/contracts/contact';
@@ -12,6 +11,10 @@ import { followUpView, formatDateShort } from '@/lib/dates/labels';
 
 import { VIEWER_EDIT_REASON } from '../reasons';
 import { Panel } from './panel';
+
+// The calendar (react-day-picker) is a third of the route's JS and only a click away from needed.
+const load = () => import('@/components/ui/date-picker');
+const DatePicker = lazy(() => load().then((m) => ({ default: m.DatePicker })));
 
 type FollowUpCardProps = {
   contact: Pick<
@@ -30,6 +33,8 @@ export function FollowUpCard({
 }: FollowUpCardProps) {
   const canWrite = usePermission('contacts.write');
   const [pending, setPending] = useState(false);
+  // Set by the first click: the picker mounts already open once its code lands.
+  const [armed, setArmed] = useState(false);
   const inflight = useRef(false);
   const { followUpOn, status } = contact;
   const view = followUpView(contact, today);
@@ -55,6 +60,20 @@ export function FollowUpCard({
     }
   }
 
+  const reschedule = (busy: boolean, onClick?: () => void) => (
+    <Button
+      variant="ghost"
+      size="sm"
+      pending={busy}
+      pendingLabel="Saving…"
+      onClick={onClick}
+      onPointerEnter={() => void load()}
+      onFocus={() => void load()}
+    >
+      Reschedule
+    </Button>
+  );
+
   return (
     <Panel title="Follow-up">
       <div className="text-13 flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -62,22 +81,20 @@ export function FollowUpCard({
         {urgent && date && <span className="tnum">Due {date}</span>}
         <div className="ml-auto">
           {canWrite ? (
-            <DatePicker
-              label="Follow-up date"
-              value={followUpOn}
-              min={today}
-              onChange={(next) => void save(next)}
-              trigger={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  pending={pending}
-                  pendingLabel="Saving…"
-                >
-                  Reschedule
-                </Button>
-              }
-            />
+            armed ? (
+              <Suspense fallback={reschedule(true)}>
+                <DatePicker
+                  defaultOpen
+                  label="Follow-up date"
+                  value={followUpOn}
+                  min={today}
+                  onChange={(next) => void save(next)}
+                  trigger={reschedule(pending)}
+                />
+              </Suspense>
+            ) : (
+              reschedule(false, () => setArmed(true))
+            )
           ) : (
             <Button
               variant="ghost"
