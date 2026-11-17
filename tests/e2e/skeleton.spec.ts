@@ -149,16 +149,20 @@ for (const size of [
     test('contacts: skeleton rows are the loaded rows', async ({ page }) => {
       const wide = size.width >= 768;
       const head = 'main#main table thead th';
-      const row = wide
-        ? 'main#main table tbody tr:first-child td'
-        : 'main#main ul > li:first-child';
+      const rows = (cards: string) =>
+        wide ? `${head}, main#main table tbody tr:first-child td` : cards;
       await page.goto('/dev/skeleton/list');
       await page.locator('main#main [aria-busy="true"]').first().waitFor();
-      const loading = await boxes(page, wide ? `${head}, ${row}` : row);
+      const loading = (
+        await boxes(page, rows('main#main [aria-busy] ul > li'))
+      ).slice(0, wide ? undefined : 1);
       await page.goto('/contacts');
       await page.waitForLoadState('networkidle');
       await page.waitForTimeout(500);
-      const loaded = await boxes(page, wide ? `${head}, ${row}` : row);
+      const loaded = (
+        await boxes(page, rows('main#main ul[aria-label="Contacts"] > li'))
+      ).slice(0, wide ? undefined : 1);
+      // On a phone only the first card is pinned: a card is 70 or 72px by what it holds.
       expect(loading.length, 'skeleton cells found').toBeGreaterThan(0);
       near(loading, loaded);
     });
