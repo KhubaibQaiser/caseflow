@@ -183,3 +183,44 @@ describe('proxy with AUTH_ENFORCED=false', () => {
     expect((await proxy(req('/dev/components'))).status).toBe(404);
   });
 });
+
+describe('Content-Security-Policy', () => {
+  const csp = (r: Response) => r.headers.get('content-security-policy') ?? '';
+  const nonceOf = (r: Response) => /'nonce-([^']+)'/.exec(csp(r))?.[1];
+
+  it('is set on a normal response, with a fresh nonce each time', async () => {
+    claims = { sub: 'u1' };
+    const a = await proxy(req('/contacts'));
+    const b = await proxy(req('/contacts'));
+    expect(csp(a)).toContain("script-src 'self' 'nonce-");
+    expect(nonceOf(a)).toBeTruthy();
+    expect(nonceOf(a)).not.toBe(nonceOf(b));
+  });
+
+  it('is set on the sign-in redirect', async () => {
+    const r = await proxy(req('/contacts'));
+    expect(r.status).toBe(307);
+    expect(csp(r)).toContain("default-src 'self'");
+  });
+
+  it('is set on /login and on the /dev 404 in production', async () => {
+    expect(csp(await proxy(req('/login')))).toContain("object-src 'none'");
+    claims = { sub: 'u1' };
+    vi.stubEnv('VERCEL_ENV', 'production');
+    const r = await proxy(req('/dev/components'));
+    expect(r.status).toBe(404);
+    expect(csp(r)).toContain('upgrade-insecure-requests');
+  });
+
+  it('is set when auth is not enforced', async () => {
+    vi.stubEnv('AUTH_ENFORCED', 'false');
+    expect(csp(await proxy(req('/contacts')))).toContain("base-uri 'self'");
+  });
+
+  it('forwards the nonce to Next on the request', async () => {
+    claims = { sub: 'u1' };
+    const r = await proxy(req('/contacts'));
+    const fwd = r.headers.get('x-middleware-request-content-security-policy');
+    expect(fwd).toBe(csp(r));
+  });
+});

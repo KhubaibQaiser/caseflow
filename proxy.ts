@@ -1,10 +1,23 @@
 import { createServerClient } from '@supabase/ssr';
 import { authEnforced, supabaseEnv } from '@/lib/env';
 import { sessionCookieOptions } from '@/lib/supabase/cookie-options';
+import { buildCsp, createNonce } from '@/lib/security/csp';
 import { NextResponse, type NextRequest } from 'next/server';
 
-// Logged in or not, nothing more. Authorization lives in getViewer and Postgres RLS.
+// Every response path gets the CSP; Next reads the nonce back from the request header.
 export async function proxy(request: NextRequest) {
+  const csp = buildCsp(createNonce(), {
+    dev: process.env.NODE_ENV === 'development',
+    production: process.env.VERCEL_ENV === 'production',
+  });
+  request.headers.set('Content-Security-Policy', csp);
+  const response = await route(request);
+  response.headers.set('Content-Security-Policy', csp);
+  return response;
+}
+
+// Logged in or not, nothing more. Authorization lives in getViewer and Postgres RLS.
+async function route(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const here = (path: string) => new URL(path, request.url);
 
@@ -12,10 +25,10 @@ export async function proxy(request: NextRequest) {
     (pathname === '/dev' || pathname.startsWith('/dev/')) &&
     process.env.VERCEL_ENV === 'production'
   )
-    return NextResponse.rewrite(here('/__not-found'), { status: 404 });
+    return NextResponse.rewrite(here('/__not-found'), { request, status: 404 });
 
   // Until T22 nothing in the app signs in, so enforcing would lock everyone out.
-  if (!authEnforced()) return NextResponse.next();
+  if (!authEnforced()) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });
   let authHeaders: Record<string, string> = {};

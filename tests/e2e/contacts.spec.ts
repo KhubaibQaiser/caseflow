@@ -2,13 +2,15 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { storage } from './helpers';
+import { settleAnimations, storage } from './helpers';
 
 // Seeded data: 2,500 contacts. Until T22b flips the data layer the list still runs on the fake (1,200 contacts, one with a 120-character name).
-const axe = (page: Page) =>
-  new AxeBuilder({ page })
+const axe = async (page: Page) => {
+  await settleAnimations(page);
+  return new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
+};
 
 // Scoped to main: while the page streams in, React parks a hidden copy outside it (role queries skip it, text queries don't).
 const main = (page: Page) => page.getByRole('main');
