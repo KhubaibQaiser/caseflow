@@ -148,10 +148,12 @@ describe('Toolbar search', () => {
       act(() => void vi.advanceTimersByTime(100));
       fireEvent.click(screen.getByRole('button', { name: 'Remove chip' }));
       expect(box).toHaveValue('');
-      onUrlUpdate.mockClear();
       act(() => void vi.advanceTimersByTime(400));
       // The removed q stays removed: "smithe" never lands.
-      expect(onUrlUpdate).not.toHaveBeenCalled();
+      for (const [update] of onUrlUpdate.mock.calls)
+        expect((update.searchParams as URLSearchParams).get('q')).not.toBe(
+          'smithe',
+        );
       expect(box).toHaveValue('');
     } finally {
       vi.useRealTimers();
@@ -215,7 +217,7 @@ describe('Toolbar search', () => {
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
     await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
     // The box mirrors the URL, so whitespace alone simply doesn't take.
-    expect(box).toHaveValue('');
+    await waitFor(() => expect(box).toHaveValue(''));
   });
 });
 

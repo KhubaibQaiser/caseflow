@@ -45,18 +45,22 @@ export function Toolbar({
   // The box is local; the URL gets one write, 250ms after the last key. nuqs's own debounce times each key
   // separately, so q and the page reset could land apart (an extra server render with a stale page).
   const [text, setText] = useState(query.q ?? '');
-  const [seenQ, setSeenQ] = useState(query.q);
-  if (seenQ !== query.q) {
-    // q changed from outside the box (chip, Clear filters, back/forward).
-    setSeenQ(query.q);
-    setText(query.q ?? '');
-  }
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  // What this box last wrote (or started from): a q that differs came from outside the box.
+  const lastSent = useRef(query.q ?? '');
   useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(() => {
+    if ((query.q ?? '') === lastSent.current) return; // our own write echoing back
+    // Chip, Clear filters, back/forward: drop any keystroke still waiting and show the URL's q.
+    clearTimeout(timer.current);
+    lastSent.current = query.q ?? '';
+    setText(query.q ?? '');
+  }, [query.q]);
   const commit = (q: string) => {
     clearTimeout(timer.current);
     // Whitespace alone never takes: the box mirrors the URL, so it empties.
     if (!q.trim()) setText('');
+    lastSent.current = q.trim() ? q : '';
     setQuery({ q: q.trim() ? q : null, page: null }, { history: 'replace' });
   };
   const applied = countActiveFilterGroups(toFilters(query));
