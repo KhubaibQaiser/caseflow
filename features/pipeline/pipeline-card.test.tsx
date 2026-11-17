@@ -23,7 +23,9 @@ describe('PipelineCard', () => {
     const onMove = vi.fn().mockResolvedValue(ok(pipelineRow('a', 'active')));
     render(<PipelineCard row={pipelineRow('a', 'lead')} onMove={onMove} />);
     await user.click(screen.getByRole('button', { name: /Move to/ }));
-    await user.dblClick(await screen.findByRole('menuitem', { name: 'Active' }));
+    await user.dblClick(
+      await screen.findByRole('menuitem', { name: 'Active' }),
+    );
     expect(onMove).toHaveBeenCalledExactlyOnceWith('a', 'active');
   });
 

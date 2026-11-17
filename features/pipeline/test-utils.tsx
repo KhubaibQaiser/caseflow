@@ -1,4 +1,3 @@
-import type { ContactRow } from '@/lib/contracts/contact';
 import type { Status } from '@/lib/contracts/enums';
 
 import type { Columns, PipelineRow } from './rows';
@@ -6,7 +5,7 @@ import type { Columns, PipelineRow } from './rows';
 export function pipelineRow(
   id: string,
   status: Status,
-  over: Partial<ContactRow> = {},
+  over: Partial<PipelineRow> = {},
 ): PipelineRow {
   return {
     id,

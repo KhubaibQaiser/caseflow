@@ -19,7 +19,7 @@ describe('Column', () => {
   it('shows the status, its count and what is left', () => {
     render(<Column {...props} />);
     expect(screen.getByRole('heading', { name: /Lead/ })).toHaveTextContent(
-      'Lead642',
+      'Lead 642 contacts',
     );
     expect(
       screen.getByRole('button', { name: 'Show 50 more · 592 left' }),

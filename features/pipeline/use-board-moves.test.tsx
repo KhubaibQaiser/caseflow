@@ -48,7 +48,9 @@ describe('useBoardMoves', () => {
     });
     // The move stays after the server confirms it.
     expect(ids(result.current.columns.active.rows)).toContain('a');
-    expect(toast.success).toHaveBeenCalledWith('Marisol Ortega moved to Active.');
+    expect(toast.success).toHaveBeenCalledWith(
+      'Marisol Ortega moved to Active.',
+    );
   });
 
   it('puts the card where urgency sorts it, not on top', async () => {
@@ -64,7 +66,9 @@ describe('useBoardMoves', () => {
     ];
     cols.active.matching = 2;
     const { result } = renderHook(() =>
-      useBoardMoves(cols, () => Promise.resolve(ok(pipelineRow('a', 'active')))),
+      useBoardMoves(cols, () =>
+        Promise.resolve(ok(pipelineRow('a', 'active'))),
+      ),
     );
     await act(async () => {
       await result.current.move('a', 'active');
@@ -146,12 +150,11 @@ describe('useBoardMoves', () => {
     await act(async () => {
       await result.current.move('a', 'active');
     });
-    const options = vi.mocked(toast.error).mock.calls[0]?.[1];
-    await act(async () => {
-      options?.action && 'onClick' in options.action
-        ? options.action.onClick({} as never)
-        : undefined;
-    });
+    const [, options] = vi.mocked(toast.error).mock.calls[0] as unknown as [
+      string,
+      { action: { onClick(): void } },
+    ];
+    await act(async () => options.action.onClick());
     expect(onMove).toHaveBeenCalledTimes(2);
     expect(ids(result.current.columns.active.rows)).toContain('a');
   });
@@ -161,7 +164,11 @@ describe('useBoardMoves', () => {
       useBoardMoves(board(), () => Promise.reject(new Error('unused'))),
     );
     act(() =>
-      result.current.append('lead', [pipelineRow('b', 'lead'), pipelineRow('n', 'lead')], 3),
+      result.current.append(
+        'lead',
+        [pipelineRow('b', 'lead'), pipelineRow('n', 'lead')],
+        3,
+      ),
     );
     expect(ids(result.current.columns.lead.rows)).toEqual(['a', 'b', 'n']);
     expect(result.current.columns.lead.matching).toBe(3);
