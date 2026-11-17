@@ -131,3 +131,18 @@ test('@mobile a toast clears the tab bar and the safe area', async ({
   const tabBox = (await page.locator('[data-tab-bar]').boundingBox())!;
   expect(toastBox.y + toastBox.height).toBeLessThanOrEqual(tabBox.y - 8);
 });
+
+test('the rail shows an initials avatar that opens the account menu', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 900, height: 700 });
+  await page.goto('/no-such-page');
+  const avatar = page
+    .getByRole('complementary')
+    .getByRole('button', { name: 'Account: Alex Morgan, Admin' });
+  await expect(avatar).toContainText('AM');
+  await avatar.click();
+  await expect(page.getByRole('menu')).toContainText('Alex Morgan');
+  await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]);
+});

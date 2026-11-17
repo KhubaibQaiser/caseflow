@@ -8,9 +8,7 @@ import { ROLE_LABEL } from '@/lib/contracts/permissions';
 import { initials } from '@/utils/initials';
 
 /** The menu trigger, and its stand-in while the menu code loads. */
-export function AccountTrigger(
-  props: Omit<ComponentProps<'button'>, 'aria-label'>,
-) {
+export function AccountTrigger(props: ComponentProps<'button'>) {
   const { displayName, role } = useViewer();
   const viewer = role === 'viewer';
   const RoleIcon = viewer ? Lock : ShieldCheck;
@@ -18,9 +16,10 @@ export function AccountTrigger(
     <button
       type="button"
       {...props}
-      aria-label={`Account: ${displayName}, ${ROLE_LABEL[role]}`}
       className="text-13 text-ink hover:bg-canvas rounded-ctl flex min-h-8 cursor-pointer items-center gap-1 border-0 bg-transparent p-0 max-lg:size-8 max-lg:justify-center max-lg:rounded-full lg:w-full lg:px-2.5"
     >
+      {/* The name comes from content, not aria-label: initials on the rail are visible text that a label would not contain. */}
+      <span className="sr-only">{`Account: ${displayName}, ${ROLE_LABEL[role]}`}</span>
       <span
         aria-hidden
         className="bg-accent-soft text-accent relative inline-flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tracking-wide lg:hidden"
