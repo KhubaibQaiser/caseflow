@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Caseflow · Screens v2 (proposed changes)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --canvas:#F4F6F3; --surface:#FFFFFF; --panel:#FAFBF9; --line:#E3E8E2; --line-soft:#EEF1ED;
+  --ink:#1E2A26; --ink-2:#56645E; --accent:#1F5C4A; --accent-soft:#E6F0EB;
+  --overdue-bg:#FCE8E4; --overdue:#9E3426; --today-bg:#FFF1D6; --today:#7A4B00;
+  --r-ctl:6px; --r-surface:10px;
+  font-family:'Figtree',system-ui,sans-serif; color:var(--ink);
+}
+*{box-sizing:border-box}
+::selection{background:#CFE3D9;color:var(--ink)}
+body{margin:0;padding:28px;background:#E4E8E3;font-size:14px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.caption{font-size:13px;color:#3D4A44;max-width:1440px}
+.caption b{color:var(--ink)}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- desktop frame ---------- */
+.desk{width:1440px;height:820px;background:var(--canvas);border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(30,42,38,.12);display:flex;flex-direction:column}
+.topbar{height:52px;flex:none;display:flex;align-items:center;gap:28px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.mark{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;letter-spacing:-.01em;color:var(--accent)}
+.mark i{width:18px;height:18px;border-radius:5px;background:var(--accent);display:block;position:relative}
+.mark i::after{content:'';position:absolute;inset:5px 4px 5px 4px;border-left:2px solid #fff;border-bottom:2px solid #fff;border-radius:0 0 0 3px}
+.tabs{display:flex;gap:4px;height:100%}
+.tabs a{display:flex;align-items:center;padding:0 12px;color:var(--ink-2);text-decoration:none;font-weight:500;border-bottom:2px solid transparent}
+.tabs a.on{color:var(--ink);border-bottom-color:var(--accent)}
+.user{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px}
+.body{flex:1;display:flex;min-height:0}
+
+.filters{width:252px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:16px;overflow:hidden;display:flex;flex-direction:column;gap:18px}
+.fhead{display:flex;align-items:center;justify-content:space-between}
+.fhead h2{margin:0;font-size:14px;font-weight:600}
+.fhead h2 span{color:var(--ink-2);font-weight:500}
+.link{color:var(--accent);font-weight:600;font-size:13px;text-decoration:none}
+.group h3{margin:0 0 8px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.opt{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.opt .n{margin-left:auto;color:var(--ink-2)}
+.box{width:16px;height:16px;border:1.5px solid #9AA8A1;border-radius:4px;flex:none;display:grid;place-items:center}
+.box.on{background:var(--accent);border-color:var(--accent)}
+.box.on::after{content:'';width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.radio{width:16px;height:16px;border:1.5px solid #9AA8A1;border-radius:50%;flex:none}
+.radio.on{border:5px solid var(--accent)}
+.more{font-size:13px;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line)}
+
+.main{flex:1;min-width:0;padding:18px 24px 14px;display:flex;flex-direction:column;gap:12px}
+.head{display:flex;align-items:baseline;gap:10px}
+.head h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.head .of{color:var(--ink-2);font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:var(--r-ctl);font:inherit;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff;margin-left:auto;align-self:center}
+.btn.ghost{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;height:34px;width:320px;padding:0 10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-ctl);color:var(--ink-2);font-size:13px}
+.search.focus{border-color:var(--accent);box-shadow:0 0 0 3px #CFE3D9}
+.badge{background:var(--accent);color:#fff;border-radius:999px;padding:0 7px;font-size:11px;line-height:18px}
+.seg{display:inline-flex;background:#E9EEEA;border-radius:8px;padding:3px;gap:2px}
+.seg a{padding:5px 10px;border-radius:5px;font-size:13px;font-weight:500;color:var(--ink-2);text-decoration:none;display:flex;gap:6px}
+.seg a.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(30,42,38,.12)}
+.seg .c{color:var(--ink-2)}
+.seg .c.hot{color:var(--overdue);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;font-size:12.5px}
+.chip b{font-weight:600}
+.chip button{width:24px;height:24px;border:0;background:none;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.chip button svg{width:14px;height:14px}
+
+.tablewrap{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:0 10px;height:34px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.sorted{color:var(--ink)}
+th.sorted svg{width:13px;height:13px;vertical-align:-2px;margin-left:3px;color:var(--accent)}
+td{height:36px;padding:0 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+tr:hover td{background:#F7F9F7}
+td.name{font-weight:600}
+td.muted{color:var(--ink-2)}
+.st{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;line-height:20px}
+.st.lead{border:1px solid #C3CEC8;color:#3D4A44;padding:0 8px}
+.st.active{background:var(--accent-soft);color:var(--accent)}
+.st.closed{background:#ECEFED;color:var(--ink-2)}
+.fu{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;line-height:20px}
+.fu.over{background:var(--overdue-bg);color:var(--overdue)}
+.fu.today{background:var(--today-bg);color:var(--today)}
+.fu.later{padding:0;font-weight:400;color:var(--ink-2)}
+.foot{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--ink-2)}
+.pp{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink)}
+.pager{margin-left:auto;display:flex;gap:2px;align-items:center}
+.pager a{min-width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r-ctl);color:var(--ink);text-decoration:none}
+.pager a.on{background:var(--accent);color:#fff;font-weight:600}
+.pager a.dim{color:#A9B4AE}
+
+/* ---------- mobile frame ---------- */
+.phone{width:390px;height:844px;background:var(--canvas);border-radius:28px;overflow:hidden;box-shadow:0 8px 30px rgba(30,42,38,.12);display:flex;flex-direction:column;border:8px solid #1E2A26}
+.mtop{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.mmain{flex:1;padding:14px 16px 0;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.mmain .head h1{font-size:20px}
+.mmain .search{width:100%;height:40px}
+.mrow{display:flex;gap:8px}
+.mrow .btn{height:36px;flex:1;justify-content:center}
+.mscroll{display:flex;gap:6px;overflow:hidden}
+.mscroll .seg a{white-space:nowrap}
+.cards{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);overflow:hidden}
+.card{padding:10px 12px;border-bottom:1px solid var(--line-soft);display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:13px}
+.card .nm{font-weight:600;font-size:14px}
+.card .meta{color:var(--ink-2);grid-column:1/-1;display:flex;gap:8px;align-items:center}
+.mtabs{height:60px;display:flex;background:var(--surface);border-top:1px solid var(--line)}
+.mtabs a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:600;color:var(--ink-2);text-decoration:none}
+.mtabs a.on{color:var(--accent)}
+.mtabs svg{width:20px;height:20px}
+.row2{display:flex;gap:20px;align-items:flex-start}
+
+.desk{flex-direction:row}
+.side{width:196px;flex:none;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 10px}
+.side .mark{padding:4px 8px 18px}
+.side a.nav{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:var(--r-ctl);color:var(--ink-2);text-decoration:none;font-weight:500}
+.side a.nav.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.side a.nav .n{margin-left:auto;font-size:12px;color:var(--ink-2);font-weight:500}
+.side .acct{margin-top:auto;border-top:1px solid var(--line);padding:12px 10px 2px;font-size:13px;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between}
+.filters{border-right:0;border-left:1px solid var(--line);width:256px}
+.fhead .act{display:flex;align-items:center;gap:10px}
+.iconbtn{width:28px;height:28px;border:0;background:none;border-radius:var(--r-ctl);display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.iconbtn:hover{background:#E9EEEA}
+.btn.ghost.pressed{background:var(--accent-soft);border-color:#B9D2C6;color:var(--accent)}
+.phone{position:relative}
+.sheetwrap{position:static;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.scrim{position:absolute;inset:0;z-index:1;background:rgba(30,42,38,.38)}
+.sheet{position:absolute;z-index:2;top:0;right:0;bottom:0;width:88%;background:var(--panel);box-shadow:-8px 0 24px rgba(30,42,38,.18);display:flex;flex-direction:column}
+.sheet .in{flex:1;padding:16px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.sheet .sfoot{padding:12px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.sheet .sfoot .btn{width:100%;justify-content:center;height:40px;margin:0}
+td.em{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.desk{position:relative}
+.desk > .filters{position:absolute;top:111px;right:0;bottom:0;z-index:5;padding:0;gap:0;border-top:1px solid var(--line);border-top-left-radius:var(--r-surface);box-shadow:-10px 8px 28px rgba(30,42,38,.14)}
+.filters .fhead,.sheet .fhead{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.fbody{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:18px}
+.ffoot{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.ffoot .btn{flex:1;justify-content:center;margin:0;height:36px}
+.ffoot .btn.primary{flex:1.4}
+.fbody::-webkit-scrollbar{width:8px}.fbody::-webkit-scrollbar-thumb{background:#C9D3CD;border-radius:8px}
+.sheet .in{padding:0;gap:0}
+.dirty{font-size:12px;color:var(--ink-2);padding:0 16px 10px;background:var(--surface)}
+
+.main.scroll{overflow:hidden}
+.crumbs{font-size:13px;color:var(--ink-2)} .crumbs a{color:var(--ink-2)} .crumbs span{margin:0 4px}
+.dhead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.dhead h1{margin:0 0 6px;font-size:24px;font-weight:600;letter-spacing:-.01em}
+.dmeta{display:flex;gap:8px;align-items:center;color:var(--ink-2);font-size:13px;flex-wrap:wrap}
+.dact{display:flex;gap:8px;align-items:center}
+.dgrid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;min-height:0}
+.dcol{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:14px 16px}
+.panel h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--ink)}
+.panel h2 .cnt{color:var(--ink-2);font-weight:500;margin-left:4px}
+.furow{display:flex;align-items:center;gap:12px;font-size:13px}
+.furow .btn{margin-left:auto}
+.btn.sm{height:30px;padding:0 10px;font-size:12.5px}
+.btn[disabled]{opacity:.45}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;margin:0;font-size:13px}
+.kv dt{color:var(--ink-2)} .kv dd{margin:0}
+.kv .prose{line-height:1.55;max-width:68ch}
+.composer{border:1px solid var(--line);border-radius:var(--r-ctl);margin-bottom:12px}
+.composer .ta{min-height:56px;padding:10px 12px;color:var(--ink-2);font-size:13px}
+.composer .crow{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 8px 12px;border-top:1px solid var(--line-soft)}
+.hint{font-size:12px;color:var(--ink-2)}
+.note{padding:10px 0;border-top:1px solid var(--line-soft)} .note p{margin:4px 0 0;font-size:13px;line-height:1.55}
+.nmeta{font-size:12px;color:var(--ink-2)}
+.timeline{list-style:none;margin:0;padding:0;font-size:13px}
+.timeline li{display:flex;gap:10px;padding:0 0 14px;position:relative}
+.timeline li::before{content:'';position:absolute;left:4px;top:12px;bottom:0;width:1px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline .dot{width:9px;height:9px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);margin-top:4px;flex:none}
+.timeline .dot.first{background:var(--accent)}
+.timeline span{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}
+.formpage{max-width:none}
+.fh1{margin:0;font-size:24px;font-weight:600}
+.esum{display:flex;gap:10px;align-items:flex-start;background:var(--overdue-bg);color:var(--overdue);border-radius:var(--r-ctl);padding:10px 12px;font-size:13px;max-width:720px}
+.esum a{color:var(--overdue);text-decoration:underline;text-underline-offset:2px}
+.form{max-width:720px;display:flex;flex-direction:column;gap:14px}
+fieldset{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-surface);padding:12px 16px 16px;margin:0;display:flex;flex-direction:column;gap:12px}
+legend{font-size:13px;font-weight:600;padding:0 4px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:600}
+.field label i{font-style:normal;font-weight:500;color:var(--ink-2);margin-left:6px;font-size:12px}
+.in{height:36px;border:1px solid #C9D3CD;border-radius:var(--r-ctl);padding:0 10px;display:flex;align-items:center;justify-content:space-between;color:var(--ink-2);font-size:13px;background:var(--surface)}
+.in.filled{color:var(--ink)}
+.in.ta2{height:72px;align-items:flex-start;padding-top:9px}
+.err .in,.pair.err .in{border-color:var(--overdue);box-shadow:0 0 0 3px #F8D7D1}
+.field.err .in{border-color:var(--overdue);box-shadow:0 0 0 3px #F8D7D1}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pair .emsg{grid-column:1/-1}
+.emsg{margin:0;display:flex;gap:6px;align-items:center;color:var(--overdue);font-size:12.5px;font-weight:500}
+.emsg svg{width:14px;height:14px}
+.help{margin:0;font-size:12px;color:var(--ink-2)}
+.row2f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.segf{display:inline-flex;background:#E9EEEA;border-radius:8px;padding:3px;gap:2px;align-self:flex-start}
+.segf span{padding:6px 14px;border-radius:5px;font-size:13px;font-weight:500;color:var(--ink-2)}
+.segf .on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(30,42,38,.12)}
+.ffbar{display:flex;justify-content:flex-end;gap:8px}
+.ffbar .btn.primary{margin-left:0}
+.board{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.colm{background:#EBEFEB;border-radius:var(--r-surface);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}
+.colm header{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.colm h2{margin:0;font-size:13px;font-weight:600} .colm header span{color:var(--ink-2);font-size:13px}
+.kcards{display:flex;flex-direction:column;gap:8px}
+.kc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;position:relative}
+.kt{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px}
+.km{font-size:12.5px;color:var(--ink-2)}
+.kmove{align-self:flex-start;margin-top:4px;display:inline-flex;gap:4px;align-items:center;height:26px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);font:inherit;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer}
+.kmove svg{width:14px;height:14px}
+.kmove.on{border-color:var(--accent);box-shadow:0 0 0 3px #CFE3D9}
+.menu{position:absolute;left:12px;top:100%;margin-top:-6px;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 24px rgba(30,42,38,.16);padding:6px;min-width:180px}
+.mlabel{font-size:11.5px;color:var(--ink-2);padding:4px 8px}
+.mi{padding:6px 8px;border-radius:5px} .mi:first-of-type{background:#F1F5F2}
+.more2{margin-top:auto;height:32px;border:1px dashed #C3CEC8;border-radius:var(--r-ctl);background:transparent;font:inherit;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+.main{position:relative}
+.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 12px 10px 14px;font-size:13px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 24px rgba(30,42,38,.25)}
+.toast .link{background:none;border:0;color:#9FD3BC;font:inherit;font-weight:600;cursor:pointer}
+.seg.full{display:flex} .seg.full a{flex:1;justify-content:center}
+.mh1{margin:0 0 6px;font-size:22px;font-weight:600}
+.mact{display:flex;gap:8px} .mact .btn{flex:1;justify-content:center;height:40px}
+.mmain.scroll{overflow:hidden}
+.states{display:flex;flex-direction:column;gap:14px;width:360px}
+.state{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:14px;min-height:200px}
+.slabel{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:10px}
+.sk{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.sk i{display:block;height:10px;border-radius:5px;background:linear-gradient(90deg,#ECF0ED,#F5F7F5,#ECF0ED)}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px;font-size:13px}
+.empty svg{width:22px;height:22px;color:var(--ink-2)} .empty p{margin:0 0 6px;color:var(--ink-2)}
+
+/* ---------- v2 additions (tokens from DESIGN.md only; no new colours) ---------- */
+:root{--control-border:#7F8D87;--ring:#CFE3D9;--error-ring:#F8D7D1}
+body{padding:0;gap:0;background:#E4E8E3;width:1440px}
+.blk{width:1440px;padding:28px;background:#E4E8E3;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+.blk h2.sec{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.blk .caption{max-width:1100px;line-height:1.5}
+.prop{font-style:normal;font-weight:700;color:var(--accent)}
+.tag{margin:0 0 8px;display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;line-height:18px}
+.tag.cur{background:#ECEFED;color:var(--ink-2)} .tag.new{background:var(--accent-soft);color:var(--accent)}
+.fcol{display:flex;flex-direction:column;align-items:flex-start}
+.p375{width:391px;height:610px}
+.mhead{display:flex;align-items:center;gap:10px;min-height:34px}
+.mhead h1{margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.mhead .of{flex:none;white-space:nowrap;color:var(--ink-2);font-size:13px}
+.mhead .newc{flex:none;margin-left:auto;height:34px;white-space:nowrap}
+.mmain .card{grid-template-columns:minmax(0,1fr) auto}
+.back{display:inline-flex;align-items:center;gap:2px;height:32px;margin:-4px 0 -6px -6px;padding:0 10px 0 4px;color:var(--accent);font-weight:600;font-size:13px;text-decoration:none;border-radius:var(--r-ctl)}
+.back.hit{align-self:flex-start;outline:1px dashed #9AA8A1;outline-offset:-1px}
+.crumbs{font-size:13px;color:var(--ink-2)}
+.dname{margin:0 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.dname.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.mact .btn.fix{flex:none;padding:0 14px}
+.mact .btn{height:40px}
+.sbox{box-sizing:content-box;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:10px 12px;overflow:hidden}
+.slab{margin:0 0 6px;font-size:12px;color:var(--ink-2)}
+.strip{display:flex;gap:28px;align-items:flex-start}
+.stage{background:var(--canvas);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 30px rgba(30,42,38,.12)}
+.stage .panel{width:100%}
+.panel .note:last-child{padding-bottom:0}
+.cmp{border:1px solid var(--control-border);border-radius:var(--r-ctl);background:var(--surface);margin-bottom:12px}
+.cmp.focus{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 3px var(--ring)}
+.cmp.err{border-color:var(--overdue);box-shadow:0 0 0 3px var(--error-ring)}
+.cmp .tb{display:flex;align-items:center;gap:2px;padding:4px 6px;border-bottom:1px solid var(--line-soft)}
+.cmp .tbtn{width:32px;height:32px;border:0;background:none;border-radius:var(--r-ctl);display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.cmp .tbtn:first-child{color:var(--ink)}
+.cmp .bd{min-height:72px;padding:10px 12px;font-size:13px;line-height:1.55;color:var(--ink)}
+.cmp .bd.ph{color:var(--ink-2)}
+.cmp .cf{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 12px;border-top:1px solid var(--line-soft)}
+.cmp .cf .btn{flex:none;margin-left:0}
+.mob .cmp .tb{gap:4px;padding:4px 6px} .mob .cmp .tbtn{width:40px;height:40px}
+.mob .cmp .bd{min-height:88px}
+.mob .hint{line-height:1.35}
+.caret{display:inline-block;width:1px;height:14px;background:var(--ink);vertical-align:-2px;margin-left:1px}
+.err-line{margin:-4px 0 12px}
+.old-tb{display:flex;gap:4px;padding:0 4px 8px}.old-tb .oi{width:32px;height:32px;display:grid;place-items:center;color:var(--ink-2)}
+.old-ta{border:1px solid var(--control-border);border-radius:var(--r-ctl);min-height:72px;padding:10px 12px;font-size:13px;line-height:1.55}
+.old-ta.ph{color:var(--ink-2)} .old-ta.err{border-color:var(--overdue);box-shadow:0 0 0 3px var(--error-ring)}
+.old-row .btn,.old-err .btn{flex:none;margin-left:0;align-self:auto}.mob .old-row .btn{align-self:flex-start}.old-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 12px}
+.old-err{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+.mob .old-row{flex-direction:column;align-items:flex-start;gap:8px}
+.nbody p{margin:4px 0 0;font-size:13px;line-height:1.55} .nbody ul{margin:4px 0 0;padding-left:20px;font-size:13px;line-height:1.55}
+.nbody a{color:var(--accent);text-decoration:none}
+.fcol.new .nbody a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.timeline .who{font-weight:600} .timeline li div{font-weight:400}
+.w480{width:620px}.w340{width:375px}
+.stage.mob{width:375px;padding:16px}
+</style></head><body>
+
+<section class="blk" id="s0"><h2 class="sec">Caseflow · Screens v2: proposed changes only</h2>
+<p class="caption">Reuses the v1 tokens, Figtree and patterns unchanged; no new colours. Each block shows the <b>Current build</b> beside the <b>Proposed</b> change for the same state. Items marked <em class="prop">Proposal</em> are my additions that nobody has ruled on yet. Fictional intake data only.</p></section>
+
+<section class="blk" id="s1"><h2 class="sec">1 · Mobile header</h2>
+<p class="caption"><b>Top bar is the brand mark only; "New contact" moves into the page header row.</b> Today the build shows two New actions on the same screen (top bar "New" and page-header "New contact"). Proposed: one, at the right of the title, same row. The title is <code>min-w-0</code> and truncates; the button never shrinks. A Viewer sees the title row with no button (the action is hidden by permission, as today). Pipeline follows the same rule.</p>
+<div class="strip"><div class="fcol"><p class="tag cur">Current build · Contacts, Admin</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><button class="btn primary" style="margin:0;height:32px;padding:0 10px"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New</button></header><div class="mmain"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary newc"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="mrow"><div class="search" style="flex:1;width:auto"><svg class="i" viewBox="0 0 24 24" ><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost" style="flex:none;height:40px"><svg class="i" viewBox="0 0 24 24" ><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button></div><div class="cards"><div class="card"><span class="nm">Kevin O'Donnell</span><span class="fu over">Overdue · 5d</span><span class="meta tnum">Criminal defense · (512) 555-0131</span></div><div class="card"><span class="nm">Marisol Ortega</span><span class="fu over">Overdue · 2d</span><span class="meta tnum">Personal injury · (512) 555-0148</span></div><div class="card"><span class="nm">Hana Yoshida</span><span class="fu today">Today</span><span class="meta tnum">Immigration · (737) 555-0166</span></div><div class="card"><span class="nm">Priya Raman</span><span class="fu later">Mon, Nov 23</span><span class="meta tnum">Immigration · (512) 555-0177</span></div><div class="card"><span class="nm">Grace Whitfield</span><span class="fu later">Wed, Nov 25</span><span class="meta tnum">Estate planning · (512) 555-0120</span></div></div></div><nav class="mtabs"><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div><div class="fcol"><p class="tag new">Proposed · Contacts, Admin</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div></header><div class="mmain"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary newc"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="mrow"><div class="search" style="flex:1;width:auto"><svg class="i" viewBox="0 0 24 24" ><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost" style="flex:none;height:40px"><svg class="i" viewBox="0 0 24 24" ><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button></div><div class="cards"><div class="card"><span class="nm">Kevin O'Donnell</span><span class="fu over">Overdue · 5d</span><span class="meta tnum">Criminal defense · (512) 555-0131</span></div><div class="card"><span class="nm">Marisol Ortega</span><span class="fu over">Overdue · 2d</span><span class="meta tnum">Personal injury · (512) 555-0148</span></div><div class="card"><span class="nm">Hana Yoshida</span><span class="fu today">Today</span><span class="meta tnum">Immigration · (737) 555-0166</span></div><div class="card"><span class="nm">Priya Raman</span><span class="fu later">Mon, Nov 23</span><span class="meta tnum">Immigration · (512) 555-0177</span></div><div class="card"><span class="nm">Grace Whitfield</span><span class="fu later">Wed, Nov 25</span><span class="meta tnum">Estate planning · (512) 555-0120</span></div></div></div><nav class="mtabs"><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div><div class="fcol"><p class="tag new">Proposed · Contacts, Viewer (no New)</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div></header><div class="mmain"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span></div><div class="mrow"><div class="search" style="flex:1;width:auto"><svg class="i" viewBox="0 0 24 24" ><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost" style="flex:none;height:40px"><svg class="i" viewBox="0 0 24 24" ><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button></div><div class="cards"><div class="card"><span class="nm">Kevin O'Donnell</span><span class="fu over">Overdue · 5d</span><span class="meta tnum">Criminal defense · (512) 555-0131</span></div><div class="card"><span class="nm">Marisol Ortega</span><span class="fu over">Overdue · 2d</span><span class="meta tnum">Personal injury · (512) 555-0148</span></div><div class="card"><span class="nm">Hana Yoshida</span><span class="fu today">Today</span><span class="meta tnum">Immigration · (737) 555-0166</span></div><div class="card"><span class="nm">Priya Raman</span><span class="fu later">Mon, Nov 23</span><span class="meta tnum">Immigration · (512) 555-0177</span></div><div class="card"><span class="nm">Grace Whitfield</span><span class="fu later">Wed, Nov 25</span><span class="meta tnum">Estate planning · (512) 555-0120</span></div></div></div><nav class="mtabs"><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div></div>
+<p class="caption"><b>Pipeline.</b> Admin gets New contact at the right of "Pipeline 2,437 contacts". Viewer sees the same row without it.</p>
+<div class="strip"><div class="fcol"><p class="tag new">Proposed · Pipeline, Admin</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div></header><div class="mmain"><div class="mhead"><h1>Pipeline</h1><span class="of tnum">2,437 contacts</span><button class="btn primary newc"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><nav class="seg full"><a class="on" href="#">Lead <span class="c tnum">642</span></a><a href="#">Active <span class="c tnum">642</span></a><a href="#">Closed <span class="c tnum">1,153</span></a></nav><div class="kcards tnum"><article class="kc"><div class="kt"><b>Kevin O'Donnell</b><span class="fu over">Overdue · 5d</span></div><div class="km">Criminal defense · (512) 555-0131</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button></article><article class="kc"><div class="kt"><b>Marisol Ortega</b><span class="fu over">Overdue · 2d</span></div><div class="km">Personal injury · (512) 555-0148</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button></article><article class="kc"><div class="kt"><b>Hana Yoshida</b><span class="fu today">Today</span></div><div class="km">Immigration · (737) 555-0166</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button></article></div></div><nav class="mtabs"><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div><div class="fcol"><p class="tag new">Proposed · Pipeline, Viewer</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div></header><div class="mmain"><div class="mhead"><h1>Pipeline</h1><span class="of tnum">2,437 contacts</span></div><nav class="seg full"><a class="on" href="#">Lead <span class="c tnum">642</span></a><a href="#">Active <span class="c tnum">642</span></a><a href="#">Closed <span class="c tnum">1,153</span></a></nav><div class="kcards tnum"><article class="kc"><div class="kt"><b>Kevin O'Donnell</b><span class="fu over">Overdue · 5d</span></div><div class="km">Criminal defense · (512) 555-0131</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button></article><article class="kc"><div class="kt"><b>Marisol Ortega</b><span class="fu over">Overdue · 2d</span></div><div class="km">Personal injury · (512) 555-0148</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button></article><article class="kc"><div class="kt"><b>Hana Yoshida</b><span class="fu today">Today</span></div><div class="km">Immigration · (737) 555-0166</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button></article></div></div><nav class="mtabs"><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div></div>
+<p class="caption"><b>Contact detail.</b> The top bar is the mark only. The way back is the breadcrumb "‹ Contacts" below it, as a link with a 32px-high hit area (dashed outline shows the target; minimum is 24px). Then name, meta and the action row: Call, Move to…, Edit. <em class="prop">Proposal:</em> a very long name wraps to two lines and then ends in an ellipsis (full name in the tooltip / tab title), so the action row never moves.</p>
+<div class="strip"><div class="fcol"><p class="tag cur">Current build · Contact detail</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><button class="btn primary" style="margin:0;height:32px;padding:0 10px"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New</button></header><div class="mmain"><div class="crumbs">Contacts / Marisol Ortega</div><div><h1 class="dname">Marisol Ortega</h1><div class="dmeta"><span class="st lead">Lead</span><span>Personal injury</span><span>·</span><span class="tnum">waiting 4d</span></div></div><div class="mact"><a class="btn primary"><svg class="i" viewBox="0 0 24 24" ><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg>Call</a><button class="btn ghost">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button><button class="btn ghost fix"><svg class="i" viewBox="0 0 24 24" ><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button></div><section class="panel"><h2>Follow-up</h2><div class="furow"><span class="fu over">Overdue · 2d</span><span class="tnum">Sat, Nov 14</span></div></section><section class="panel"><h2>Details</h2><dl class="kv tnum"><dt>Phone</dt><dd>(512) 555-0148</dd><dt>Email</dt><dd>m.ortega@gmail.com</dd></dl></section></div><nav class="mtabs"><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div><div class="fcol"><p class="tag new">Proposed · Contact detail</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div></header><div class="mmain"><a class="back hit" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="m15 18-6-6 6-6"/></svg>Contacts</a><div><h1 class="dname " >Marisol Ortega</h1><div class="dmeta"><span class="st lead">Lead</span><span>Personal injury</span><span>·</span><span class="tnum">waiting 4d</span></div></div><div class="mact"><a class="btn primary"><svg class="i" viewBox="0 0 24 24" ><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg>Call</a><button class="btn ghost">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button><button class="btn ghost fix"><svg class="i" viewBox="0 0 24 24" ><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button></div><section class="panel"><h2>Follow-up</h2><div class="furow"><span class="fu over">Overdue · 2d</span><span class="tnum">Sat, Nov 14</span></div></section><section class="panel"><h2>Details</h2><dl class="kv tnum"><dt>Phone</dt><dd>(512) 555-0148</dd><dt>Email</dt><dd>m.ortega@gmail.com</dd></dl></section></div><nav class="mtabs"><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div><div class="fcol"><p class="tag new">Proposed · Long name (2-line clamp)</p><div class="phone p375"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div></header><div class="mmain"><a class="back hit" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="m15 18-6-6 6-6"/></svg>Contacts</a><div><h1 class="dname clamp" title="Maria Alejandra Fernández-Villanueva de la Cruz y Hernández-Montgomery">Maria Alejandra Fernández-Villanueva de la Cruz y Hernández-Montgomery</h1><div class="dmeta"><span class="st lead">Lead</span><span>Personal injury</span><span>·</span><span class="tnum">waiting 4d</span></div></div><div class="mact"><a class="btn primary"><svg class="i" viewBox="0 0 24 24" ><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2Z"/></svg>Call</a><button class="btn ghost">Move to… <svg class="i" viewBox="0 0 24 24" ><path d="m6 9 6 6 6-6"/></svg></button><button class="btn ghost fix"><svg class="i" viewBox="0 0 24 24" ><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button></div><section class="panel"><h2>Follow-up</h2><div class="furow"><span class="fu over">Overdue · 2d</span><span class="tnum">Sat, Nov 14</span></div></section><section class="panel"><h2>Details</h2><dl class="kv tnum"><dt>Phone</dt><dd>(512) 555-0148</dd><dt>Email</dt><dd>m.ortega@gmail.com</dd></dl></section></div><nav class="mtabs"><a class="on" href="#"><svg class="i" viewBox="0 0 24 24" ><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div></div>
+<p class="caption"><b>Truncation proof for the header row.</b> The New contact button keeps its width at every size; only the title gives way. <em class="prop">Proposal:</em> under 360px the count (<span class="tnum">1,284 of 2,437</span>) is dropped from the row so "Contacts" still reads at 320px (WCAG reflow width). The last row forces a 200px container to show the ellipsis.</p>
+<div class="strip" style="gap:20px">
+<div class="sw"><p class="slab">375 wide: title, count, button</p><div class="sbox" style="width:343px"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary newc"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div></div></div>
+<div class="sw"><p class="slab">320 wide: count hidden</p><div class="sbox" style="width:288px"><div class="mhead"><h1>Contacts</h1><button class="btn primary newc"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div></div></div>
+<div class="sw"><p class="slab">Forced 200px: title truncates, button holds</p><div class="sbox" style="width:200px"><div class="mhead"><h1>Contacts</h1><button class="btn primary newc"><svg class="i" viewBox="0 0 24 24" ><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div></div></div>
+</div></section>
+
+<section class="blk" id="s2"><h2 class="sec">2 · Notes composer as one frame</h2>
+<p class="caption"><b>One bordered container</b> holds toolbar, editor and footer. Focus anywhere inside lights the whole frame: accent border, 2px accent outline (2px offset) and the 3px ring. Inside, top to bottom: the toolbar row (Bold, Italic, bulleted list, numbered list, Link) over a line-soft rule; a borderless editor body; a footer with the hint at left and <b>Save note</b> at right at every width. Mobile drops the shortcut from the hint and uses 40px toolbar targets with small gaps (desktop 32px).</p>
+<div class="strip" style="gap:28px">
+ <div class="fcol"><p class="tag cur">Current build · desktop</p><div class="stage w480"><section class="panel"><h2>Notes <span class="cnt">2</span></h2><div class="old-tb"><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span></div><div class="old-ta ph ">Add a note…</div><div class="old-row"><span class="hint">Notes are visible to the whole intake team. Ctrl or Cmd+Enter saves.</span><button class="btn primary sm" disabled>Save note</button></div></section></div></div>
+ <div class="fcol"><p class="tag new">Proposed · desktop, focused with text</p><div class="stage w480"><section class="panel"><h2>Notes <span class="cnt">2</span></h2><div class="cmp focus"><div class="tb"><button class="tbtn" aria-label="Bold"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button><button class="tbtn" aria-label="Italic"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></button><button class="tbtn" aria-label="Bulleted list"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button><button class="tbtn" aria-label="Numbered list"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button><button class="tbtn" aria-label="Link"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div><div class="bd ">Called back and left a message with the front desk. Asked her to send the police report number before Thursday.<span class="caret"></span></div><div class="cf"><span class="hint">Notes are visible to the whole intake team. Ctrl or Cmd+Enter saves.</span><button class="btn primary sm" >Save note</button></div></div></section></div></div>
+</div>
+<div class="strip" style="gap:28px">
+ <div class="fcol mob"><p class="tag cur">Current build · mobile</p><div class="stage mob"><section class="panel mob"><h2>Notes <span class="cnt">2</span></h2><div class="old-tb"><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span></div><div class="old-ta ph ">Add a note…</div><div class="old-row"><span class="hint">Notes are visible to the whole intake team.</span><button class="btn primary sm" disabled>Save note</button></div></section></div></div>
+ <div class="fcol mob"><p class="tag new">Proposed · mobile, empty</p><div class="stage mob"><section class="panel mob"><h2>Notes <span class="cnt">2</span></h2><div class="cmp "><div class="tb"><button class="tbtn" aria-label="Bold"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button><button class="tbtn" aria-label="Italic"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></button><button class="tbtn" aria-label="Bulleted list"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button><button class="tbtn" aria-label="Numbered list"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button><button class="tbtn" aria-label="Link"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div><div class="bd ph">Add a note…</div><div class="cf"><span class="hint">Notes are visible to the whole intake team.</span><button class="btn primary sm" disabled>Save note</button></div></div></section></div></div>
+ <div class="fcol mob"><p class="tag new">Proposed · mobile, focused with text</p><div class="stage mob"><section class="panel mob"><h2>Notes <span class="cnt">2</span></h2><div class="cmp focus"><div class="tb"><button class="tbtn" aria-label="Bold"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button><button class="tbtn" aria-label="Italic"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></button><button class="tbtn" aria-label="Bulleted list"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button><button class="tbtn" aria-label="Numbered list"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button><button class="tbtn" aria-label="Link"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div><div class="bd ">Called back and left a message with the front desk. Asked her to send the police report number.<span class="caret"></span></div><div class="cf"><span class="hint">Notes are visible to the whole intake team.</span><button class="btn primary sm" >Save note</button></div></div></section></div></div>
+</div></section>
+
+<section class="blk" id="s3"><h2 class="sec">3 · Failed save, one button</h2>
+<p class="caption"><b>The draft stays, the frame takes the error ring, and Save note is the retry.</b> The separate Retry button goes. Inline error, announced as an alert: "Note not saved. Check your connection and save again." Pressing Save note sends the same draft again.</p>
+<div class="strip" style="gap:28px">
+ <div class="fcol"><p class="tag cur">Current build · desktop</p><div class="stage w480"><section class="panel"><h2>Notes <span class="cnt">2</span></h2><div class="old-tb"><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></span><span class="oi"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span></div><div class="old-ta  err">Called back and left a message with the front desk. Asked her to send the police report number.</div><div class="old-row"><span class="hint">Notes are visible to the whole intake team. Ctrl or Cmd+Enter saves.</span><button class="btn primary sm" >Save note</button></div><div class="old-err"><p class="emsg"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Couldn't save the note. Check your connection and retry.</p><button class="btn ghost sm">Retry</button></div></section></div></div>
+ <div class="fcol"><p class="tag new">Proposed · desktop</p><div class="stage w480"><section class="panel"><h2>Notes <span class="cnt">2</span></h2><div class="cmp err"><div class="tb"><button class="tbtn" aria-label="Bold"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button><button class="tbtn" aria-label="Italic"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></button><button class="tbtn" aria-label="Bulleted list"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button><button class="tbtn" aria-label="Numbered list"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button><button class="tbtn" aria-label="Link"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div><div class="bd ">Called back and left a message with the front desk. Asked her to send the police report number.</div><div class="cf"><span class="hint">Notes are visible to the whole intake team. Ctrl or Cmd+Enter saves.</span><button class="btn primary sm" >Save note</button></div></div><p style="margin:-4px 0 12px" class="emsg" role="alert"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Note not saved. Check your connection and save again.</p></section></div></div>
+ </div>
+<div class="strip"><div class="fcol mob"><p class="tag new">Proposed · mobile</p><div class="stage mob"><section class="panel mob"><h2>Notes <span class="cnt">2</span></h2><div class="cmp err"><div class="tb"><button class="tbtn" aria-label="Bold"><svg class="i" viewBox="0 0 24 24" ><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg></button><button class="tbtn" aria-label="Italic"><svg class="i" viewBox="0 0 24 24" ><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg></button><button class="tbtn" aria-label="Bulleted list"><svg class="i" viewBox="0 0 24 24" ><path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/></svg></button><button class="tbtn" aria-label="Numbered list"><svg class="i" viewBox="0 0 24 24" ><path d="M10 6h11"/><path d="M10 12h11"/><path d="M10 18h11"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg></button><button class="tbtn" aria-label="Link"><svg class="i" viewBox="0 0 24 24" ><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button></div><div class="bd ">Called back and left a message with the front desk. Asked her to send the police report number.</div><div class="cf"><span class="hint">Notes are visible to the whole intake team.</span><button class="btn primary sm" >Save note</button></div></div><p style="margin:-4px 0 12px" class="emsg" role="alert"><svg class="i" viewBox="0 0 24 24" ><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>Note not saved. Check your connection and save again.</p></section></div></div>
+</div></section>
+
+<section class="blk" id="s4"><h2 class="sec">4 · Rendered rich note</h2>
+<p class="caption"><b>Bold, a bulleted list and a link.</b> The link is accent <em>and</em> underlined (1px decoration, 3px offset), so it is never colour alone. The byline reads "Alex Morgan · Nov 17, 10:42" with no role, because a note's author role is noise to the intake team.</p>
+<div class="strip" style="gap:28px">
+ <div class="fcol"><p class="tag cur">Current build · desktop</p><div class="stage w480"><section class="panel"><h2>Notes <span class="cnt">2</span></h2><article class="note"><div class="nmeta tnum">Alex Morgan · Admin · Nov 17, 8:40 AM</div><div class="nbody"><p><b>Documents needed</b> before Thursday's call:</p><ul><li>Police report (number is on file)</li><li>Photos of both vehicles in the <a href="#">shared intake folder</a></li><li>ER discharge summary</li></ul></div></article><article class="note"><div class="nmeta tnum">Alex Morgan · Admin · Sep 28, 2:15 AM</div><div class="nbody"><p>Called back and confirmed the details.</p><p>Prefers calls after 5pm.</p></div></article></section></div></div>
+ <div class="fcol new"><p class="tag new">Proposed · desktop</p><div class="stage w480"><section class="panel"><h2>Notes <span class="cnt">2</span></h2><article class="note"><div class="nmeta tnum">Alex Morgan · Nov 17, 10:42</div><div class="nbody"><p><b>Documents needed</b> before Thursday's call:</p><ul><li>Police report (number is on file)</li><li>Photos of both vehicles in the <a href="#">shared intake folder</a></li><li>ER discharge summary</li></ul></div></article><article class="note"><div class="nmeta tnum">Alex Morgan · Nov 12, 10:03</div><div class="nbody"><p>Called back and confirmed the details.</p><p>Prefers calls after 5pm.</p></div></article></section></div></div>
+ </div>
+<div class="strip"><div class="fcol new mob"><p class="tag new">Proposed · mobile</p><div class="stage mob"><section class="panel mob"><h2>Notes <span class="cnt">2</span></h2><article class="note"><div class="nmeta tnum">Alex Morgan · Nov 17, 10:42</div><div class="nbody"><p><b>Documents needed</b> before Thursday's call:</p><ul><li>Police report (number is on file)</li><li>Photos of both vehicles in the <a href="#">shared intake folder</a></li><li>ER discharge summary</li></ul></div></article><article class="note"><div class="nmeta tnum">Alex Morgan · Nov 12, 10:03</div><div class="nbody"><p>Called back and confirmed the details.</p><p>Prefers calls after 5pm.</p></div></article></section></div></div>
+</div></section>
+
+<section class="blk" id="s5"><h2 class="sec">5 · Activity timeline</h2>
+<p class="caption"><b>Actor in semibold, action in regular weight</b>: "<b>Alex Morgan</b> added a note". The eye finds who, then what; timestamps stay muted below.</p>
+<div class="strip" style="gap:28px">
+ <div class="fcol"><p class="tag cur">Current build</p><div class="stage" style="width:400px"><aside class="panel"><h2>Activity</h2><ol class="timeline tnum"><li><span class="dot "></span><div>Alex Morgan added a note<span>Nov 17, 10:42 AM</span></div></li><li><span class="dot "></span><div>Alex Morgan set follow-up to Mon, Nov 23<span>Nov 12, 10:05 AM</span></div></li><li><span class="dot "></span><div>Alex Morgan added a note<span>Nov 12, 10:03 AM</span></div></li><li><span class="dot first"></span><div>Alex Morgan created this contact as Lead<span>Nov 12, 9:58 AM</span></div></li></ol></aside></div></div>
+ <div class="fcol"><p class="tag new">Proposed</p><div class="stage" style="width:400px"><aside class="panel"><h2>Activity</h2><ol class="timeline tnum"><li><span class="dot "></span><div><b class="who">Alex Morgan</b> added a note<span>Nov 17, 10:42 AM</span></div></li><li><span class="dot "></span><div><b class="who">Alex Morgan</b> set follow-up to Mon, Nov 23<span>Nov 12, 10:05 AM</span></div></li><li><span class="dot "></span><div><b class="who">Alex Morgan</b> added a note<span>Nov 12, 10:03 AM</span></div></li><li><span class="dot first"></span><div><b class="who">Alex Morgan</b> created this contact as Lead<span>Nov 12, 9:58 AM</span></div></li></ol></aside></div></div>
+</div></section>
+</body></html>
