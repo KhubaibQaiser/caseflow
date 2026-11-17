@@ -27,3 +27,17 @@ test('@mobile the tab bar, the cards and the Filters sheet', async ({
   await expect(sheet).toBeHidden();
   await expect(button).toBeFocused();
 });
+
+test('@mobile one sort button beside the tabs sorts the visible column', async ({
+  page,
+}) => {
+  await page.goto('/pipeline');
+  await page.waitForLoadState('networkidle');
+  await expect(page.getByText('Lead sorted by Urgency')).toBeVisible();
+  await page.getByRole('button', { name: 'Sort Lead: Urgency' }).click();
+  await page.getByRole('menuitemradio', { name: 'Name A–Z' }).click();
+  await expect(page).toHaveURL(/leadSort=name/);
+  await expect(page.getByText('Lead sorted by Name A–Z')).toBeVisible();
+  await page.getByRole('radio', { name: /Active/ }).click({ force: true });
+  await expect(page.getByText('Active sorted by Urgency')).toBeVisible();
+});

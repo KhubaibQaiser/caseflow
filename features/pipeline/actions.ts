@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { assertPermission } from '@/lib/auth/viewer-supabase';
 import { STATUSES } from '@/lib/contracts/enums';
 import { FiltersSchema } from '@/lib/contracts/filters';
+import { PipelineSortSchema } from '@/lib/contracts/pipeline-sort-schema';
 import { fail, ok } from '@/lib/contracts/result';
 import type { Result } from '@/lib/contracts/result';
 import { getPipelineColumn } from '@/lib/data';
@@ -18,6 +19,7 @@ import { toPipelineRows } from './to-rows';
 const Input = z.object({
   status: z.enum(STATUSES),
   filters: FiltersSchema,
+  sort: PipelineSortSchema,
   /** The page to add (the first, page 0, comes with the board). */
   page: z.number().int().min(1).max(20_000),
 });
@@ -33,10 +35,10 @@ export async function loadMoreColumnAction(
   if (!g.ok) return g;
   const p = Input.safeParse(raw);
   if (!p.success) return fail('validation', 'Reload the board and try again.');
-  const { status, filters, page } = p.data;
+  const { status, filters, sort, page } = p.data;
   const [prev, next, tz] = await Promise.all([
-    getPipelineColumn(status, filters, (page - 1) * PAGE_SIZE, PAGE_SIZE),
-    getPipelineColumn(status, filters, page * PAGE_SIZE, PAGE_SIZE),
+    getPipelineColumn(status, filters, (page - 1) * PAGE_SIZE, PAGE_SIZE, sort),
+    getPipelineColumn(status, filters, page * PAGE_SIZE, PAGE_SIZE, sort),
     getRequestTimeZone(),
   ]);
   return ok({

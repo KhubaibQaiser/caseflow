@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from '@/components/ui/toaster';
 import { fail, ok } from '@/lib/contracts/result';
 import type { Result } from '@/lib/contracts/result';
+import type { PipelineSorts } from '@/lib/contracts/pipeline-sort';
 import type { ContactRow } from '@/lib/contracts/contact';
 
 import { board, pipelineRow } from './test-utils';
@@ -168,9 +169,38 @@ describe('useBoardMoves', () => {
         'lead',
         [pipelineRow('b', 'lead'), pipelineRow('n', 'lead')],
         3,
+        'urgency',
       ),
     );
     expect(ids(result.current.columns.lead.rows)).toEqual(['a', 'b', 'n']);
     expect(result.current.columns.lead.matching).toBe(3);
+  });
+
+  it('drops a page that was asked for under a sort the column has since left', () => {
+    const urgency: PipelineSorts = {
+      lead: 'urgency',
+      active: 'urgency',
+      closed: 'urgency',
+    };
+    const { result, rerender } = renderHook(
+      ({ sorts }) => useBoardMoves(board(), vi.fn(), undefined, sorts),
+      { initialProps: { sorts: urgency } },
+    );
+    rerender({ sorts: { ...urgency, lead: 'name' } });
+    act(() =>
+      result.current.append(
+        'lead',
+        [pipelineRow('late', 'lead')],
+        9,
+        'urgency',
+      ),
+    );
+    expect(ids(result.current.columns.lead.rows)).toEqual(['a', 'b']);
+    expect(result.current.columns.lead.pages).toBe(1);
+    act(() =>
+      result.current.append('lead', [pipelineRow('ok', 'lead')], 3, 'name'),
+    );
+    expect(ids(result.current.columns.lead.rows)).toContain('ok');
+    expect(result.current.columns.lead.pages).toBe(2);
   });
 });
