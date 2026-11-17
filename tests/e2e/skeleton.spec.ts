@@ -70,9 +70,12 @@ for (const size of [
             (k) => Math.abs(b[k] - l[k]) > 1,
           );
           // Content that runs past the fold (a long form or timeline) only has to fill the screen.
-          const tail = i === r.loaded.length - 1 && b.y + b.h > vh;
+          // A contact's notes and activity set the last block's height, so it only has to start in place and fill the screen.
+          const tail =
+            i === r.loaded.length - 1 && (b.y + b.h > vh || name === 'detail');
           const off = tail
-            ? keys.filter((k) => k !== 'h').length > 0 || l.y + l.h < vh
+            ? keys.filter((k) => k !== 'h').length > 0 ||
+              (b.y + b.h > vh && l.y + l.h < vh)
             : keys.length > 0;
           return off
             ? [`block ${i}: loading [x,y,w,h] ${fmt(l)} vs loaded ${fmt(b)}`]
