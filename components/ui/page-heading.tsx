@@ -9,10 +9,16 @@ import { cn } from '@/utils/cn';
 export function PageHeading({
   className,
   children,
+  focusOnMount = true,
   ...rest
-}: ComponentProps<'h1'>) {
+}: ComponentProps<'h1'> & {
+  /** Off where another control takes first focus (the login email). */
+  focusOnMount?: boolean;
+}) {
   const ref = useRef<HTMLHeadingElement>(null);
-  useEffect(() => ref.current?.focus(), []);
+  useEffect(() => {
+    if (focusOnMount) ref.current?.focus();
+  }, [focusOnMount]);
   return (
     <h1
       {...rest}
