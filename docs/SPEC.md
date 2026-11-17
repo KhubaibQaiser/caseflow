@@ -275,7 +275,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 
 ### 8.4 Contact detail (`/contacts/[id]`)
 - **Breadcrumb:** "Contacts / Name". Back returns to the list with its filters intact, because they're in the URL.
-- **Header:** name, status pill, matter, "Enquired Nov 12 · waiting 4d". Actions: **Move to…** (a menu listing the other two statuses), and **Edit**. (Delete is out of scope for v1.)
+- **Header:** name, status pill, matter, "Enquired Nov 12 · waiting 4d" (a Closed contact shows only "Enquired Nov 12"). Actions: **Move to…** (a menu listing the other two statuses), and **Edit**. (Delete is out of scope for v1.)
 - **Left column:**
   - The Follow-up card first: an urgency pill and the date, with a **Reschedule** button opening a date popover that saves straight away.
   - The Details list (phone as a `tel:` link, email as a `mailto:` link, matter type, source, summary at 68ch).
@@ -323,7 +323,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 | Screen | Loading | Empty | Error |
 |---|---|---|---|
 | Contacts | Route `loading.tsx` with table-shaped skeleton rows. While filters change, the old rows dim (`aria-busy`) and nothing jumps. | First-run (no contacts at all): "No contacts yet." with New contact. Filtered: "No contacts match these filters." listing the active filters, with Clear filters. | `error.tsx`: "Contacts didn't load." plus the reason class, a Retry button (`startTransition(() => { router.refresh(); reset() })`, or the retry API the pinned Next 16 docs recommend, because `reset()` alone doesn't re-fetch server data), and "Your filters are kept." |
-| Detail | Skeletons shaped like the header, panels and timeline | No notes: "No notes yet." with focus moved to the composer. No activity beyond creation is still shown. | Error boundary with Retry. Not found is handled separately (§8.4). |
+| Detail | Skeletons shaped like the header, panels and timeline | No notes: "No notes yet." with an **Add note** button (admins) that moves focus to the composer; focus never moves on load. No activity beyond creation is still shown. | Error boundary with Retry. Not found is handled separately (§8.4). |
 | Form | A skeleton for edit while the contact loads. Pending state on submit. | n/a | Inline field errors, the summary, a save-failed banner (input kept), the conflict banner |
 | Pipeline | Three skeleton columns | Per column: "No Lead contacts." Filtered: same pattern as the list. | Error boundary with Retry. A failed move rolls back with a toast. |
 | Login | Pending button ("Signing in…") | n/a | Field errors ("Enter a valid email address.", "Enter your password."), wrong credentials ("Email or password is incorrect.", never saying which), rate limited ("Too many attempts. Try again in N minutes."), server error with retry. All announced through `aria-live`. Mockup: `design/mockups/login-rbac-v1.html`. |

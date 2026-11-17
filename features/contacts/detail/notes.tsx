@@ -6,7 +6,7 @@ import type { KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
 import { Textarea } from '@/components/ui/textarea';
-import { Can } from '@/lib/auth/permissions-context';
+import { Can, usePermission } from '@/lib/auth/permissions-context';
 import type { Note } from '@/lib/contracts/contact';
 import { ROLE_LABEL } from '@/lib/contracts/permissions';
 import type { Result } from '@/lib/contracts/result';
@@ -67,6 +67,7 @@ export function Notes({
   // State lags a render behind a fast second keypress; the ref doesn't.
   const inflight = useRef(false);
   const errorId = useId();
+  const canWrite = usePermission('notes.write');
   const expired = useSessionExpired();
 
   // Back from sign-in after a session expiry: the history entry still carries the note.
@@ -193,7 +194,18 @@ export function Notes({
         {announce}
       </p>
       {shown.length === 0 ? (
-        <p className="text-13 text-ink-2 m-0">No notes yet.</p>
+        <div className="text-13 text-ink-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <p className="m-0">No notes yet.</p>
+          {canWrite && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => field.current?.focus()}
+            >
+              Add note
+            </Button>
+          )}
+        </div>
       ) : (
         <div>
           {shown.map((n) => (

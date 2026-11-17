@@ -50,8 +50,9 @@ export function ContactHeader({
           <span>{MATTER_TYPE_LABEL[matterType]}</span>
           <span aria-hidden>·</span>
           <span className="tnum">
-            Enquired {formatEnquired(createdAt, today, tz)} · waiting{' '}
-            {waiting === 'Today' ? 'today' : waiting}
+            Enquired {formatEnquired(createdAt, today, tz)}
+            {status !== 'closed' &&
+              ` · waiting ${waiting === 'Today' ? 'today' : waiting}`}
           </span>
         </div>
       </div>
