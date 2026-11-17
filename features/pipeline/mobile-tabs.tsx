@@ -18,7 +18,7 @@ export function MobileTabs({
 }) {
   return (
     // The control is a full-width row on a phone (screens-v1.html).
-    <div className="md:hidden [&_[role=radiogroup]]:w-full [&_[role=radiogroup]]:self-stretch [&_label]:min-h-9 [&_label]:flex-1 [&_label]:justify-center [&>div]:self-stretch">
+    <div className="md:hidden [&_[role=radiogroup]]:w-full [&_[role=radiogroup]]:self-stretch [&_label]:min-h-9 [&_label]:flex-1 [&_label]:justify-center [&_label]:px-2 [&>div]:self-stretch">
       <Segmented
         label="Status"
         hideLabel

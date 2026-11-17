@@ -38,6 +38,7 @@ export function Headroom({
   return (
     <div
       ref={root}
+      data-headroom
       {...(pin ? {} : off)}
       className={cn(
         'flex flex-col gap-3 md:contents',
