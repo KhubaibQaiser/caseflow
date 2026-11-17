@@ -92,16 +92,16 @@ PRs that add or change a UI component or page include desktop (1440) and mobile 
 
 Going live:
 
-1. Set `AUTH_ENFORCED=true` and the Supabase env vars in Vercel Production (names: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `AUTH_ENFORCED`; none are `NEXT_PUBLIC_`).
-2. Set the `DEPLOY_ENABLED` repository variable to `true` (`gh variable set DEPLOY_ENABLED --body true`). Until then deploys and the keep-alive are off.
-3. Push to `main`. `.github/workflows/deploy.yml` runs after CI passes on that push.
-4. Run the seed workflow once: `gh workflow run seed.yml` (manual, `main` only; restores the demo accounts and data).
+1. Set the `DEPLOY_ENABLED` repository variable to `true` (`gh variable set DEPLOY_ENABLED --body true`). Until then deploys and the keep-alive are off. The Vercel env vars (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `AUTH_ENFORCED=true`) come from the deploy sync; nothing is set by hand.
+2. Push to `main`. `.github/workflows/deploy.yml` runs after CI passes on that push.
+3. Run the seed workflow once: `gh workflow run seed.yml` (manual, `main` only; restores the demo accounts and data).
+4. Go-live checklist (Supabase dashboard): sign-ups are disabled (a sign-up call with the publishable key must fail), auth rate limits are sane, and the site URL and redirect URLs match the Vercel domain.
 
 What `deploy.yml` does, in order:
 
 - Guard: skips the run if its commit is no longer the tip of `main`.
 - `supabase db push` migrates the production project.
-- Syncs the Supabase env vars from GitHub secrets (the secret key is sensitive).
+- Syncs the Vercel production env: Supabase vars from GitHub secrets (the secret key is sensitive) and `AUTH_ENFORCED=true`.
 - `vercel build --prod`, then a second tip check. If `main` moved on, the deploy and smoke steps are skipped with a notice, so an old run never overwrites a newer deploy. Skipped runs are green, not failed.
 - `vercel deploy --prebuilt --prod`. Vercel's Git auto-deploy is off and there are no PR previews.
 - Smoke test (`tests/e2e/smoke.spec.ts`) against the deployed URL, once that file exists.
