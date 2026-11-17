@@ -7,7 +7,7 @@ import { cn } from '@/utils/cn';
 import { useFieldControl } from './field';
 
 export const controlClass =
-  'w-full rounded-ctl border border-control-border bg-surface px-2.5 text-base text-ink transition-colors sm:text-13 duration-150 placeholder:text-ink-2 enabled:not-aria-invalid:hover:border-ink-2 disabled:cursor-not-allowed disabled:bg-canvas disabled:text-ink-2 aria-invalid:border-overdue aria-invalid:shadow-[0_0_0_3px_var(--error-ring)]';
+  'w-full rounded-ctl border border-control-border bg-surface px-2.5 text-base text-ink transition-colors sm:text-13 duration-150 placeholder:text-ink-2 enabled:not-aria-invalid:hover:border-ink-2 disabled:cursor-not-allowed disabled:bg-canvas disabled:text-ink-2 focus-visible:border-accent focus-visible:outline-1 focus-visible:outline-offset-0 aria-invalid:border-overdue aria-invalid:focus-visible:outline-overdue';
 
 /** Text input. Inside a Field it picks up id, aria-invalid and aria-describedby. */
 export function Input({ className, ...props }: ComponentProps<'input'>) {
