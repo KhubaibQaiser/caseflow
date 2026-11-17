@@ -70,6 +70,18 @@ describe('ContactsTable', () => {
     ).toHaveAttribute('aria-sort', 'descending');
   });
 
+  it('a new sort or filter starts the table at the top', () => {
+    const { container, rerender } = render(table({ scrollKey: 'a' }));
+    const box = container.querySelector<HTMLElement>('[data-results-scroll]')!;
+    const set = vi.fn();
+    Object.defineProperty(box, 'scrollTop', { set, get: () => 400 });
+    rerender(table({ scrollKey: 'a', rows: rows(4) }));
+    // A refresh of the same list (new rows, same key) keeps the reader's place.
+    expect(set).not.toHaveBeenCalled();
+    rerender(table({ scrollKey: 'b' }));
+    expect(set).toHaveBeenCalledWith(0);
+  });
+
   it('long names truncate with title', () => {
     render(
       table({
@@ -81,6 +93,8 @@ describe('ContactsTable', () => {
     expect(link).toHaveAttribute('href', '/contacts/c-1');
     expect(link).toHaveAttribute('title', LONG_NAME);
     expect(link).toHaveClass('truncate');
+    // The truncating cell clips anything outside it, so the focus ring is drawn inside.
+    expect(link).toHaveClass('focus-visible:-outline-offset-2');
     const email = screen.getByTitle(LONG_EMAIL);
     expect(email).toHaveClass('truncate');
   });

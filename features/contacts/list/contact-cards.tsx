@@ -39,13 +39,16 @@ export function ContactCards({
           key={r.id}
           aria-posinset={matching ? offset + i + 1 : undefined}
           aria-setsize={matching}
-          className="hover:bg-panel text-13 relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-[3px] px-3 py-2.5 [contain-intrinsic-size:auto_62px] [content-visibility:auto]"
+          className="hover:bg-panel text-13 relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-[3px] px-3 py-2.5 [contain-intrinsic-size:auto_51px] [content-visibility:auto]"
         >
-          {/* The link's ::after covers the card, so the whole card is the target. */}
+          {/* The link's ::after covers the card, so the whole card is the target.
+              Intrinsic size is the content box of a 72px card (less 20px padding and the 1px divider):
+              a larger guess shrinks the page as cards render and leaves blank ground at the end. */}
           <Link
             href={`/contacts/${r.id}`}
+            prefetch={false}
             title={r.fullName}
-            className="text-ink block truncate text-sm leading-6 font-semibold no-underline after:absolute after:inset-0"
+            className="text-ink block truncate text-sm leading-6 font-semibold no-underline after:absolute after:inset-0 focus-visible:shadow-none focus-visible:-outline-offset-2"
           >
             {r.fullName}
           </Link>

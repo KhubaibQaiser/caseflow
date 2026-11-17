@@ -4,6 +4,7 @@ import { Suspense, lazy, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 import type { ContactFacets } from '@/lib/contracts/facets';
+import { serializeListQuery } from '@/lib/contracts/list-query';
 
 import { useFiltersPanel } from '../filters/use-filters-panel';
 import { ListTransition, useListQuery } from '../url-state';
@@ -116,6 +117,7 @@ function Results({
                   sort={query.sort}
                   dir={query.dir}
                   onSort={(key) => setQuery(nextSort(query, key))}
+                  scrollKey={serializeListQuery({ ...query, page: null })}
                 />
                 <ContactCards
                   className="md:hidden"

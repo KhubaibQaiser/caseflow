@@ -25,8 +25,9 @@ export function makeContactInputSchema(opts: {
     z
       .object({
         fullName: z
-          .string('Enter a name.')
+          .string('Enter a full name.')
           .trim()
+          .min(1, 'Enter a full name.')
           .min(2, 'Name must be at least 2 characters.')
           .max(120, 'Name must be 120 characters or fewer.'),
         email: z.preprocess(
@@ -52,7 +53,7 @@ export function makeContactInputSchema(opts: {
         status: z.enum(STATUSES).default('lead'),
         followUpOn: z.preprocess(
           blankToNull,
-          z.string().regex(DATE, 'Use YYYY-MM-DD.').nullable(),
+          z.iso.date('Use YYYY-MM-DD.').nullable(),
         ),
         summary: z.preprocess(
           blankToNull,
@@ -70,7 +71,8 @@ export function makeContactInputSchema(opts: {
             ctx.addIssue({
               code: 'custom',
               path: ['contactMethod'],
-              message: 'Add an email or a phone number.',
+              message:
+                "Add an email or a phone number. Intake can't follow up without one.",
             });
           }
           if (

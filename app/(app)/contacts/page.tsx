@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/shell/page-header';
 import { ContactsView } from '@/features/contacts/list/contacts-view';
-import { NewContactLink } from '@/features/contacts/list/empty-states';
+import { NewContactLink } from '@/features/contacts/list/new-contact-link';
 import { toListRows } from '@/features/contacts/list/list-rows';
 import {
   clampPage,

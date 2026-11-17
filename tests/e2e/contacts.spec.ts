@@ -284,3 +284,40 @@ test('mobile shows cards and sorts from a menu @mobile', async ({ page }) => {
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   expect((await axe(page)).violations).toEqual([]);
 });
+
+test('a 100-character search never widens the page at 320px', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 700 });
+  const q = 'x'.repeat(100);
+  await page.goto(`/contacts?q=${q}`);
+  await expect(main(page).getByText(`Search: “${q}”`)).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test('a slow earlier response never replaces the latest results', async ({
+  page,
+}) => {
+  await page.goto('/contacts');
+  await page.waitForLoadState('networkidle');
+  // Hold the first search's RSC response back until after the second has landed.
+  await page.route(/[?&]q=ortega(&|$)/, async (route) => {
+    await new Promise((r) => setTimeout(r, 2500));
+    await route.continue();
+  });
+  const box = page.getByRole('searchbox');
+  await box.fill('ortega');
+  await page.waitForTimeout(400); // past the 250ms debounce: the ortega request is in flight
+  await box.fill('kessler');
+  await expect(page).toHaveURL(/q=kessler/);
+  await page.waitForTimeout(3000); // the held ortega response has now arrived
+  await settled(page);
+  await expect(page).toHaveURL(/q=kessler/);
+  const names = await table(page).getByRole('link').allTextContents();
+  expect(names.length).toBeGreaterThan(0);
+  for (const n of names) expect(n.toLowerCase()).toContain('kessler');
+});

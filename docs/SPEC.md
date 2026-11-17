@@ -290,7 +290,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - Fields validate on blur after the first interaction. Submitting validates everything.
   - An **error summary** (`role="alert"`) lists links to each invalid field, and focus moves to the first one.
   - Each message is tied to its field with `aria-describedby`, and invalid fields get `aria-invalid`.
-  - **Cross-field rule:** "Add an email or a phone number." is shown on the email/phone pair.
+  - **Cross-field rule:** "Add an email or a phone number. Intake can't follow up without one." is shown on the email/phone pair.
 - **Saving:**
   - The Save button shows a pending label and can't be pressed twice.
   - The server repeats the same validation and returns field errors, which are mapped back onto the fields.

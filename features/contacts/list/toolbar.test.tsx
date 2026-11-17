@@ -52,8 +52,11 @@ describe('Toolbar search', () => {
       screen.getByRole('searchbox', { name: 'Search contacts' }),
       'ana',
     );
-    await waitFor(() => expect(lastUrl(onUrlUpdate).get('q')).toBe('ana'));
-    expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
+    // nuqs debounces each key on its own timer, so q and page can land a tick apart on a slow runner.
+    await waitFor(() => {
+      expect(lastUrl(onUrlUpdate).get('q')).toBe('ana');
+      expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
+    });
     expect(lastUrl(onUrlUpdate).get('sort')).toBe('name');
   });
 
@@ -79,6 +82,19 @@ describe('Toolbar search', () => {
     await user.keyboard('{Escape}');
     await waitFor(() => expect(box).toHaveValue(''));
     await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
+  });
+
+  it('keeps a whitespace-only search out of the URL', async () => {
+    const user = userEvent.setup();
+    const onUrlUpdate = vi.fn();
+    renderToolbar({ searchParams: '?q=a&page=2', onUrlUpdate });
+    const box = screen.getByRole('searchbox');
+    await user.clear(box);
+    await user.type(box, '   ');
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
+    // The box mirrors the URL, so whitespace alone simply doesn't take.
+    expect(box).toHaveValue('');
   });
 });
 

@@ -24,7 +24,7 @@ export default function ContactsLoading() {
       <span className="sr-only" role="status">
         Loading contacts
       </span>
-      <div className="flex h-[30px] items-center gap-3">
+      <div className="flex h-[34px] items-center gap-3">
         <Skeleton className="h-5 w-28" />
         <Skeleton className="w-20" />
       </div>

@@ -10,7 +10,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import ArrowDown from 'lucide-react/icons/arrow-down';
 import ArrowUp from 'lucide-react/icons/arrow-up';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
@@ -51,8 +51,11 @@ const columns = helper.columns([
     cell: ({ row: { original: r } }) => (
       <Link
         href={`/contacts/${r.id}`}
+        // 250 rows of links would otherwise prefetch 250 detail pages.
+        prefetch={false}
         title={r.fullName}
-        className="text-ink block truncate font-semibold no-underline hover:underline"
+        // Inset ring: the truncating (and pinned) cell clips anything drawn outside it.
+        className="text-ink block truncate font-semibold no-underline hover:underline focus-visible:shadow-none focus-visible:-outline-offset-2"
       >
         {r.fullName}
       </Link>
@@ -115,7 +118,7 @@ function shownDirection(key: SortKey, dir: SortDir) {
 }
 
 // The first column stays put while 1024–1279px scrolls sideways.
-const pinned = 'sticky left-0 z-[1]';
+const pinned = 'sticky left-0 z-[1] border-r border-r-line';
 
 type ContactsTableProps = {
   rows: ListRow[];
@@ -126,6 +129,8 @@ type ContactsTableProps = {
   sort: SortKey;
   dir: SortDir;
   onSort(key: SortKey): void;
+  /** Changes when the sort or filters change; the table then scrolls back to the top. */
+  scrollKey?: string;
   className?: string;
 };
 
@@ -136,6 +141,7 @@ export function ContactsTable({
   sort,
   dir,
   onSort,
+  scrollKey,
   className,
 }: ContactsTableProps) {
   const sortedColumn = Object.keys(SORT_BY_COLUMN).find(
@@ -153,6 +159,13 @@ export function ContactsTable({
   });
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const lastKey = useRef(scrollKey);
+  // Only a different list moves the reader; a refresh of the same one keeps their place.
+  useEffect(() => {
+    if (lastKey.current === scrollKey) return;
+    lastKey.current = scrollKey;
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
+  }, [scrollKey]);
   const tableRows = table.getRowModel().rows;
   // eslint-disable-next-line react-hooks/incompatible-library -- no React Compiler here; the virtualizer is meant to re-render.
   const virtualizer = useVirtualizer({

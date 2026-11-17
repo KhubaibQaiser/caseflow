@@ -20,7 +20,9 @@ describe('makeContactInputSchema', () => {
     expect(r.success).toBe(false);
     expect(
       r.error!.issues.find((i) => i.path[0] === 'contactMethod')!.message,
-    ).toBe('Add an email or a phone number.');
+    ).toBe(
+      "Add an email or a phone number. Intake can't follow up without one.",
+    );
   });
 
   it('trims names and rejects whitespace-only', () => {
@@ -31,9 +33,31 @@ describe('makeContactInputSchema', () => {
     expect(bad.error!.issues.some((i) => i.path[0] === 'fullName')).toBe(true);
   });
 
+  it('says "Enter a full name." for an empty name and keeps the length rule for one character', () => {
+    const msg = (fullName: string) =>
+      schema
+        .safeParse({ ...valid, fullName })
+        .error?.issues.find((i) => i.path[0] === 'fullName')?.message;
+    expect(msg('')).toBe('Enter a full name.');
+    expect(msg('   ')).toBe('Enter a full name.');
+    expect(msg('A')).toBe('Name must be at least 2 characters.');
+  });
+
   it('accepts unicode and apostrophes', () => {
     expect(
       schema.safeParse({ ...valid, fullName: "Zoë O'Brien-Núñez" }).success,
+    ).toBe(true);
+  });
+
+  it('rejects impossible calendar dates', () => {
+    const schema = makeContactInputSchema({ today: '2026-11-16' });
+    const r = schema.safeParse({ ...valid, followUpOn: '2026-12-32' });
+    expect(r.success).toBe(false);
+    expect(
+      schema.safeParse({ ...valid, followUpOn: '2027-02-29' }).success,
+    ).toBe(false);
+    expect(
+      schema.safeParse({ ...valid, followUpOn: '2028-02-29' }).success,
     ).toBe(true);
   });
 
