@@ -184,50 +184,63 @@ function Aside({
     if (focusOnOpen) ref.current?.focus();
   }, [focusOnOpen]);
   useEffect(() => {
-    const el = ref.current;
-    // A calendar is portaled out of the panel, so its Esc never reaches this listener; it closes only the calendar.
+    // Document-wide, so Esc works wherever focus is. A calendar portaled out of the panel dismisses itself on Esc and marks the event handled.
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && !e.defaultPrevented) latestClose.current();
     };
-    el?.addEventListener('keydown', onKey);
-    return () => el?.removeEventListener('keydown', onKey);
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
   }, []);
   return (
-    <aside
-      ref={ref}
-      id="filters-panel"
-      aria-label="Filters"
-      tabIndex={-1}
-      aria-hidden={closing || undefined}
-      data-closing={closing || undefined}
-      // Docked to the window edge: -right-6 and -bottom-4 undo main's gutter (px-6, pb-4). The entrance slides in (tokens go to none under reduced motion).
-      className={cn(
-        focusOnOpen && 'animate-sheet-in',
-        'bg-panel border-line rounded-tl-surface shadow-overlay absolute top-0 -right-6 -bottom-4 z-20 flex w-64 flex-col border-t border-l transition-opacity duration-150 outline-none data-closing:opacity-0 motion-reduce:transition-none max-lg:hidden',
-      )}
-    >
-      <header className="border-line bg-panel flex items-center justify-between gap-3 border-b py-2.5 pr-2.5 pl-4">
-        <h2 className="text-ink m-0 text-sm font-semibold">{title}</h2>
-        <div className="flex items-center gap-2">
-          {actions}
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Close filters"
-            onClick={onClose}
-            className="size-8 border-transparent bg-transparent"
-          >
-            <X aria-hidden className="size-4" />
-          </Button>
+    <>
+      <div
+        data-filters-backdrop
+        aria-hidden
+        data-closing={closing || undefined}
+        onClick={onClose}
+        // Fixed: it dims the page without touching layout. Restored-on-load skips the fade (focusOnOpen is false then).
+        className={cn(
+          'bg-panel-scrim fixed inset-0 z-30 max-lg:hidden',
+          focusOnOpen && 'animate-scrim-in',
+          'data-closing:animate-scrim-out',
+        )}
+      />
+      <aside
+        ref={ref}
+        id="filters-panel"
+        aria-label="Filters"
+        tabIndex={-1}
+        aria-hidden={closing || undefined}
+        data-closing={closing || undefined}
+        // Fixed to the window edge, over the page and out of flow, so opening it never moves anything. Slides in and out (tokens go to none under reduced motion).
+        className={cn(
+          focusOnOpen && 'animate-panel-in',
+          'bg-panel border-line shadow-overlay data-closing:animate-panel-out fixed inset-y-0 right-0 z-40 flex w-64 flex-col border-l outline-none max-lg:hidden',
+        )}
+      >
+        <header className="border-line bg-panel flex items-center justify-between gap-3 border-b py-2.5 pr-2.5 pl-4">
+          <h2 className="text-ink m-0 text-sm font-semibold">{title}</h2>
+          <div className="flex items-center gap-2">
+            {actions}
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Close filters"
+              onClick={onClose}
+              className="size-8 border-transparent bg-transparent"
+            >
+              <X aria-hidden className="size-4" />
+            </Button>
+          </div>
+        </header>
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4">
+          {children}
         </div>
-      </header>
-      <div className="flex-1 overflow-y-auto overscroll-contain p-4">
-        {children}
-      </div>
-      <footer className="border-line bg-surface flex gap-2 border-t px-4 py-3">
-        {footer}
-      </footer>
-    </aside>
+        <footer className="border-line bg-surface flex gap-2 border-t px-4 py-3">
+          {footer}
+        </footer>
+      </aside>
+    </>
   );
 }
 
