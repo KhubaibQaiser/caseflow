@@ -607,7 +607,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 - **`usePermission(p: Permission): boolean`** and **`useViewer()`**.
 - **`<Can p fallback?>`.**
 - **`Sidebar`** (desktop ≥ 1024px, width 196px; a tooltip icon rail at 768–1023px) and **`TabBar`** (below 768px; sticky; safe-area padding; Contacts, Pipeline, Account).
-- **`AccountBlock`**: display name, role badge ("Admin", or "Viewer · read-only" with a lock icon), and a Sign out form.
+- **`AccountBlock`**: one account menu button ("Name · Role" row from lg, initials avatar with shield or lock badge on the rail). The menu shows the full name, the role ("Admin", or "Viewer · read-only" with a lock icon) and a Sign out form. The mobile Account sheet keeps `AccountIdentity` and `SignOutForm`.
 - **`PageHeader`** `{title; meta?; actions?}`.
 - **`TimezoneSync`**: a client component. It compares `Intl.DateTimeFormat().resolvedOptions().timeZone` with the `tz` cookie on mount and on `visibilitychange`; if they differ, it sets the cookie and calls `router.refresh()`. On `focus` it also calls `router.refresh()` (to refresh labels after midnight).
 - **`ForbiddenState`** `{action: string; backHref; backLabel}` renders "You can't {action}. Your role is Viewer, which is read-only. An admin can change your role or make this edit for you."

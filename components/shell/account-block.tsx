@@ -1,110 +1,126 @@
 'use client';
 
+import ChevronsUpDown from 'lucide-react/icons/chevrons-up-down';
 import LogOut from 'lucide-react/icons/log-out';
 import Lock from 'lucide-react/icons/lock';
 import ShieldCheck from 'lucide-react/icons/shield-check';
 
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { LazyTooltip } from '@/components/ui/lazy-tooltip';
 import { useViewer } from '@/lib/auth/permissions-context';
 import { ROLE_LABEL } from '@/lib/contracts/permissions';
-import { cn } from '@/utils/cn';
+import { initials } from '@/utils/initials';
 
 export type SignOut = () => Promise<void>;
 
-/** `rail` collapses to an icon pill below lg (the tablet rail), with a tooltip; elsewhere it is always full. */
-function RoleBadge({ rail = false }: { rail?: boolean }) {
-  const { role } = useViewer();
-  const viewer = role === 'viewer';
-  const label = `${ROLE_LABEL[role]}${viewer ? ' · read-only' : ''}`;
-  const badge = (
-    <span
-      className={cn(
-        'text-ink-2 border-lead-border rounded-pill inline-flex items-center gap-1 self-start border px-1.75 text-xs leading-4.5 font-semibold',
-        // A 24px circle: one glyph, even padding all round.
-        rail &&
-          'max-lg:size-6 max-lg:justify-center max-lg:gap-0 max-lg:self-center max-lg:px-0',
-      )}
-    >
-      {viewer ? (
-        <Lock aria-hidden className="size-2.75 max-lg:size-3" />
-      ) : (
-        rail && <ShieldCheck aria-hidden className="size-3 lg:hidden" />
-      )}
-      <span className={cn(rail && 'max-lg:sr-only')}>{label}</span>
-    </span>
-  );
-  if (!rail) return badge;
-  return (
-    <LazyTooltip content={label} side="right" contentClassName="lg:hidden">
-      {badge}
-    </LazyTooltip>
-  );
+function roleLine(role: keyof typeof ROLE_LABEL) {
+  return `${ROLE_LABEL[role]}${role === 'viewer' ? ' · read-only' : ''}`;
 }
 
-export function AccountIdentity({ rail = false }: { rail?: boolean }) {
-  const { displayName } = useViewer();
+/** The mobile Account sheet's name and role badge. */
+export function AccountIdentity() {
+  const { displayName, role } = useViewer();
   return (
-    <div className={cn('flex flex-col gap-1', rail && 'max-lg:items-center')}>
-      <span
-        className={cn(
-          'text-ink text-13 font-semibold',
-          rail && 'max-lg:sr-only',
-        )}
-      >
-        {displayName}
+    <div className="flex flex-col gap-1">
+      <span className="text-ink text-13 font-semibold">{displayName}</span>
+      <span className="text-ink-2 border-lead-border rounded-pill inline-flex items-center gap-1 self-start border px-1.75 text-xs leading-4.5 font-semibold">
+        {role === 'viewer' && <Lock aria-hidden className="size-2.75" />}
+        {roleLine(role)}
       </span>
-      <RoleBadge rail={rail} />
     </div>
   );
 }
 
-/**
- * `rail`: the sidebar's quiet text link (icon only on the tablet rail, tooltip there).
- * Otherwise the bordered button for the mobile Account sheet, whose label is already visible.
- */
+/** The bordered Sign out button for the mobile Account sheet. */
 export function SignOutForm({
   signOut,
-  rail = false,
   className,
 }: {
   signOut: SignOut;
-  rail?: boolean;
   className?: string;
 }) {
-  if (!rail)
-    return (
-      <form action={signOut} className={className}>
-        <Button variant="ghost" size="sm" type="submit" className="w-full">
-          <LogOut aria-hidden className="size-4" />
-          Sign out
-        </Button>
-      </form>
-    );
   return (
-    <form
-      action={signOut}
-      className={cn(className, 'max-lg:flex max-lg:justify-center')}
-    >
-      <LazyTooltip content="Sign out" side="right" contentClassName="lg:hidden">
-        <button
-          type="submit"
-          className="text-ink-2 hover:text-ink rounded-ctl text-13 inline-flex min-h-6 cursor-pointer items-center justify-center gap-0 border-0 bg-transparent font-medium max-lg:size-7.5 lg:-ml-1 lg:px-1"
-        >
-          <LogOut aria-hidden className="size-4 lg:hidden" />
-          <span className="max-lg:sr-only">Sign out</span>
-        </button>
-      </LazyTooltip>
+    <form action={signOut} className={className}>
+      <Button variant="ghost" size="sm" type="submit" className="w-full">
+        <LogOut aria-hidden className="size-4" />
+        Sign out
+      </Button>
     </form>
   );
 }
 
-/** Sidebar footer: who you are, what you may do, and the way out. */
+/**
+ * Sidebar footer: one menu trigger. From lg it is a "Name · Role" row; on the rail it is
+ * a 32px initials avatar whose corner badge (shield or lock) carries the role by shape.
+ */
 export function AccountBlock({ signOut }: { signOut: SignOut }) {
+  const { displayName, role } = useViewer();
+  const viewer = role === 'viewer';
+  const RoleIcon = viewer ? Lock : ShieldCheck;
   return (
-    <div className="border-line mt-auto flex flex-col gap-1 border-t pt-3 lg:px-2.5">
-      <AccountIdentity rail />
-      <SignOutForm signOut={signOut} rail />
+    <div className="border-line mt-auto border-t pt-3 max-lg:flex max-lg:justify-center">
+      <DropdownMenu>
+        <LazyTooltip
+          content={`${displayName} · ${ROLE_LABEL[role]}`}
+          side="right"
+          contentClassName="lg:hidden"
+        >
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={`Account: ${displayName}, ${ROLE_LABEL[role]}`}
+              className="text-13 text-ink hover:bg-canvas rounded-ctl flex min-h-8 cursor-pointer items-center gap-1 border-0 bg-transparent p-0 max-lg:size-8 max-lg:justify-center max-lg:rounded-full lg:w-full lg:px-2.5"
+            >
+              <span
+                aria-hidden
+                className="bg-accent-soft text-accent relative inline-flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-bold tracking-wide lg:hidden"
+              >
+                {initials(displayName)}
+                <span className="bg-surface border-line text-ink-2 absolute -right-0.75 -bottom-0.75 grid size-4 place-items-center rounded-full border">
+                  <RoleIcon className="size-2.5" />
+                </span>
+              </span>
+              <span
+                aria-hidden
+                className="flex min-w-0 flex-1 items-center gap-1.5 max-lg:hidden"
+              >
+                <span className="truncate font-semibold">{displayName}</span>{' '}
+                <span className="text-ink-2 inline-flex shrink-0 items-center gap-0.75 font-medium">
+                  <span>·</span> {viewer && <Lock className="size-3" />}
+                  {ROLE_LABEL[role]}
+                </span>
+                <ChevronsUpDown className="text-ink-2 ml-auto size-3.5 shrink-0" />
+              </span>
+            </button>
+          </DropdownMenuTrigger>
+        </LazyTooltip>
+        <DropdownMenuContent side="right" align="end">
+          <div className="flex flex-col gap-0.5 px-2 pt-1 pb-1.5">
+            <span className="text-13 text-ink font-semibold">
+              {displayName}
+            </span>
+            <span className="text-ink-2 inline-flex items-center gap-1 text-xs">
+              {viewer && <Lock aria-hidden className="size-3" />}
+              {roleLine(role)}
+            </span>
+          </div>
+          <div role="separator" className="bg-line my-1 h-px" />
+          <form action={signOut}>
+            <DropdownMenuItem asChild onSelect={(e) => e.preventDefault()}>
+              <button type="submit" className="w-full border-0 bg-transparent">
+                <LogOut aria-hidden className="size-4" />
+                Sign out
+              </button>
+            </DropdownMenuItem>
+          </form>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

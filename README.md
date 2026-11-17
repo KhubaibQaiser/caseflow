@@ -25,6 +25,7 @@ A legal-intake mini CRM. Track every prospective client, a **contact**, from fir
 - **Dense and calm.** Compact rows, one accent, no decoration, for a coordinator working a queue all day.
 - **Filters draft, then Apply.** Counts show what each choice returns, and the list doesn't jump while you build a query.
 - **Every state is designed.** Each one says what happened and what to do next.
+- **One account menu.** The sidebar ends in "Name · Role" (an initials avatar on the tablet rail) that opens a menu with Sign out.
 
 ## Trade-off
 

@@ -53,35 +53,55 @@ describe.each([
   });
 });
 
-describe('Sidebar account block', () => {
-  it('shows the viewer name and read-only badge, and a Sign out button', () => {
-    pathname = '/contacts';
-    inShell(<Sidebar signOut={signOut} />);
-    expect(screen.getByText('Sam Patel')).toBeInTheDocument();
-    expect(screen.getByRole('complementary')).toHaveTextContent(
-      'Viewer · read-only',
-    );
-    expect(
-      screen.getByRole('button', { name: 'Sign out' }),
-    ).toBeInTheDocument();
-  });
+describe('Sidebar account menu', () => {
+  const admin = {
+    displayName: 'Alex Morgan',
+    role: 'admin' as const,
+    permissions: ['contacts.write'] as ShellViewer['permissions'],
+  };
 
-  it('shows a plain Admin badge for an admin', () => {
+  it('shows "Name · Role" on one row, with no separate Sign out', () => {
+    pathname = '/contacts';
     render(
-      <PermissionsProvider
-        viewer={{
-          displayName: 'Alex Morgan',
-          role: 'admin',
-          permissions: ['contacts.write'],
-        }}
-      >
+      <PermissionsProvider viewer={admin}>
         <Sidebar signOut={signOut} />
       </PermissionsProvider>,
     );
-    expect(screen.getByRole('complementary')).toHaveTextContent('Admin');
-    expect(screen.getByRole('complementary')).not.toHaveTextContent(
-      'read-only',
-    );
+    const trigger = screen.getByRole('button', {
+      name: 'Account: Alex Morgan, Admin',
+    });
+    expect(trigger).toHaveTextContent('Alex Morgan · Admin');
+    expect(trigger).toHaveTextContent('AM');
+    expect(
+      screen.queryByRole('button', { name: 'Sign out' }),
+    ).not.toBeInTheDocument();
+  });
+
+  it('puts a lock before Viewer; the menu says read-only and offers Sign out', async () => {
+    pathname = '/contacts';
+    inShell(<Sidebar signOut={signOut} />);
+    const trigger = screen.getByRole('button', {
+      name: 'Account: Sam Patel, Viewer',
+    });
+    expect(trigger).toHaveTextContent('Sam Patel · Viewer');
+    expect(trigger.querySelector('svg.lucide-lock')).not.toBeNull();
+    await userEvent.setup().click(trigger);
+    const menu = await screen.findByRole('menu');
+    expect(menu).toHaveTextContent('Sam Patel');
+    expect(menu).toHaveTextContent('Viewer · read-only');
+    expect(
+      screen.getByRole('menuitem', { name: 'Sign out' }),
+    ).toBeInTheDocument();
+  });
+
+  it('submits the sign-out action from the menu', async () => {
+    pathname = '/contacts';
+    const out = vi.fn(async () => {});
+    inShell(<Sidebar signOut={out} />);
+    const user = userEvent.setup();
+    await user.click(screen.getByRole('button', { name: /^Account:/ }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Sign out' }));
+    await vi.waitFor(() => expect(out).toHaveBeenCalled());
   });
 });
 
@@ -110,14 +130,16 @@ describe('Sidebar rail', () => {
     expect(await screen.findByRole('tooltip')).toHaveTextContent('Contacts');
   });
 
-  it('labels Sign out the same way', async () => {
+  it('labels the account avatar with name and role in a tooltip on focus', async () => {
     pathname = '/contacts';
     inShell(<Sidebar signOut={signOut} />);
     const user = userEvent.setup();
     await user.tab();
     await user.tab();
     await user.tab();
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Sign out');
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(
+      'Sam Patel · Viewer',
+    );
   });
 });
 
