@@ -142,8 +142,15 @@ for (const size of [
       const loaded = (await boxes(page, controls(true))).filter(
         (b) => (b[3] ?? 0) >= 34,
       );
+      // Cancel and Save are right-aligned and sized by their text, which renders a few px differently per OS: pin their right edges.
+      const rightEdges = (b: number[][]) =>
+        b.map((box, i) =>
+          i >= b.length - 2
+            ? [(box[0] ?? 0) + (box[2] ?? 0), ...box.slice(1)]
+            : box,
+        );
       // The phone row is one block over a country button and an input, so its width is the one thing that cannot match.
-      near(skeleton, loaded, 2);
+      near(rightEdges(skeleton), rightEdges(loaded), 2);
     });
 
     test('contacts: skeleton rows are the loaded rows', async ({ page }) => {
