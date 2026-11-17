@@ -1,13 +1,16 @@
 'use client';
 
+import { useRef } from 'react';
+
 import { ListTransition } from '../url-state';
 import { Toolbar } from './toolbar';
 
-/** The toolbar on the error screen: no counts (they didn't load), filters and chips intact. */
+/** The toolbar on the error screen: no counts (they didn't load), chips intact, Filters waits for the list. */
 export function ErrorToolbar() {
+  const filtersButton = useRef<HTMLButtonElement>(null);
   return (
     <ListTransition>
-      <Toolbar isPending={false} />
+      <Toolbar isPending={false} filtersButton={filtersButton} />
     </ListTransition>
   );
 }
