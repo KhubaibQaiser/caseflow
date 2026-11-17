@@ -1,7 +1,6 @@
 'use client';
 
 import { Suspense, lazy, useRef } from 'react';
-import type { ReactNode } from 'react';
 
 import type { ContactFacets } from '@/lib/contracts/facets';
 import { serializeListQuery } from '@/lib/contracts/list-query';
@@ -9,6 +8,7 @@ import { serializeListQuery } from '@/lib/contracts/list-query';
 import { useFiltersPanel } from '../filters/use-filters-panel';
 import { ListTransition, useListQuery } from '../url-state';
 import { nextSort } from './columns';
+import { BusyRegion } from './busy-region';
 import { ContactCards } from './contact-cards';
 import { ContactsTable } from './contacts-table';
 import { Filtered, FirstRun } from './empty-states';
@@ -22,34 +22,6 @@ const FiltersPanel = lazy(() =>
   loadPanel().then((m) => ({ default: m.FiltersPanel })),
 );
 
-/**
- * Old rows stay at full contrast while the next ones load (spec 8.8, 8.11);
- * a thin bar on the top edge is the signal. It overlays, so nothing shifts.
- */
-export function BusyRegion({
-  busy,
-  children,
-}: {
-  busy: boolean;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      aria-busy={busy || undefined}
-      className="relative flex min-h-0 flex-1 flex-col"
-    >
-      {busy && (
-        <span
-          data-loading-bar
-          aria-hidden="true"
-          className="bg-accent rounded-pill pointer-events-none absolute inset-x-2.5 top-0 z-[4] h-0.5 animate-pulse motion-reduce:animate-none forced-colors:bg-[Highlight]"
-        />
-      )}
-      {children}
-    </div>
-  );
-}
-
 type ContactsViewProps = {
   rows: ListRow[];
   total: number;
@@ -61,6 +33,8 @@ type ContactsViewProps = {
   /** The `filters_open` cookie, read on the server. */
   filtersOpen: boolean;
 };
+
+export { BusyRegion };
 
 export function ContactsView(props: ContactsViewProps) {
   return (
