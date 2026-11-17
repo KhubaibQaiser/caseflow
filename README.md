@@ -4,7 +4,7 @@ A legal-intake mini CRM. Track every prospective client, a **contact**, from fir
 
 **Live:** [caseflow-drab.vercel.app](https://caseflow-drab.vercel.app) · **Demo access:** an **Admin** (full access) and a read-only **Viewer**. Credentials are in the submission message.
 
-**What's in it:** a contact list with search, filters with live counts, urgency sort and paging. Contact detail with a timeline, reschedule and rich-text notes. Create and edit forms with validation, conflict handling and phone numbers formatted by country, with that country's example as the placeholder. A pipeline with **Move to…** and a sort per column (urgency, name, recently updated, newest). Two roles, with disabled controls that say why. Loading, empty, error, 404 and 403 states on every screen. Light and dark themes, System by default, remembered per device. On phones the pager stays pinned and the header slides away as you scroll.
+**What's in it:** a contact list with search, filters with live counts, urgency sort and paging. Contact detail with a timeline, reschedule and rich-text notes at a readable width. Create and edit forms with validation, conflict handling and phone numbers formatted by country, with that country's example as the placeholder. A pipeline with **Move to…** and a sort per column (urgency, name, recently updated, newest). Two roles, with disabled controls that say why. Loading, empty, error, 404 and 403 states on every screen. Light and dark themes, System by default, remembered per device. On phones the pager stays pinned and the header slides away as you scroll.
 
 ## Component structure and state
 
@@ -49,6 +49,6 @@ Claude Code wrote the code. I made every product and design decision.
 - **Reviews.** A fresh code review and a design critique ran on every PR. Visual changes went to a mockup for my approval first.
 - **Ownership.** Every fork came back to me. I review and can explain every line.
 
-**Quality:** WCAG 2.2 AA, with axe checks in the e2e suite. Lighthouse on mobile `/contacts`: Performance 100, Accessibility 100, CLS 0 (measured locally). The first-load JS budget is 220 kB, enforced in CI.
+**Quality:** WCAG 2.2 AA, with axe checks in the e2e suite. Lighthouse on mobile `/contacts`: Performance 100, Accessibility 100, CLS 0 (measured locally). The first-load JS budget is 220 kB, enforced in CI. Loading skeletons are real tables and forms, and an e2e test checks every column and control against the loaded page to within 1px.
 
 **Setup, tests, CI/CD and security notes:** [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
