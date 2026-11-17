@@ -3,7 +3,9 @@ import { describe, expect, it } from 'vitest';
 import {
   followUpView,
   formatDateShort,
+  formatEnquired,
   formatTimestamp,
+  formatTimestampFull,
   waitingLabel,
 } from './labels';
 
@@ -123,6 +125,24 @@ describe('formatTimestamp', () => {
     );
     expect(formatTimestamp('2026-11-13T21:12:00Z', 'America/Chicago')).toBe(
       'Nov 13, 3:12 PM',
+    );
+  });
+});
+
+describe('formatTimestampFull and formatEnquired', () => {
+  it('spells the whole moment in the given zone', () => {
+    expect(formatTimestampFull('2026-11-12T14:58:00.000Z', 'UTC')).toBe(
+      'Thursday, November 12, 2026 at 2:58 PM UTC',
+    );
+  });
+
+  it('dates the enquiry in the given zone, with the year only when it differs', () => {
+    // 23:30 UTC on the 12th is already the 13th in Asia/Kolkata.
+    expect(formatEnquired('2026-11-12T23:30:00.000Z', T, 'Asia/Kolkata')).toBe(
+      'Nov 13',
+    );
+    expect(formatEnquired('2025-12-31T10:00:00.000Z', T, 'UTC')).toBe(
+      'Dec 31, 2025',
     );
   });
 });

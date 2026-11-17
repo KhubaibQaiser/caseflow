@@ -1,3 +1,4 @@
+import { docFromText } from '@/lib/contracts/rich-text';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -39,6 +40,7 @@ import {
   adminClient,
   anonClient,
   anonSignedIn,
+  localConfig,
   PASSWORD,
   resetData,
   serviceClient,
@@ -115,15 +117,80 @@ describe('data layer against the local stack', () => {
     expect((await getPipelineColumn('lead', {}, 50, 25)).rows).toHaveLength(0);
   });
 
+  it('getContact still opens a contact whose stored note document is malformed, showing it as plain text', async () => {
+    const id = await seed({ full_name: 'Tolerant Read' });
+    const admin = current as SupabaseClient;
+    // The database only checks that body_json is an object, so a user with notes.write can store this.
+    const bad = await admin.from('notes').insert({
+      contact_id: id,
+      author_id: adminId,
+      body: 'Plain fallback',
+      body_json: { type: 'doc', content: [{ type: 'script' }] },
+    });
+    expect(bad.error).toBeNull();
+    await admin.from('notes').insert({
+      contact_id: id,
+      author_id: adminId,
+      body: 'Good note',
+      body_json: docFromText('Good note'),
+    });
+    const d = await getContact(id);
+    expect(d?.fullName).toBe('Tolerant Read');
+    expect(d?.notes).toHaveLength(2);
+    const fallback = d?.notes.find((n) => n.body === 'Plain fallback');
+    expect(fallback?.bodyJson).toEqual(docFromText('Plain fallback'));
+  });
+
+  it('getContact still opens a contact whose stored note is 3,000 lists deep', async () => {
+    const id = await seed({ full_name: 'Deep Read' });
+    const { url, anon } = localConfig();
+    const { data: sess } = await (current as SupabaseClient).auth.getSession();
+    // Built as a string: a nested object this deep would overflow JSON.stringify before it was sent.
+    // Postgres refuses much deeper (its own stack limit, near 4,000); Zod's recursion gives out from about 500.
+    const n = 3_000;
+    const open =
+      '{"type":"bulletList","content":[{"type":"listItem","content":[{"type":"paragraph"},';
+    const json =
+      '{"type":"doc","content":[' +
+      open.repeat(n) +
+      '{"type":"paragraph"}' +
+      ']}]}'.repeat(n) +
+      ']}';
+    const res = await fetch(`${url}/rest/v1/notes`, {
+      method: 'POST',
+      headers: {
+        apikey: anon,
+        authorization: `Bearer ${sess.session?.access_token}`,
+        'content-type': 'application/json',
+      },
+      body: `{"contact_id":"${id}","author_id":"${adminId}","body":"Deep fallback","body_json":${json}}`,
+    });
+    expect(res.status, await res.clone().text()).toBeLessThan(300);
+
+    const d = await getContact(id);
+    expect(d?.fullName).toBe('Deep Read');
+    expect(d?.notes[0]?.bodyJson).toEqual(docFromText('Deep fallback'));
+  });
+
   it('getContact joins authors and actors, newest first, and hides deleted rows', async () => {
     const id = await seed({ full_name: 'Detail Case', summary: 'Hello' });
     const admin = current as SupabaseClient;
-    await admin
-      .from('notes')
-      .insert([{ contact_id: id, author_id: adminId, body: 'first' }]);
-    await admin
-      .from('notes')
-      .insert([{ contact_id: id, author_id: adminId, body: 'second' }]);
+    await admin.from('notes').insert([
+      {
+        contact_id: id,
+        author_id: adminId,
+        body: 'first',
+        body_json: docFromText('first'),
+      },
+    ]);
+    await admin.from('notes').insert([
+      {
+        contact_id: id,
+        author_id: adminId,
+        body: 'second',
+        body_json: docFromText('second'),
+      },
+    ]);
     const d = await getContact(id);
     expect(d?.summary).toBe('Hello');
     expect(d?.notes.map((n) => n.body)).toEqual(['second', 'first']);

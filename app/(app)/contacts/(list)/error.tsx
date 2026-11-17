@@ -8,8 +8,8 @@ import { NewContactLink } from '@/features/contacts/list/new-contact-link';
 import { listFrame } from '@/features/contacts/list/frame';
 import { ResetOnNavigate } from '@/features/contacts/list/reset-on-navigate';
 
-import { reasonClass, useOffline } from '../../error-content';
-import type { ReasonClass } from '../../error-content';
+import { reasonClass, useOffline } from '../../../error-content';
+import type { ReasonClass } from '../../../error-content';
 
 // Lazy, so the route's first load doesn't carry a second copy of the toolbar for a screen that rarely shows.
 const ErrorToolbar = lazy(() =>
@@ -40,10 +40,7 @@ export default function ContactsError({
   return (
     <div className="flex flex-col gap-3">
       <title>Contacts didn&apos;t load · Caseflow</title>
-      <PageHeader
-        title="Contacts"
-        actions={<NewContactLink className="max-md:hidden" />}
-      />
+      <PageHeader title="Contacts" actions={<NewContactLink />} />
       {/* min-h holds the toolbar's row while its code loads. */}
       <div className="md:min-h-[34px]">
         <Suspense fallback={null}>

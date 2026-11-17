@@ -61,7 +61,7 @@ The FE track builds against `lib/data/fake.ts` (same signatures as the real data
 app/layout.tsx, app/globals.css, app/page.tsx (redirect /contacts), app/forbidden.tsx (or Next 16 equivalent)
 app/(auth)/login/page.tsx
 app/(app)/layout.tsx                              # getViewer → PermissionsProvider + shell
-app/(app)/contacts/{page,loading,error}.tsx
+app/(app)/contacts/(list)/{page,loading,error}.tsx
 app/(app)/contacts/new/page.tsx
 app/(app)/contacts/[id]/{page,loading,error,not-found}.tsx
 app/(app)/contacts/[id]/edit/page.tsx
@@ -625,7 +625,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 ### Task 14: Contacts list (table, cards, toolbar, pagination, states)
 
 **Files:**
-- Create: `features/contacts/url-state.ts`, `features/contacts/list/{toolbar,quick-views,filter-chips,contacts-table,contact-cards,pagination,sort-menu,empty-states}.tsx`, `app/(app)/contacts/{page,loading,error}.tsx`
+- Create: `features/contacts/url-state.ts`, `features/contacts/list/{toolbar,quick-views,filter-chips,contacts-table,contact-cards,pagination,sort-menu,empty-states}.tsx`, `app/(app)/contacts/(list)/{page,loading,error}.tsx`
 - Test: `features/contacts/list/contacts-table.test.tsx`, `features/contacts/list/toolbar.test.tsx`
 
 **Interfaces:**

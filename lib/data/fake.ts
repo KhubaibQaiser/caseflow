@@ -1,5 +1,7 @@
 import 'server-only';
-import type { ContactDetail, ContactRow } from '@/lib/contracts/contact';
+import type { ContactDetail, ContactRow, Note } from '@/lib/contracts/contact';
+import type { Role } from '@/lib/contracts/permissions';
+import { fail, ok, type Result } from '@/lib/contracts/result';
 import {
   FOLLOW_UP_FILTERS,
   MATTER_TYPES,
@@ -14,6 +16,7 @@ import {
   type Filters,
   type ListQuery,
 } from '@/lib/contracts/list-query';
+import { docFromText, type RichDoc } from '@/lib/contracts/rich-text';
 import { addDaysDateOnly, todayIn } from '@/lib/dates/date-only';
 import { getRequestTimeZone } from '@/lib/dates/server';
 import { makeFixtureRows } from './fixtures';
@@ -230,22 +233,92 @@ export async function getPipelineColumn(
   return { rows: hit.slice(offset, offset + limit), matching: hit.length };
 }
 
+const ACTOR = 'Alex Morgan';
+const at = (iso: string, mins: number) =>
+  new Date(Date.parse(iso) + mins * 60_000).toISOString();
+
+// Notes added through insertNote, per contact, newest first. Process memory, like the fixtures.
+const addedNotes = new Map<string, Note[]>();
+
+/**
+ * The fake's write: same shape as lib/data/mutations.ts insertNote, minus the client. The real one
+ * relies on the notes_after_insert trigger for the "note added" activity; getContact derives it from
+ * the notes here, so a saved note shows up in the timeline as it will against Postgres.
+ */
+export async function insertNote(
+  contactId: string,
+  note: { body: string; bodyJson: RichDoc },
+  author: { id: string; displayName: string; role: Role },
+): Promise<Result<Note>> {
+  const { rows } = await load();
+  if (!rows.some((r) => r.id === contactId))
+    return fail('not_found', 'That contact no longer exists.');
+  const saved: Note = {
+    id: `${contactId}-added-${(addedNotes.get(contactId)?.length ?? 0) + 1}`,
+    body: note.body,
+    bodyJson: note.bodyJson,
+    createdAt: new Date().toISOString(),
+    author: { name: author.displayName, role: author.role },
+  };
+  addedNotes.set(contactId, [saved, ...(addedNotes.get(contactId) ?? [])]);
+  return ok(saved);
+}
+
+// Deterministic by id: even-numbered contacts have two notes, odd ones none (both states stay reachable).
 export async function getContact(id: string): Promise<ContactDetail | null> {
   const { rows } = await load();
   const r = rows.find((x) => x.id === id);
   if (!r) return null;
-  return {
-    ...r,
-    summary: summaryOf(r),
-    notes: [],
-    activities: [
-      {
-        id: `${r.id}-a1`,
-        type: 'created',
-        payload: {},
-        createdAt: r.createdAt,
-        actor: { name: 'Khubaib' },
-      },
-    ],
-  };
+  const withNotes = Number(r.id.replace(/\D/g, '')) % 2 === 0;
+  const seeded = withNotes
+    ? [
+        {
+          id: `${r.id}-n2`,
+          body: 'Called back and confirmed the details.\nPrefers calls after 5pm.',
+          bodyJson: docFromText(
+            'Called back and confirmed the details.\nPrefers calls after 5pm.',
+          ),
+          createdAt: at(r.createdAt, 180),
+          author: { name: ACTOR, role: 'admin' as const },
+        },
+        {
+          id: `${r.id}-n1`,
+          body: 'Left voicemail. Asked them not to speak to the other side before we call back.',
+          bodyJson: docFromText(
+            'Left voicemail. Asked them not to speak to the other side before we call back.',
+          ),
+          createdAt: at(r.createdAt, 30),
+          author: { name: ACTOR, role: 'admin' as const },
+        },
+      ]
+    : [];
+  const notes = [...(addedNotes.get(r.id) ?? []), ...seeded];
+  const activities: ContactDetail['activities'] = [
+    ...notes.map((n) => ({
+      id: `${n.id}-a`,
+      type: 'note_added' as const,
+      payload: {},
+      createdAt: n.createdAt,
+      actor: { name: n.author.name },
+    })),
+    ...(r.followUpOn
+      ? [
+          {
+            id: `${r.id}-a2`,
+            type: 'follow_up_changed' as const,
+            payload: { from: null, to: r.followUpOn },
+            createdAt: at(r.createdAt, 5),
+            actor: { name: ACTOR },
+          },
+        ]
+      : []),
+    {
+      id: `${r.id}-a1`,
+      type: 'created' as const,
+      payload: {},
+      createdAt: r.createdAt,
+      actor: { name: ACTOR },
+    },
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return { ...r, summary: summaryOf(r), notes, activities };
 }

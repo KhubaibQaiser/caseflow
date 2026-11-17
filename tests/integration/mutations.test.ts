@@ -1,3 +1,4 @@
+import { docFromText } from '@/lib/contracts/rich-text';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/lib/supabase/database.types';
@@ -61,6 +62,11 @@ beforeEach(async () => {
   revalidatePath.mockClear();
 });
 
+const note = (text: string) => ({
+  body: text,
+  bodyJson: docFromText(text),
+});
+
 describe('mutations', () => {
   it('insertContact returns the new id', async () => {
     const a = await adminClient();
@@ -120,7 +126,7 @@ describe('mutations', () => {
       error: { code: 'forbidden' },
     });
     expect(
-      await insertNote(db(v.client), c.id, 'hi', {
+      await insertNote(db(v.client), c.id, note('hi'), {
         id: v.userId,
         displayName: 'IT Viewer',
         role: 'viewer',
@@ -148,12 +154,14 @@ describe('mutations', () => {
       displayName: 'IT Admin',
       role: 'admin' as const,
     };
-    expect(await insertNote(db(a.client), c.id, '', author)).toMatchObject({
+    expect(
+      await insertNote(db(a.client), c.id, note(''), author),
+    ).toMatchObject({
       ok: false,
       error: { code: 'validation' },
     });
     expect(
-      await insertNote(db(a.client), c.id, 'Called', author),
+      await insertNote(db(a.client), c.id, note('Called'), author),
     ).toMatchObject({
       ok: true,
       data: { body: 'Called', author: { name: 'IT Admin' } },
@@ -205,7 +213,7 @@ describe('server actions', () => {
       ok: false,
       error: { code: 'forbidden' },
     });
-    expect(await addNoteAction('x', 'hi')).toMatchObject({
+    expect(await addNoteAction('x', docFromText('hi'))).toMatchObject({
       ok: false,
       error: { code: 'forbidden' },
     });
@@ -271,18 +279,74 @@ describe('server actions', () => {
       ok: false,
       error: { fieldErrors: { followUpOn: 'Use YYYY-MM-DD.' } },
     });
-    expect(await addNoteAction(c.id, 'x'.repeat(2001))).toMatchObject({
+    expect(
+      await addNoteAction(c.id, docFromText('x'.repeat(2001))),
+    ).toMatchObject({
       ok: false,
       error: { code: 'validation', fieldErrors: { body: expect.any(String) } },
     });
     expect(await rescheduleAction(c.id, null)).toMatchObject({ ok: true });
-    expect(await addNoteAction(c.id, '   ')).toMatchObject({
+    expect(await addNoteAction(c.id, docFromText('   '))).toMatchObject({
       ok: false,
       error: { code: 'validation', fieldErrors: { body: expect.any(String) } },
     });
-    expect(await addNoteAction(c.id, ' Called ')).toMatchObject({
+    expect(await addNoteAction(c.id, docFromText(' Called '))).toMatchObject({
       ok: true,
-      data: { body: 'Called' },
+      data: { body: ' Called'.trim() },
+    });
+    // Forbidden markup never reaches the database.
+    for (const bad of [
+      { type: 'doc', content: [{ type: 'script' }] },
+      {
+        type: 'doc',
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: 'x',
+                marks: [
+                  { type: 'link', attrs: { href: 'javascript:alert(1)' } },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+      'plain string',
+    ])
+      expect(await addNoteAction(c.id, bad)).toMatchObject({
+        ok: false,
+        error: {
+          code: 'validation',
+          fieldErrors: { body: expect.any(String) },
+        },
+      });
+    const rich = {
+      type: 'doc',
+      content: [
+        {
+          type: 'bulletList',
+          content: [
+            {
+              type: 'listItem',
+              content: [
+                {
+                  type: 'paragraph',
+                  content: [
+                    { type: 'text', text: 'one', marks: [{ type: 'bold' }] },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    expect(await addNoteAction(c.id, rich)).toMatchObject({
+      ok: true,
+      data: { body: 'one', bodyJson: rich },
     });
     expect(await moveContactAction('not-a-uuid', 'lead')).toMatchObject({
       ok: false,

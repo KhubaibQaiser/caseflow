@@ -16,6 +16,7 @@ import {
   type Filters,
   type ListQuery,
 } from '@/lib/contracts/list-query';
+import { docFromText, safeParseRichDoc } from '@/lib/contracts/rich-text';
 import { todayIn } from '@/lib/dates/date-only';
 import { urgencyOf } from '@/lib/dates/urgency';
 import { getRequestTimeZone } from '@/lib/dates/server';
@@ -146,6 +147,7 @@ const DetailRaw = z.object({
     z.object({
       id: z.string(),
       body: z.string(),
+      body_json: z.unknown(),
       created_at: z.string(),
       author: z.object({ display_name: z.string(), role: z.string() }),
     }),
@@ -172,7 +174,7 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
     .select(
       `id, full_name, email, phone, matter_type, referral_source, status,
        follow_up_on, summary, created_at, updated_at,
-       notes(id, body, created_at, author:profiles!notes_author_id_fkey(display_name, role)),
+       notes(id, body, body_json, created_at, author:profiles!notes_author_id_fkey(display_name, role)),
        activities(id, type, payload, created_at, actor:profiles!activities_actor_id_fkey(display_name))`,
     )
     .eq('id', id)
@@ -203,6 +205,11 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
     notes: c.notes.map((n) => ({
       id: n.id,
       body: n.body,
+      // One stored note that fails the allowlist (the database only checks it is an object) must not
+      // make the whole contact unopenable: show its plain-text mirror instead.
+      bodyJson: safeParseRichDoc(n.body_json).success
+        ? n.body_json
+        : docFromText(n.body),
       createdAt: n.created_at,
       author: { name: n.author.display_name, role: n.author.role },
     })),

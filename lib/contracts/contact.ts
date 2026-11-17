@@ -7,6 +7,7 @@ import {
   STATUSES,
 } from './enums';
 import { ROLES } from './permissions';
+import { RichDocSchema } from './rich-text';
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -113,7 +114,9 @@ export type ContactRow = z.infer<typeof ContactRowSchema>;
 
 export const NoteSchema = z.object({
   id: z.string(),
+  /** Plain-text mirror of the document (search, previews). */
   body: z.string(),
+  bodyJson: RichDocSchema,
   createdAt: z.string(),
   author: z.object({ name: z.string(), role: z.enum(ROLES) }),
 });

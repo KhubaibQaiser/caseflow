@@ -142,8 +142,9 @@ GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-aliv
 - **Indexes:** `(status, follow_up_on)`, `(created_at)`, a partial index `where deleted_at is null`. **No trigram indexes** *(Claude's call)*: at about 2.5k rows, `ilike '%q%'` takes about 1ms. README scale path: add `pg_trgm` GIN indexes past about 50k rows.
 
 **`notes`**
-- `id`, `contact_id → contacts on delete cascade`, `author_id → profiles`, `body text` (1–2,000 characters), `created_at`
+- `id`, `contact_id → contacts on delete cascade`, `author_id → profiles`, `body text` (the plain-text mirror, 1–2,000 characters), `body_json jsonb not null` (a Tiptap document, `jsonb_typeof = 'object'`), `created_at`
 - Add-only in v1.
+- **Rich text:** a note is a Tiptap JSON document limited to paragraphs, bold, italic, links (http, https, mailto), bullet and numbered lists and hard breaks. The server validates it with a strict Zod allowlist (`lib/contracts/rich-text.ts`), derives the plain text and writes both columns; the page renders the JSON into React elements (no `innerHTML`).
 - **RLS:** select needs `contacts.read`; insert needs `notes.write` and `author_id = auth.uid()`.
 
 **`activities`**
@@ -277,11 +278,11 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 
 ### 8.4 Contact detail (`/contacts/[id]`)
 - **Breadcrumb:** "Contacts / Name". Back returns to the list with its filters intact, because they're in the URL.
-- **Header:** name, status pill, matter, "Enquired Nov 12 · waiting 4d". Actions: **Move to…** (a menu listing the other two statuses), and **Edit**. (Delete is out of scope for v1.)
+- **Header:** name, status pill, matter, "Enquired Nov 12 · waiting 4d" (a Closed contact shows only "Enquired Nov 12"). Actions: **Move to…** (a menu listing the other two statuses), and **Edit**. (Delete is out of scope for v1.)
 - **Left column:**
   - The Follow-up card first: an urgency pill and the date, with a **Reschedule** button opening a date popover that saves straight away.
   - The Details list (phone as a `tel:` link, email as a `mailto:` link, matter type, source, summary at 68ch).
-  - **Notes:** a composer (textarea, at most 2,000 characters with a counter near the limit, Save disabled while empty or pending, Cmd/Ctrl+Enter submits) above a list of notes, newest first. If a save fails, the draft is kept and the error reads "Note not saved. Check your connection and save again." The single Save button retries the draft; there is no separate Retry.
+  - **Notes:** a composer (a rich-text editor with a small toolbar: bold, italic, bullet and numbered lists, links; at most 2,000 characters of text with a counter near the limit, Save disabled while empty or pending, Cmd/Ctrl+Enter submits) above a list of notes, newest first. If a save fails, the draft is kept and the error reads "Note not saved. Check your connection and save again." The single Save button retries the draft; there is no separate Retry.
 - **Right column:** the **activity timeline**, with entries such as "Status changed Lead → Active" and "Follow-up set to Sat, Nov 14". Each timestamp is a `<time>` element with the full date in a tooltip.
 - **Mobile:** a single column with a large **Call** button. The breadcrumb "Contacts" link is the way back.
 - **Not found:** if the id is unknown, a page reads "This contact doesn't exist." with a link back to Contacts.
@@ -325,7 +326,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 | Screen | Loading | Empty | Error |
 |---|---|---|---|
 | Contacts | Route `loading.tsx` with table-shaped skeleton rows. While filters change, the old rows dim (`aria-busy`) and nothing jumps. | First-run (no contacts at all): "No contacts yet." with New contact. Filtered: "No contacts match these filters." listing the active filters, with Clear filters. | `error.tsx`: "Contacts didn't load." plus the reason class, a Retry button (`startTransition(() => { router.refresh(); reset() })`, or the retry API the pinned Next 16 docs recommend, because `reset()` alone doesn't re-fetch server data), and "Your filters are kept." |
-| Detail | Skeletons shaped like the header, panels and timeline | No notes: "No notes yet." with focus moved to the composer. No activity beyond creation is still shown. | Error boundary with Retry. A failed note save keeps the draft with "Note not saved. Check your connection and save again." and the Save button retries it. Not found is handled separately (§8.4). |
+| Detail | Skeletons shaped like the header, panels and timeline | No notes: "No notes yet." with an **Add note** button (admins) that moves focus to the composer; focus never moves on load. No activity beyond creation is still shown. | Error boundary with Retry. A failed note save keeps the draft with "Note not saved. Check your connection and save again." and the Save button retries it. Not found is handled separately (§8.4). |
 | Form | A skeleton for edit while the contact loads. Pending state on submit. | n/a | Inline field errors, the summary, a save-failed banner (input kept), the conflict banner |
 | Pipeline | Three skeleton columns | Per column: "No Lead contacts." Filtered: same pattern as the list. | Error boundary with Retry. A failed move rolls back with a toast. |
 | Login | Pending button ("Signing in…") | n/a | Field errors ("Enter a valid email address.", "Enter your password."), wrong credentials ("Email or password is incorrect.", never saying which), rate limited ("Too many attempts. Try again in N minutes."), server error with retry. All announced through `aria-live`. Mockup: `design/mockups/login-rbac-v1.html`. |

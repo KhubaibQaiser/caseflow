@@ -8,6 +8,7 @@ import {
   type Note,
 } from '@/lib/contracts/contact';
 import type { Status } from '@/lib/contracts/enums';
+import type { RichDoc } from '@/lib/contracts/rich-text';
 import type { Role } from '@/lib/contracts/permissions';
 import { fail, ok, type Result } from '@/lib/contracts/result';
 import { urgencyOf } from '@/lib/dates/urgency';
@@ -170,13 +171,18 @@ export async function getFollowUpOn(
 export async function insertNote(
   db: Db,
   contactId: string,
-  body: string,
+  note: { body: string; bodyJson: RichDoc },
   author: { id: string; displayName: string; role: Role },
 ): Promise<Result<Note>> {
   const { data, error } = await db
     .from('notes')
-    .insert({ contact_id: contactId, body, author_id: author.id })
-    .select('id, body, created_at')
+    .insert({
+      contact_id: contactId,
+      body: note.body,
+      body_json: note.bodyJson,
+      author_id: author.id,
+    })
+    .select('id, body, body_json, created_at')
     .single();
   if (error)
     // 23503: the contact id does not exist
@@ -186,6 +192,7 @@ export async function insertNote(
   const p = NoteSchema.safeParse({
     id: data.id,
     body: data.body,
+    bodyJson: data.body_json,
     createdAt: data.created_at,
     author: { name: author.displayName, role: author.role },
   });

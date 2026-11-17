@@ -154,6 +154,7 @@ export type Database = {
         Row: {
           author_id: string;
           body: string;
+          body_json: NonNullable<Json>;
           contact_id: string;
           created_at: string;
           id: string;
@@ -162,6 +163,7 @@ export type Database = {
         Insert: {
           author_id: string;
           body: string;
+          body_json: NonNullable<Json>;
           contact_id: string;
           created_at?: string;
           id?: string;
@@ -169,6 +171,7 @@ export type Database = {
         Update: {
           author_id?: string;
           body?: string;
+          body_json?: NonNullable<Json>;
           contact_id?: string;
           created_at?: string;
           id?: string;
@@ -272,6 +275,13 @@ export type Database = {
       };
       seed_firm: { Args: { actor?: string; n?: number }; Returns: undefined };
       seed_insert_contact: { Args: { c: Json }; Returns: string };
+      seed_note: {
+        Args: { pool: string[]; salt: number };
+        Returns: {
+          body: string;
+          doc: Json;
+        }[];
+      };
     };
     Enums: {
       activity_type:

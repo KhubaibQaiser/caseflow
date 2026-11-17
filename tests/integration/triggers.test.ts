@@ -1,3 +1,4 @@
+import { docFromText } from '@/lib/contracts/rich-text';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   adminClient,
@@ -139,9 +140,12 @@ describe('contact triggers', () => {
 
   it('logs note_added', async () => {
     const { a, c } = await newContact();
-    const { error } = await a.client
-      .from('notes')
-      .insert({ contact_id: c.id, body: 'called', author_id: a.userId });
+    const { error } = await a.client.from('notes').insert({
+      contact_id: c.id,
+      body: 'called',
+      body_json: docFromText('called'),
+      author_id: a.userId,
+    });
     expect(error).toBeNull();
     const rows = await activities(c.id);
     expect(rows.at(-1)).toMatchObject({
@@ -234,9 +238,12 @@ describe('contact triggers', () => {
 
   it('signed-in writes are logged (cannot prove the seeding guard: no pg client)', async () => {
     const { a, c } = await newContact();
-    await a.client
-      .from('notes')
-      .insert({ contact_id: c.id, body: 'x', author_id: a.userId });
+    await a.client.from('notes').insert({
+      contact_id: c.id,
+      body: 'x',
+      body_json: docFromText('x'),
+      author_id: a.userId,
+    });
     expect((await activities(c.id)).map((r) => r.type)).toEqual([
       'created',
       'note_added',

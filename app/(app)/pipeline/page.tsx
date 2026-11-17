@@ -50,7 +50,7 @@ export default async function PipelinePage({
       <PageHeader
         title="Pipeline"
         meta={`${fmt(facets.matching)} of ${fmt(facets.total)}`}
-        actions={<NewContactLink className="max-md:hidden" />}
+        actions={<NewContactLink />}
       />
       <Board
         // A new filter set, a new day or a new time zone is a new board: paged-in rows and moves belong to the old one,

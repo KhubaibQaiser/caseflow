@@ -1,3 +1,4 @@
+import { docFromText } from '@/lib/contracts/rich-text';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { PERMISSIONS, ROLE_PERMISSIONS } from '@/lib/contracts/permissions';
 import {
@@ -49,9 +50,12 @@ describe('RBAC and RLS', () => {
     expect(upd.data ?? []).toHaveLength(0);
     expect(
       (
-        await v.client
-          .from('notes')
-          .insert({ contact_id: c.id, body: 'x', author_id: v.userId })
+        await v.client.from('notes').insert({
+          contact_id: c.id,
+          body: 'x',
+          body_json: docFromText('x'),
+          author_id: v.userId,
+        })
       ).error,
     ).not.toBeNull();
   });
@@ -70,10 +74,30 @@ describe('RBAC and RLS', () => {
       .select();
     expect(upd.error).toBeNull();
     expect(upd.data).toHaveLength(1);
-    const note = await a.client
-      .from('notes')
-      .insert({ contact_id: c.id, body: 'Called', author_id: a.userId });
+    const note = await a.client.from('notes').insert({
+      contact_id: c.id,
+      body: 'Called',
+      body_json: docFromText('Called'),
+      author_id: a.userId,
+    });
     expect(note.error).toBeNull();
+  });
+
+  it('the database refuses a note whose body_json is not an object', async () => {
+    const a = await adminClient();
+    const { data: c } = await seedContact(a.client, {
+      full_name: 'Di Ellis',
+      email: 'di@example.com',
+    });
+    for (const bad of ['text', [], null]) {
+      const { error } = await a.client.from('notes').insert({
+        contact_id: c.id,
+        body: 'x',
+        body_json: bad as never,
+        author_id: a.userId,
+      });
+      expect(error, JSON.stringify(bad)).not.toBeNull();
+    }
   });
 
   it('admin cannot forge note author or hard-delete', async () => {
@@ -85,9 +109,12 @@ describe('RBAC and RLS', () => {
     });
     expect(
       (
-        await a.client
-          .from('notes')
-          .insert({ contact_id: c.id, body: 'x', author_id: v.userId })
+        await a.client.from('notes').insert({
+          contact_id: c.id,
+          body: 'x',
+          body_json: docFromText('x'),
+          author_id: v.userId,
+        })
       ).error,
     ).not.toBeNull();
     await a.client.from('contacts').delete().eq('id', c.id);
