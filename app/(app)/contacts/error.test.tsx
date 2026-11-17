@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 // The committed URL, as the App Router reports it once a navigation lands.
 let url = '?status=closed';
 vi.mock('next/navigation', () => ({
+  usePathname: () => '/contacts',
   useSearchParams: () => new URLSearchParams(url),
 }));
 

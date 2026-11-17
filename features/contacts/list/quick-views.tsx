@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import type { MouseEvent } from 'react';
 
 import type { ContactFacets } from '@/lib/contracts/facets';
@@ -26,6 +27,8 @@ export function QuickViews({
   counts?: ContactFacets['quickViews'];
 }) {
   const [query, setQuery] = useListQuery();
+  // The board shares this toolbar: its links stay on the board. (null outside the app router, as in tests.)
+  const path = usePathname() ?? '/contacts';
   return (
     <nav aria-label="Quick views" className="shrink-0">
       <ul className="bg-track m-0 inline-flex list-none gap-0.5 rounded-lg p-[3px]">
@@ -35,7 +38,7 @@ export function QuickViews({
           return (
             <li key={v.label}>
               <a
-                href={serializeListQuery('/contacts', {
+                href={serializeListQuery(path, {
                   ...query,
                   ...patch,
                   page: null,
