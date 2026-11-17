@@ -13,7 +13,7 @@ Read `docs/SPEC.md`, `docs/PLAN.md` and `docs/adr/README.md`. Before writing rou
 ## Global constraints
 
 - No `any`, no `@ts-ignore`. Validate with Zod at every trust boundary (form, Server Action, RPC response).
-- No colour literals outside `app/globals.css`. Design tokens only; v1 is light mode only.
+- No colour literals outside `app/globals.css`. Design tokens only; light and dark via tokens, System default.
 - Layering is `app -> features -> components -> lib -> utils`; nothing imports upward. `lib/data`, `lib/supabase` and `lib/auth/viewer.ts` start with `import 'server-only'`.
 - Terminology: "contact", "matter", "follow-up", "Lead / Active / Closed". Never "deal" or "customer". Voice is crisp power-tool (PRODUCT.md).
 - Dates cross browser/server only as `'YYYY-MM-DD'` strings. Never `toISOString()` for date-only values.

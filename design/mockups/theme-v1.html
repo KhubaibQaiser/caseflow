@@ -1,0 +1,562 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Caseflow · Theme toggle v2</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+:root{
+  --canvas:#F4F6F3; --surface:#FFFFFF; --panel:#FAFBF9; --line:#E3E8E2; --line-soft:#EEF1ED;
+  --ink:#1E2A26; --ink-2:#56645E; --accent:#1F5C4A; --accent-soft:#E6F0EB;
+  --overdue-bg:#FCE8E4; --overdue:#9E3426; --today-bg:#FFF1D6; --today:#7A4B00;
+  --r-ctl:6px; --r-surface:10px;
+  font-family:'Figtree',system-ui,sans-serif; color:var(--ink);
+}
+*{box-sizing:border-box}
+::selection{background:#CFE3D9;color:var(--ink)}
+body{margin:0;padding:28px;background:#E4E8E3;font-size:14px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+.caption{font-size:13px;color:#3D4A44;max-width:1440px}
+.caption b{color:var(--ink)}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* ---------- desktop frame ---------- */
+.desk{width:1440px;height:820px;background:var(--canvas);border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(30,42,38,.12);display:flex;flex-direction:column}
+.topbar{height:52px;flex:none;display:flex;align-items:center;gap:28px;padding:0 20px;background:var(--surface);border-bottom:1px solid var(--line)}
+.mark{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;letter-spacing:-.01em;color:var(--accent)}
+.mark i{width:18px;height:18px;border-radius:5px;background:var(--accent);display:block;position:relative}
+.mark i::after{content:'';position:absolute;inset:5px 4px 5px 4px;border-left:2px solid #fff;border-bottom:2px solid #fff;border-radius:0 0 0 3px}
+.tabs{display:flex;gap:4px;height:100%}
+.tabs a{display:flex;align-items:center;padding:0 12px;color:var(--ink-2);text-decoration:none;font-weight:500;border-bottom:2px solid transparent}
+.tabs a.on{color:var(--ink);border-bottom-color:var(--accent)}
+.user{margin-left:auto;display:flex;align-items:center;gap:6px;color:var(--ink-2);font-size:13px}
+.body{flex:1;display:flex;min-height:0}
+
+.filters{width:252px;flex:none;background:var(--panel);border-right:1px solid var(--line);padding:16px;overflow:hidden;display:flex;flex-direction:column;gap:18px}
+.fhead{display:flex;align-items:center;justify-content:space-between}
+.fhead h2{margin:0;font-size:14px;font-weight:600}
+.fhead h2 span{color:var(--ink-2);font-weight:500}
+.link{color:var(--accent);font-weight:600;font-size:13px;text-decoration:none}
+.group h3{margin:0 0 8px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.opt{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px}
+.opt .n{margin-left:auto;color:var(--ink-2)}
+.box{width:16px;height:16px;border:1.5px solid #9AA8A1;border-radius:4px;flex:none;display:grid;place-items:center}
+.box.on{background:var(--accent);border-color:var(--accent)}
+.box.on::after{content:'';width:8px;height:4px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translate(1px,-1px)}
+.radio{width:16px;height:16px;border:1.5px solid #9AA8A1;border-radius:50%;flex:none}
+.radio.on{border:5px solid var(--accent)}
+.more{font-size:13px;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid var(--line)}
+
+.main{flex:1;min-width:0;padding:18px 24px 14px;display:flex;flex-direction:column;gap:12px}
+.head{display:flex;align-items:baseline;gap:10px}
+.head h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.head .of{color:var(--ink-2);font-size:14px}
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 14px;border-radius:var(--r-ctl);font:inherit;font-weight:600;font-size:13px;border:1px solid transparent;cursor:pointer}
+.btn.primary{background:var(--accent);color:#fff;margin-left:auto;align-self:center}
+.btn.ghost{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.search{display:flex;align-items:center;gap:8px;height:34px;width:320px;padding:0 10px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-ctl);color:var(--ink-2);font-size:13px}
+.search.focus{border-color:var(--accent);box-shadow:0 0 0 3px #CFE3D9}
+.badge{background:var(--accent);color:#fff;border-radius:999px;padding:0 7px;font-size:11px;line-height:18px}
+.seg{display:inline-flex;background:#E9EEEA;border-radius:8px;padding:3px;gap:2px}
+.seg a{padding:5px 10px;border-radius:5px;font-size:13px;font-weight:500;color:var(--ink-2);text-decoration:none;display:flex;gap:6px}
+.seg a.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(30,42,38,.12)}
+.seg .c{color:var(--ink-2)}
+.seg .c.hot{color:var(--overdue);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:2px;height:28px;padding:0 2px 0 10px;background:var(--surface);border:1px solid var(--line);border-radius:999px;font-size:12.5px}
+.chip b{font-weight:600}
+.chip button{width:24px;height:24px;border:0;background:none;border-radius:50%;display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.chip button svg{width:14px;height:14px}
+
+.tablewrap{flex:1;min-height:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{position:sticky;top:0;background:var(--panel);text-align:left;font-weight:600;font-size:12px;color:var(--ink-2);padding:0 10px;height:34px;border-bottom:1px solid var(--line);white-space:nowrap}
+th.sorted{color:var(--ink)}
+th.sorted svg{width:13px;height:13px;vertical-align:-2px;margin-left:3px;color:var(--accent)}
+td{height:36px;padding:0 10px;border-bottom:1px solid var(--line-soft);white-space:nowrap}
+tr:hover td{background:#F7F9F7}
+td.name{font-weight:600}
+td.muted{color:var(--ink-2)}
+.st{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;line-height:20px}
+.st.lead{border:1px solid #C3CEC8;color:#3D4A44;padding:0 8px}
+.st.active{background:var(--accent-soft);color:var(--accent)}
+.st.closed{background:#ECEFED;color:var(--ink-2)}
+.fu{display:inline-block;border-radius:999px;padding:1px 9px;font-size:12px;font-weight:600;line-height:20px}
+.fu.over{background:var(--overdue-bg);color:var(--overdue)}
+.fu.today{background:var(--today-bg);color:var(--today)}
+.fu.later{padding:0;font-weight:400;color:var(--ink-2)}
+.foot{display:flex;align-items:center;gap:16px;font-size:13px;color:var(--ink-2)}
+.pp{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);color:var(--ink)}
+.pager{margin-left:auto;display:flex;gap:2px;align-items:center}
+.pager a{min-width:28px;height:28px;display:grid;place-items:center;border-radius:var(--r-ctl);color:var(--ink);text-decoration:none}
+.pager a.on{background:var(--accent);color:#fff;font-weight:600}
+.pager a.dim{color:#A9B4AE}
+
+/* ---------- mobile frame ---------- */
+.phone{width:390px;height:844px;background:var(--canvas);border-radius:28px;overflow:hidden;box-shadow:0 8px 30px rgba(30,42,38,.12);display:flex;flex-direction:column;border:8px solid #1E2A26}
+.mtop{height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;background:var(--surface);border-bottom:1px solid var(--line)}
+.mmain{flex:1;padding:14px 16px 0;display:flex;flex-direction:column;gap:10px;overflow:hidden}
+.mmain .head h1{font-size:20px}
+.mmain .search{width:100%;height:40px}
+.mrow{display:flex;gap:8px}
+.mrow .btn{height:36px;flex:1;justify-content:center}
+.mscroll{display:flex;gap:6px;overflow:hidden}
+.mscroll .seg a{white-space:nowrap}
+.cards{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);overflow:hidden}
+.card{padding:10px 12px;border-bottom:1px solid var(--line-soft);display:grid;grid-template-columns:1fr auto;row-gap:3px;font-size:13px}
+.card .nm{font-weight:600;font-size:14px}
+.card .meta{color:var(--ink-2);grid-column:1/-1;display:flex;gap:8px;align-items:center}
+.mtabs{height:60px;display:flex;background:var(--surface);border-top:1px solid var(--line)}
+.mtabs a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11px;font-weight:600;color:var(--ink-2);text-decoration:none}
+.mtabs a.on{color:var(--accent)}
+.mtabs svg{width:20px;height:20px}
+.row2{display:flex;gap:20px;align-items:flex-start}
+
+.desk{flex-direction:row}
+.side{width:196px;flex:none;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:14px 10px}
+.side .mark{padding:4px 8px 18px}
+.side a.nav{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:var(--r-ctl);color:var(--ink-2);text-decoration:none;font-weight:500}
+.side a.nav.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.side a.nav .n{margin-left:auto;font-size:12px;color:var(--ink-2);font-weight:500}
+.side .acct{margin-top:auto;border-top:1px solid var(--line);padding:12px 10px 2px;font-size:13px;color:var(--ink-2);display:flex;align-items:center;justify-content:space-between}
+.filters{border-right:0;border-left:1px solid var(--line);width:256px}
+.fhead .act{display:flex;align-items:center;gap:10px}
+.iconbtn{width:28px;height:28px;border:0;background:none;border-radius:var(--r-ctl);display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.iconbtn:hover{background:#E9EEEA}
+.btn.ghost.pressed{background:var(--accent-soft);border-color:#B9D2C6;color:var(--accent)}
+.phone{position:relative}
+.sheetwrap{position:static;flex:1;display:flex;flex-direction:column;overflow:hidden}
+.scrim{position:absolute;inset:0;z-index:1;background:rgba(30,42,38,.38)}
+.sheet{position:absolute;z-index:2;top:0;right:0;bottom:0;width:88%;background:var(--panel);box-shadow:-8px 0 24px rgba(30,42,38,.18);display:flex;flex-direction:column}
+.sheet .in{flex:1;padding:16px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.sheet .sfoot{padding:12px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.sheet .sfoot .btn{width:100%;justify-content:center;height:40px;margin:0}
+td.em{max-width:180px;overflow:hidden;text-overflow:ellipsis}
+.desk{position:relative}
+.desk > .filters{position:absolute;top:111px;right:0;bottom:0;z-index:5;padding:0;gap:0;border-top:1px solid var(--line);border-top-left-radius:var(--r-surface);box-shadow:-10px 8px 28px rgba(30,42,38,.14)}
+.filters .fhead,.sheet .fhead{padding:14px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.fbody{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:18px}
+.ffoot{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--surface)}
+.ffoot .btn{flex:1;justify-content:center;margin:0;height:36px}
+.ffoot .btn.primary{flex:1.4}
+.fbody::-webkit-scrollbar{width:8px}.fbody::-webkit-scrollbar-thumb{background:#C9D3CD;border-radius:8px}
+.sheet .in{padding:0;gap:0}
+.dirty{font-size:12px;color:var(--ink-2);padding:0 16px 10px;background:var(--surface)}
+
+.main.scroll{overflow:hidden}
+.crumbs{font-size:13px;color:var(--ink-2)} .crumbs a{color:var(--ink-2)} .crumbs span{margin:0 4px}
+.dhead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.dhead h1{margin:0 0 6px;font-size:24px;font-weight:600;letter-spacing:-.01em}
+.dmeta{display:flex;gap:8px;align-items:center;color:var(--ink-2);font-size:13px;flex-wrap:wrap}
+.dact{display:flex;gap:8px;align-items:center}
+.dgrid{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start;min-height:0}
+.dcol{display:flex;flex-direction:column;gap:16px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:14px 16px}
+.panel h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--ink)}
+.panel h2 .cnt{color:var(--ink-2);font-weight:500;margin-left:4px}
+.furow{display:flex;align-items:center;gap:12px;font-size:13px}
+.furow .btn{margin-left:auto}
+.btn.sm{height:30px;padding:0 10px;font-size:12.5px}
+.btn[disabled]{opacity:.45}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:8px 16px;margin:0;font-size:13px}
+.kv dt{color:var(--ink-2)} .kv dd{margin:0}
+.kv .prose{line-height:1.55;max-width:68ch}
+.composer{border:1px solid var(--line);border-radius:var(--r-ctl);margin-bottom:12px}
+.composer .ta{min-height:56px;padding:10px 12px;color:var(--ink-2);font-size:13px}
+.composer .crow{display:flex;align-items:center;justify-content:space-between;padding:8px 8px 8px 12px;border-top:1px solid var(--line-soft)}
+.hint{font-size:12px;color:var(--ink-2)}
+.note{padding:10px 0;border-top:1px solid var(--line-soft)} .note p{margin:4px 0 0;font-size:13px;line-height:1.55}
+.nmeta{font-size:12px;color:var(--ink-2)}
+.timeline{list-style:none;margin:0;padding:0;font-size:13px}
+.timeline li{display:flex;gap:10px;padding:0 0 14px;position:relative}
+.timeline li::before{content:'';position:absolute;left:4px;top:12px;bottom:0;width:1px;background:var(--line)}
+.timeline li:last-child::before{display:none}
+.timeline .dot{width:9px;height:9px;border-radius:50%;background:var(--surface);border:2px solid var(--accent);margin-top:4px;flex:none}
+.timeline .dot.first{background:var(--accent)}
+.timeline span{display:block;color:var(--ink-2);font-size:12px;margin-top:2px}
+.formpage{max-width:none}
+.fh1{margin:0;font-size:24px;font-weight:600}
+.esum{display:flex;gap:10px;align-items:flex-start;background:var(--overdue-bg);color:var(--overdue);border-radius:var(--r-ctl);padding:10px 12px;font-size:13px;max-width:720px}
+.esum a{color:var(--overdue);text-decoration:underline;text-underline-offset:2px}
+.form{max-width:720px;display:flex;flex-direction:column;gap:14px}
+fieldset{border:1px solid var(--line);background:var(--surface);border-radius:var(--r-surface);padding:12px 16px 16px;margin:0;display:flex;flex-direction:column;gap:12px}
+legend{font-size:13px;font-weight:600;padding:0 4px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:600}
+.field label i{font-style:normal;font-weight:500;color:var(--ink-2);margin-left:6px;font-size:12px}
+.in{height:36px;border:1px solid #C9D3CD;border-radius:var(--r-ctl);padding:0 10px;display:flex;align-items:center;justify-content:space-between;color:var(--ink-2);font-size:13px;background:var(--surface)}
+.in.filled{color:var(--ink)}
+.in.ta2{height:72px;align-items:flex-start;padding-top:9px}
+.err .in,.pair.err .in{border-color:var(--overdue);box-shadow:0 0 0 3px #F8D7D1}
+.field.err .in{border-color:var(--overdue);box-shadow:0 0 0 3px #F8D7D1}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.pair .emsg{grid-column:1/-1}
+.emsg{margin:0;display:flex;gap:6px;align-items:center;color:var(--overdue);font-size:12.5px;font-weight:500}
+.emsg svg{width:14px;height:14px}
+.help{margin:0;font-size:12px;color:var(--ink-2)}
+.row2f{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.segf{display:inline-flex;background:#E9EEEA;border-radius:8px;padding:3px;gap:2px;align-self:flex-start}
+.segf span{padding:6px 14px;border-radius:5px;font-size:13px;font-weight:500;color:var(--ink-2)}
+.segf .on{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(30,42,38,.12)}
+.ffbar{display:flex;justify-content:flex-end;gap:8px}
+.ffbar .btn.primary{margin-left:0}
+.board{flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.colm{background:#EBEFEB;border-radius:var(--r-surface);padding:10px;display:flex;flex-direction:column;gap:8px;min-height:0;overflow:hidden}
+.colm header{display:flex;align-items:center;gap:8px;padding:2px 4px}
+.colm h2{margin:0;font-size:13px;font-weight:600} .colm header span{color:var(--ink-2);font-size:13px}
+.kcards{display:flex;flex-direction:column;gap:8px}
+.kc{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;position:relative}
+.kt{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13.5px}
+.km{font-size:12.5px;color:var(--ink-2)}
+.kmove{align-self:flex-start;margin-top:4px;display:inline-flex;gap:4px;align-items:center;height:26px;padding:0 8px;border:1px solid var(--line);border-radius:var(--r-ctl);background:var(--surface);font:inherit;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer}
+.kmove svg{width:14px;height:14px}
+.kmove.on{border-color:var(--accent);box-shadow:0 0 0 3px #CFE3D9}
+.menu{position:absolute;left:12px;top:100%;margin-top:-6px;z-index:3;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 10px 24px rgba(30,42,38,.16);padding:6px;min-width:180px}
+.mlabel{font-size:11.5px;color:var(--ink-2);padding:4px 8px}
+.mi{padding:6px 8px;border-radius:5px} .mi:first-of-type{background:#F1F5F2}
+.more2{margin-top:auto;height:32px;border:1px dashed #C3CEC8;border-radius:var(--r-ctl);background:transparent;font:inherit;font-size:12.5px;color:var(--ink-2);cursor:pointer}
+.main{position:relative}
+.toast{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:8px;padding:10px 12px 10px 14px;font-size:13px;display:flex;gap:14px;align-items:center;box-shadow:0 10px 24px rgba(30,42,38,.25)}
+.toast .link{background:none;border:0;color:#9FD3BC;font:inherit;font-weight:600;cursor:pointer}
+.seg.full{display:flex} .seg.full a{flex:1;justify-content:center}
+.mh1{margin:0 0 6px;font-size:22px;font-weight:600}
+.mact{display:flex;gap:8px} .mact .btn{flex:1;justify-content:center;height:40px}
+.mmain.scroll{overflow:hidden}
+.states{display:flex;flex-direction:column;gap:14px;width:360px}
+.state{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:14px;min-height:200px}
+.slabel{font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:10px}
+.sk{display:flex;flex-direction:column;gap:6px;padding:8px 0;border-bottom:1px solid var(--line-soft)}
+.sk i{display:block;height:10px;border-radius:5px;background:linear-gradient(90deg,#ECF0ED,#F5F7F5,#ECF0ED)}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:18px 8px;font-size:13px}
+.empty svg{width:22px;height:22px;color:var(--ink-2)} .empty p{margin:0 0 6px;color:var(--ink-2)}
+
+/* ---------- v2 additions (tokens from DESIGN.md only; no new colours) ---------- */
+:root{--control-border:#7F8D87;--ring:#CFE3D9;--error-ring:#F8D7D1}
+body{padding:0;gap:0;background:#E4E8E3;width:1440px}
+.blk{width:1440px;padding:28px;background:#E4E8E3;display:flex;flex-direction:column;gap:18px;align-items:flex-start}
+.blk h2.sec{margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em}
+.blk .caption{max-width:1100px;line-height:1.5}
+.prop{font-style:normal;font-weight:700;color:var(--accent)}
+.tag{margin:0 0 8px;display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;line-height:18px}
+.tag.cur{background:#ECEFED;color:var(--ink-2)} .tag.new{background:var(--accent-soft);color:var(--accent)}
+.fcol{display:flex;flex-direction:column;align-items:flex-start}
+.p375{width:391px;height:610px}
+.mhead{display:flex;align-items:center;gap:10px;min-height:34px}
+.mhead h1{margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:20px;font-weight:600;letter-spacing:-.01em}
+.mhead .of{flex:none;white-space:nowrap;color:var(--ink-2);font-size:13px}
+.mhead .newc{flex:none;margin-left:auto;height:34px;white-space:nowrap}
+.mmain .card{grid-template-columns:minmax(0,1fr) auto}
+.back{display:inline-flex;align-items:center;gap:2px;height:32px;margin:-4px 0 -6px -6px;padding:0 10px 0 4px;color:var(--accent);font-weight:600;font-size:13px;text-decoration:none;border-radius:var(--r-ctl)}
+.back.hit{align-self:flex-start;outline:1px dashed #9AA8A1;outline-offset:-1px}
+.crumbs{font-size:13px;color:var(--ink-2)}
+.dname{margin:0 0 6px;font-size:22px;font-weight:600;letter-spacing:-.01em;line-height:1.2}
+.dname.clamp{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.mact .btn.fix{flex:none;padding:0 14px}
+.mact .btn{height:40px}
+.sbox{box-sizing:content-box;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-surface);padding:10px 12px;overflow:hidden}
+.slab{margin:0 0 6px;font-size:12px;color:var(--ink-2)}
+.strip{display:flex;gap:28px;align-items:flex-start}
+.stage{background:var(--canvas);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 30px rgba(30,42,38,.12)}
+.stage .panel{width:100%}
+.panel .note:last-child{padding-bottom:0}
+.cmp{border:1px solid var(--control-border);border-radius:var(--r-ctl);background:var(--surface);margin-bottom:12px}
+.cmp.focus{border-color:var(--accent);outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 3px var(--ring)}
+.cmp.err{border-color:var(--overdue);box-shadow:0 0 0 3px var(--error-ring)}
+.cmp .tb{display:flex;align-items:center;gap:2px;padding:4px 6px;border-bottom:1px solid var(--line-soft)}
+.cmp .tbtn{width:32px;height:32px;border:0;background:none;border-radius:var(--r-ctl);display:grid;place-items:center;color:var(--ink-2);cursor:pointer}
+.cmp .tbtn:first-child{color:var(--ink)}
+.cmp .bd{min-height:72px;padding:10px 12px;font-size:13px;line-height:1.55;color:var(--ink)}
+.cmp .bd.ph{color:var(--ink-2)}
+.cmp .cf{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 8px 8px 12px;border-top:1px solid var(--line-soft)}
+.cmp .cf .btn{flex:none;margin-left:0}
+.mob .cmp .tb{gap:4px;padding:4px 6px} .mob .cmp .tbtn{width:40px;height:40px}
+.mob .cmp .bd{min-height:88px}
+.mob .hint{line-height:1.35}
+.caret{display:inline-block;width:1px;height:14px;background:var(--ink);vertical-align:-2px;margin-left:1px}
+.err-line{margin:-4px 0 12px}
+.old-tb{display:flex;gap:4px;padding:0 4px 8px}.old-tb .oi{width:32px;height:32px;display:grid;place-items:center;color:var(--ink-2)}
+.old-ta{border:1px solid var(--control-border);border-radius:var(--r-ctl);min-height:72px;padding:10px 12px;font-size:13px;line-height:1.55}
+.old-ta.ph{color:var(--ink-2)} .old-ta.err{border-color:var(--overdue);box-shadow:0 0 0 3px var(--error-ring)}
+.old-row .btn,.old-err .btn{flex:none;margin-left:0;align-self:auto}.mob .old-row .btn{align-self:flex-start}.old-row{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:8px 0 12px}
+.old-err{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 12px}
+.mob .old-row{flex-direction:column;align-items:flex-start;gap:8px}
+.nbody p{margin:4px 0 0;font-size:13px;line-height:1.55} .nbody ul{margin:4px 0 0;padding-left:20px;font-size:13px;line-height:1.55}
+.nbody a{color:var(--accent);text-decoration:none}
+.fcol.new .nbody a{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px}
+.timeline .who{font-weight:600} .timeline li div{font-weight:400}
+.w480{width:620px}.w340{width:375px}
+.stage.mob{width:375px;padding:16px}
+.pw{position:relative}.pw .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;display:grid;place-items:center;color:var(--ink-2)}
+.btn.block{width:100%;justify-content:center;height:38px;margin:0}
+.btn.busy{opacity:.85}
+.foot2{font-size:12px;color:var(--ink-2);display:flex;gap:6px;align-items:flex-start;border-top:1px solid var(--line-soft);padding-top:14px}
+.foot2 svg{width:14px;height:14px;margin-top:1px}
+.field label{font-size:13px;font-weight:600}
+.field label i{font-style:normal;font-weight:500;color:var(--ink-2);margin-left:6px;font-size:12px}
+.lwrap{width:100%;height:100%;display:grid;place-items:center;background:var(--canvas)}
+.lcard{width:380px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:28px;display:flex;flex-direction:column;gap:16px;box-shadow:0 1px 2px rgba(30,42,38,.06)}
+.lcard h1{margin:4px 0 0;font-size:22px;font-weight:600;letter-spacing:-.01em}
+.lcard .sub{margin:-8px 0 0;color:var(--ink-2);font-size:13px}
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.45);border-top-color:#fff;border-radius:50%}
+/* ===== THEME LAYER (new). Everything above is screens-v2 CSS, unchanged. ===== */
+:root{--track:#E9EEEA;--lead-border:#C3CEC8;--lead-ink:#3D4A44;--closed-bg:#ECEFED;--on-accent:#fff;--accent-hover:#184A3B;--skeleton:#ECF0ED;--skeleton-hi:#F5F7F5;--accent-on-ink:#9FD3BC;--raised:0 1px 2px rgb(30 42 38/.12);--overlay:-10px 8px 28px rgb(30 42 38/.14);--scrim:rgb(30 42 38/.38)}
+[data-theme="dark"]{color-scheme:dark;color:var(--ink);
+  --canvas:#0f1512;
+  --surface:#161e1a;
+  --panel:#121915;
+  --line:#2a3631;
+  --line-soft:#202a26;
+  --ink:#e6ece8;
+  --ink-2:#9fada6;
+  --accent:#7cc4a6;
+  --accent-soft:#1f352c;
+  --overdue:#ff9d8f;
+  --overdue-bg:#3b1d19;
+  --today:#f0c368;
+  --today-bg:#372a0d;
+  --lead-border:#4d5d56;
+  --closed-bg:#242e29;
+  --ring:#2c5a49;
+  --on-accent:#0b1a13;
+  --accent-hover:#95d4ba;
+  --lead-ink:#c3cfc9;
+  --control-border:#6e7e77;
+  --track:#1f2924;
+  --error-ring:#5a2a24;
+  --skeleton:#1f2924;
+  --skeleton-hi:#2a3631;
+  --accent-on-ink:#1f5c4a;
+  --scrim:rgb(0 0 0 / 0.6);
+  --raised:0 1px 2px rgb(0 0 0 / 0.5);
+  --overlay:-10px 8px 28px rgb(0 0 0 / 0.55);
+}
+/* In the real app every one of these is already a token, so the remap below does not exist there. The v2 mock CSS carries literals, so dark needs it. */
+[data-theme=dark] .mark i::after,[data-theme=dark] .box.on::after{border-color:var(--on-accent)}
+[data-theme=dark] .btn.primary,[data-theme=dark] .badge,[data-theme=dark] .pager a.on{color:var(--on-accent)}
+[data-theme=dark] .btn.primary:hover{background:var(--accent-hover)}
+[data-theme=dark] .box,[data-theme=dark] .radio{border-color:var(--control-border)}
+[data-theme=dark] .seg,[data-theme=dark] .segf,[data-theme=dark] .tgl{background:var(--track)}
+[data-theme=dark] .seg a.on,[data-theme=dark] .segf .on{box-shadow:var(--raised)}
+[data-theme=dark] .st.lead{border-color:var(--lead-border);color:var(--lead-ink)}
+[data-theme=dark] .st.closed{background:var(--closed-bg)}
+[data-theme=dark] tr:hover td,[data-theme=dark] .mi:first-of-type,[data-theme=dark] .iconbtn:hover{background:var(--line-soft)}
+[data-theme=dark] .search.focus,[data-theme=dark] .kmove.on{box-shadow:0 0 0 3px var(--ring)}
+[data-theme=dark] .btn.ghost.pressed{border-color:var(--ring)}
+[data-theme=dark] .pager a.dim{color:var(--control-border)}
+[data-theme=dark] .colm{background:var(--track)}
+[data-theme=dark] .in{border-color:var(--control-border)}
+[data-theme=dark] .sk i{background:linear-gradient(90deg,var(--skeleton),var(--skeleton-hi),var(--skeleton))}
+[data-theme=dark] .toast{color:var(--surface);box-shadow:var(--overlay)} [data-theme=dark] .toast .link{color:var(--accent-on-ink)}
+[data-theme=dark] .menu,[data-theme=dark] .desk>.filters,[data-theme=dark] .sheet{box-shadow:var(--overlay)}
+[data-theme=dark] .scrim{background:var(--scrim)}
+[data-theme=dark] .desk,[data-theme=dark] .phone,[data-theme=dark] .lframe{box-shadow:0 8px 30px rgb(0 0 0/.35)}
+[data-theme=dark] .lcard{box-shadow:none}
+[data-theme=dark] .banner.err{background:var(--overdue-bg)}
+[data-theme=dark] .fbody::-webkit-scrollbar-thumb{background:var(--lead-border)}
+/* sidebar footer: identity, theme, sign out */
+.acct2{margin-top:auto;border-top:1px solid var(--line);padding:12px 10px 2px;display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--ink-2)}
+.acct2 .who{display:flex;flex-direction:column;gap:4px;align-items:flex-start} .acct2 .who b{color:var(--ink);font-weight:600}
+.role{display:inline-block;border:1px solid var(--lead-border);color:var(--ink-2);border-radius:999px;padding:0 7px;font-size:12px;font-weight:600;line-height:17px}
+.thm{display:flex;flex-direction:column;gap:5px}.thl{font-size:12px;font-weight:600;color:var(--ink-2)}
+.tgl{display:flex;background:var(--track);border-radius:8px;padding:2px;gap:2px}
+.tgl button{flex:1;height:28px;min-width:28px;border:1px solid transparent;border-radius:6px;background:none;color:var(--ink-2);display:flex;align-items:center;justify-content:center;gap:6px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;position:relative}
+.tgl button.on{background:var(--surface);color:var(--ink);border-color:var(--ink-2);box-shadow:var(--raised)}
+.tgl button.foc{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 3px var(--ring)}
+.tgl.big button{height:40px}
+.acct2 .so{display:inline-flex;align-items:center;gap:6px;color:var(--ink-2);font-weight:500;text-decoration:none;min-height:24px}
+.ident{display:flex;flex-direction:column;gap:4px;align-items:flex-start;font-size:13px}
+.sheet .sin{flex:1;display:flex;flex-direction:column;min-height:0}.sheet .fbody{flex:1}.sheet .group{display:flex;flex-direction:column;gap:8px}.sheet .group h3{margin:0;font-size:12px;font-weight:600;color:var(--ink-2)}
+.sheet .sfoot .btn{gap:8px}
+.call{position:absolute;z-index:9;left:208px;bottom:96px;display:flex;align-items:center;font-size:13px;font-weight:600;color:var(--on-accent);pointer-events:none}
+.call span{background:var(--accent);color:var(--on-accent);padding:5px 10px;border-radius:6px;position:relative;white-space:nowrap}
+.call span::before{content:'';position:absolute;left:-6px;top:50%;margin-top:-6px;border:6px solid transparent;border-left:0;border-right-color:var(--accent)}
+.tipwrap{position:relative;display:inline-block}
+.tip2{position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);background:var(--ink);color:var(--surface);font-size:12px;font-weight:500;padding:4px 8px;border-radius:5px;white-space:nowrap}
+.corner{position:absolute;top:16px;right:16px}.cbtn{width:36px;height:36px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);display:grid;place-items:center;cursor:pointer}
+.cbtn.foc{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 3px var(--ring)}
+.cmenu{position:absolute;right:0;top:42px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--overlay);padding:6px;min-width:150px;font-size:13px}
+.cmenu .mi{display:flex;gap:8px;align-items:center;padding:7px 8px}.cmenu .mi.sel{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.lgrid3{display:grid;grid-template-columns:repeat(3,460px);gap:20px}
+.lframe .lwrap{height:100%}
+/* write-up */
+.doc{background:#fff;border-radius:12px;padding:28px 32px;width:1384px;display:flex;flex-direction:column;gap:14px;font-size:14px;line-height:1.55;color:#1E2A26;box-shadow:0 8px 30px rgba(30,42,38,.08)}
+.doc h3{margin:10px 0 0;font-size:15px}.doc p{margin:0}.doc ul{margin:0;padding-left:20px}.doc li{margin:2px 0}
+.doc table{font-size:13px;border-collapse:collapse;width:100%}.doc th{position:static;height:auto;padding:6px 10px;background:#FAFBF9;color:#56645E;text-align:left;border-bottom:1px solid #E3E8E2;font-size:12px}
+.doc td{height:auto;padding:6px 10px;border-bottom:1px solid #EEF1ED;white-space:normal;vertical-align:middle}.doc td.n{color:#56645E}.doc td.num{font-variant-numeric:tabular-nums;text-align:right}
+.doc code{font:12.5px ui-monospace,Menlo,monospace;background:#F4F6F3;border-radius:4px;padding:1px 5px}
+.doc pre{margin:0;background:#161E1A;color:#E6ECE8;border-radius:8px;padding:14px 16px;font:12.5px/1.6 ui-monospace,Menlo,monospace;overflow:hidden;white-space:pre}
+.sw{display:inline-block;width:16px;height:16px;border-radius:4px;border:1px solid rgba(0,0,0,.25);vertical-align:-3px;margin-right:8px}
+.pv{display:inline-block;border-radius:4px;padding:1px 8px;font-weight:600;font-size:12px}
+.ok{color:#1F5C4A;font-weight:600}.bad{color:#9E3426;font-weight:600}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:28px}.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.card2{border:1px solid #E3E8E2;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;gap:6px}.card2 b{font-size:13px}
+.flow{display:flex;align-items:stretch;gap:10px}.flow>div{flex:1;border:1px solid #C3CEC8;border-radius:10px;padding:10px 12px;background:#FAFBF9;font-size:13px}.flow>i{align-self:center;font-style:normal;color:#56645E;font-size:18px}
+.flow b{display:block;margin-bottom:3px}
+.badge2{display:inline-block;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;background:#FFF1D6;color:#7A4B00}
+.rec{background:#E6F0EB;color:#1F5C4A;border-radius:999px;padding:2px 10px;font-size:12px;font-weight:700}
+.sticky{position:static}
+
+.lframe{height:560px;border-radius:12px;overflow:hidden;box-shadow:0 8px 30px rgba(30,42,38,.12)}
+.tw{position:relative;display:inline-flex}
+.tbtn{width:34px;height:34px;border-radius:var(--r-ctl);border:1px solid transparent;background:none;color:var(--ink-2);display:grid;place-items:center;cursor:pointer;padding:0}
+.tbtn:hover,.tbtn.open{background:var(--track);color:var(--ink)}
+.tbtn svg.i{width:18px;height:18px}
+.tbtn.foc{outline:2px solid var(--accent);outline-offset:2px;box-shadow:0 0 0 3px var(--ring)}
+.mtop .hl::before{inset:-1px;border-radius:8px}
+.hl::before{content:'';position:absolute;inset:-5px;border:2px dashed var(--accent);border-radius:10px;pointer-events:none}
+.tcorner{position:absolute;top:18px;right:24px;z-index:6}
+.main .head{padding-right:44px}
+.main .crumbs{min-height:34px;display:flex;align-items:center}
+.mtop .mcorner{position:relative;margin-right:-8px}
+.mtop .tbtn{width:40px;height:40px}
+.lcorner{position:absolute;top:16px;right:16px;z-index:6}
+.tmenu{position:absolute;right:0;top:40px;min-width:176px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--overlay);padding:4px;font-size:13px;color:var(--ink);z-index:8}
+.lcorner .tmenu,.tcorner .tmenu{top:40px}.mcorner .tmenu{top:46px;right:8px}
+.tlabel{padding:6px 8px 4px;font-size:12px;font-weight:600;color:var(--ink-2)}
+.tmi{display:flex;align-items:center;gap:8px;height:32px;padding:0 8px;border-radius:5px;font-weight:500}
+.tmenu.m .tmi{height:44px}
+.tmi svg.i{color:var(--ink-2)} .tmi .ck{margin-left:auto;color:var(--ink)}
+.tmi.sel{font-weight:600}
+.tmi.foc{background:var(--line-soft);outline:2px solid var(--accent);outline-offset:-2px}
+.tip2.b{top:calc(100% + 8px);bottom:auto;left:auto;right:0;transform:none}
+.crop{position:relative;overflow:hidden;border-radius:12px;box-shadow:0 8px 30px rgba(30,42,38,.12)}
+.crop .desk{box-shadow:none;border-radius:0}
+.pcrop{height:330px;overflow:hidden;border-radius:28px 28px 0 0}
+.pcrop .phone{box-shadow:none}
+[data-theme=dark] .tbtn:hover,[data-theme=dark] .tbtn.open{background:var(--track)}
+.wf{position:relative;width:176px;height:104px;border:1px solid #C3CEC8;border-radius:6px;background:#F4F6F3;overflow:hidden;flex:none}
+.wf .sb{position:absolute;left:0;top:0;bottom:0;width:30px;background:#fff;border-right:1px solid #E3E8E2}
+.wf .ln{position:absolute;height:5px;border-radius:3px;background:#C3CEC8}
+.wf .dot{position:absolute;border-radius:4px;background:#1F5C4A}
+.wf.m{width:56px;height:104px}
+.wf.m .tb{position:absolute;left:0;right:0;top:0;height:14px;background:#fff;border-bottom:1px solid #E3E8E2}
+.wf.m .tabbar{position:absolute;left:0;right:0;bottom:0;height:14px;background:#fff;border-top:1px solid #E3E8E2}
+.doc{width:1440px}.cmp{width:1440px;display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.cmp .card2{background:#fff;gap:10px}.cmp .card2.rc{border:2px solid #1F5C4A}
+.cmp .wfs{display:flex;gap:8px;align-items:flex-end}
+.cmp h4{margin:0;font-size:14px}
+.cmp ul{margin:0;padding-left:16px;font-size:12.5px}
+.ts{font-size:12px;font-weight:600;color:#56645E}
+.st3{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px}
+.g{background:#E6F0EB;color:#1F5C4A}.o{background:#FFF1D6;color:#7A4B00}.w{background:#FCE8E4;color:#9E3426}
+.iconcell{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:6px;background:#F4F6F3;color:#56645E;vertical-align:middle;margin-right:8px}
+.iconcell.d{background:#161E1A;color:#E6ECE8}
+.iconcell svg.i{width:18px;height:18px}
+
+body{width:1496px}.blk{width:1496px}.lgrid3{grid-template-columns:repeat(3,460px)}</style></head><body><section class="blk"><h2 class="sec">Caseflow · Theme toggle v2 <span class="badge2">Mockup for approval. No repo changes.</span></h2><p class="caption"><b>Recommendation: one icon button in the top-right of every screen, opening a System / Light / Dark menu.</b> It is the same control, in the same corner, on desktop, tablet, mobile and login. It replaces the sidebar footer segmented control and the Account sheet row, so the shell gets one control instead of two, and the sidebar footer goes back to identity and Sign out. Dark palette and cookie persistence are unchanged from the first proposal.</p></section><section class="blk" id="s1"><h2 class="sec">1 · Recommended: icon button, top-right of the first row on every page</h2>
+<p class="caption">The dashed ring marks the new control (a review aid, not part of the UI). It is 34px, borderless, the same height as <b>New contact</b>, and always the rightmost item in the page's first row. New contact keeps its place immediately left of it. On the detail page the button shares the breadcrumb row, so no page gains a row of height. Pipeline matches /contacts. The icon shows the theme you are looking at (sun in light, moon in dark), so it is never wrong after an OS flip.</p>
+<p class="tag new">Desktop · /contacts · 1440</p><div class="desk"><nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><a class="nav on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav " href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><div class="acct2"><div class="who"><b>Alex Morgan</b><span class="role">Admin</span></div><a class="so" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</a></div></nav>
+<main class="main"><div class="head"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary"><svg class="i " viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="tcorner"><span class="tw hl"><button class="tbtn  " aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span></div>
+<div class="toolbar"><div class="search"><svg class="i " viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button><nav class="seg" aria-label="Quick views"><a class="on" href="#">All <span class="c tnum">1,284</span></a><a href="#">Overdue <span class="c hot tnum">38</span></a><a href="#">Due today <span class="c tnum">12</span></a></nav></div>
+<div class="tablewrap"><table><thead><tr><th>Name</th><th>Matter</th><th>Status</th><th class="sorted">Follow-up<svg class="i " viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></th><th>Phone</th><th>Email</th><th>Source</th><th>Waiting</th></tr></thead><tbody class="tnum"><tr><td class="name">Kevin O'Donnell</td><td>Criminal defense</td><td><span class="st lead">Lead</span></td><td><span class="fu over">Overdue · 5d</span></td><td>(512) 555-0131</td><td class="muted em">kodonnell@fastmail.com</td><td class="muted">Bar referral</td><td class="muted">9d</td></tr><tr><td class="name">Marisol Ortega</td><td>Personal injury</td><td><span class="st lead">Lead</span></td><td><span class="fu over">Overdue · 2d</span></td><td>(512) 555-0148</td><td class="muted em">m.ortega@gmail.com</td><td class="muted">Google search</td><td class="muted">4d</td></tr><tr><td class="name">Daniel Kessler</td><td>Employment</td><td><span class="st active">Active</span></td><td><span class="fu today">Today</span></td><td>(512) 555-0103</td><td class="muted em">dkessler@proton.me</td><td class="muted">Past client</td><td class="muted">21d</td></tr><tr><td class="name">Hana Yoshida</td><td>Immigration</td><td><span class="st lead">Lead</span></td><td><span class="fu today">Today</span></td><td>(737) 555-0166</td><td class="muted em">No email</td><td class="muted">Website form</td><td class="muted">1d</td></tr><tr><td class="name">Aisha Bello</td><td>Family</td><td><span class="st active">Active</span></td><td><span class="fu later">Fri, Nov 20</span></td><td>(737) 555-0192</td><td class="muted em">aisha.bello@outlook.com</td><td class="muted">Attorney referral</td><td class="muted">14d</td></tr><tr><td class="name">Priya Raman</td><td>Immigration</td><td><span class="st lead">Lead</span></td><td><span class="fu later">Mon, Nov 23</span></td><td>(512) 555-0177</td><td class="muted em">priya.r@gmail.com</td><td class="muted">Website form</td><td class="muted">2d</td></tr><tr><td class="name">Luis Carrillo</td><td>Personal injury</td><td><span class="st active">Active</span></td><td><span class="fu later">Tue, Nov 24</span></td><td class="muted">No phone</td><td class="muted em">lcarrillo@yahoo.com</td><td class="muted">Google search</td><td class="muted">33d</td></tr><tr><td class="name">Grace Whitfield</td><td>Estate planning</td><td><span class="st lead">Lead</span></td><td><span class="fu later">Wed, Nov 25</span></td><td>(512) 555-0120</td><td class="muted em">gwhitfield@icloud.com</td><td class="muted">Past client</td><td class="muted">6d</td></tr><tr><td class="name">Omar Haddad</td><td>Employment</td><td><span class="st active">Active</span></td><td><span class="fu later">Mon, Nov 30</span></td><td>(512) 555-0185</td><td class="muted em">ohaddad@gmail.com</td><td class="muted">Attorney referral</td><td class="muted">40d</td></tr><tr><td class="name">Thomas Whitfield</td><td>Estate planning</td><td><span class="st closed">Closed</span></td><td><span class="fu later">Not set</span></td><td>(512) 555-0120</td><td class="muted em">twhitfield@icloud.com</td><td class="muted">Past client</td><td class="muted">61d</td></tr><tr><td class="name">Nadia Petrov</td><td>Immigration</td><td><span class="st closed">Closed</span></td><td><span class="fu later">Not set</span></td><td>(737) 555-0101</td><td class="muted em">nadia.p@gmail.com</td><td class="muted">Website form</td><td class="muted">73d</td></tr></tbody></table></div>
+<div class="foot"><span class="pp">Rows 250 <svg class="i " viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span><span class="tnum">1–250 of 1,284</span><span class="pager"><a class="dim">‹</a><a class="on">1</a><a>2</a><a>3</a><a>…</a><a>6</a><a>›</a></span></div></main></div>
+<p class="tag new">Desktop · /contacts/[id] · 1440</p><div class="desk">
+  <nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div>
+    <a class="nav on" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav" href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a>
+    <div class="acct2"><div class="who"><b>Alex Morgan</b><span class="role">Admin</span></div><a class="so" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</a></div></nav>
+  <main class="main scroll"><div class="tcorner"><span class="tw hl"><button class="tbtn  " aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span></div>
+    <div class="crumbs"><a href="#">Contacts</a> <span>/</span> Marisol Ortega</div>
+    <div class="dhead">
+      <div><h1>Marisol Ortega</h1>
+        <div class="dmeta"><span class="st lead">Lead</span><span>Personal injury</span><span>·</span><span class="tnum">Enquired Nov 12 · waiting 4d</span></div></div>
+      <div class="dact"><button class="btn ghost">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button><button class="btn ghost"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit</button><button class="iconbtn" aria-label="More actions"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button></div>
+    </div>
+    <div class="dgrid">
+      <div class="dcol">
+        <section class="panel">
+          <h2>Follow-up</h2>
+          <div class="furow"><span class="fu over">Overdue · 2d</span><span class="tnum">Due Sat, Nov 14</span><button class="btn ghost sm">Reschedule</button></div>
+        </section>
+        <section class="panel">
+          <h2>Details</h2>
+          <dl class="kv tnum">
+            <dt>Phone</dt><dd>(512) 555-0148</dd>
+            <dt>Email</dt><dd>m.ortega@gmail.com</dd>
+            <dt>Matter type</dt><dd>Personal injury</dd>
+            <dt>Referral source</dt><dd>Google search</dd>
+            <dt>Matter summary</dt><dd class="prose">Rear-ended on I-35 northbound on Nov 9. Taken to St. David's ER, released same day. Other driver's insurer has already called her twice. Wants to know if she should give a recorded statement.</dd>
+          </dl>
+        </section>
+        <section class="panel">
+          <h2>Notes <span class="cnt">2</span></h2>
+          <div class="composer"><div class="ta">Add a note…</div><div class="crow"><span class="hint">Notes are visible to the whole intake team.</span><button class="btn primary sm" disabled>Save note</button></div></div>
+          <article class="note"><div class="nmeta tnum">Nov 13, 4:12 PM</div><p>Left voicemail. Asked her not to speak to the other insurer before we call back.</p></article>
+          <article class="note"><div class="nmeta tnum">Nov 12, 10:03 AM</div><p>Web enquiry. Prefers calls after 5pm. Has photos of both vehicles and the police report number.</p></article>
+        </section>
+      </div>
+      <aside class="panel tl">
+        <h2>Activity</h2>
+        <ol class="timeline tnum">
+          <li><span class="dot"></span><div><b>Note added</b><span>Nov 13, 4:12 PM</span></div></li>
+          <li><span class="dot"></span><div><b>Follow-up set</b> to Sat, Nov 14<span>Nov 12, 10:05 AM</span></div></li>
+          <li><span class="dot"></span><div><b>Note added</b><span>Nov 12, 10:03 AM</span></div></li>
+          <li><span class="dot first"></span><div><b>Contact created</b> as Lead<span>Nov 12, 9:58 AM</span></div></li>
+        </ol>
+      </aside>
+    </div>
+  </main></div>
+<p class="tag new">Desktop · /pipeline · 1440</p><div class="desk">
+  <nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div>
+    <a class="nav" href="#"><svg class="i" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav on" href="#"><svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a>
+    <div class="acct2"><div class="who"><b>Alex Morgan</b><span class="role">Admin</span></div><a class="so" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</a></div></nav>
+  <main class="main"><div class="tcorner"><span class="tw hl"><button class="tbtn  " aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span></div>
+    <div class="head"><h1>Pipeline</h1><span class="of tnum">2,437 contacts</span><button class="btn primary"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div>
+    <div class="toolbar"><div class="search"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button></div>
+    <div class="board">
+      <section class="colm"><header><h2>Lead</h2><span class="tnum">642</span></header>
+        <div class="kcards tnum">
+          <article class="kc"><div class="kt"><b>Kevin O'Donnell</b><span class="fu over">Overdue · 5d</span></div><div class="km">Criminal defense · (512) 555-0131</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc open"><div class="kt"><b>Marisol Ortega</b><span class="fu over">Overdue · 2d</span></div><div class="km">Personal injury · (512) 555-0148</div><button class="kmove on" aria-expanded="true">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+            <div class="menu" role="menu"><div class="mlabel">Move Marisol to</div><div class="mi" role="menuitem"><span class="st active">Active</span></div><div class="mi" role="menuitem"><span class="st closed">Closed</span></div></div></article>
+          <article class="kc"><div class="kt"><b>Hana Yoshida</b><span class="fu today">Today</span></div><div class="km">Immigration · (737) 555-0166</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Priya Raman</b><span class="fu later">Mon, Nov 23</span></div><div class="km">Immigration · (512) 555-0177</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Grace Whitfield</b><span class="fu later">Wed, Nov 25</span></div><div class="km">Estate planning · (512) 555-0120</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        </div><button class="more2 tnum">Show 50 more · 592 left</button></section>
+      <section class="colm"><header><h2>Active</h2><span class="tnum">642</span></header>
+        <div class="kcards tnum">
+          <article class="kc"><div class="kt"><b>Daniel Kessler</b><span class="fu today">Today</span></div><div class="km">Employment · (512) 555-0103</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Aisha Bello</b><span class="fu later">Fri, Nov 20</span></div><div class="km">Family · (737) 555-0192</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Luis Carrillo</b><span class="fu later">Tue, Nov 24</span></div><div class="km">Personal injury · No phone</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Omar Haddad</b><span class="fu later">Mon, Nov 30</span></div><div class="km">Employment · (512) 555-0185</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        </div><button class="more2 tnum">Show 50 more · 592 left</button></section>
+      <section class="colm"><header><h2>Closed</h2><span class="tnum">1,153</span></header>
+        <div class="kcards tnum">
+          <article class="kc"><div class="kt"><b>Thomas Whitfield</b><span class="fu later">Not set</span></div><div class="km">Estate planning · (512) 555-0120</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Nadia Petrov</b><span class="fu later">Not set</span></div><div class="km">Immigration · (737) 555-0101</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+          <article class="kc"><div class="kt"><b>Carlos Mendes</b><span class="fu later">Not set</span></div><div class="km">Employment · (512) 555-0144</div><button class="kmove">Move to… <svg class="i" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></article>
+        </div><button class="more2 tnum">Show 50 more · 1,103 left</button></section>
+    </div>
+    <div class="toast" role="status">Marisol Ortega moved to <b>Active</b><button class="link">Undo</button></div>
+  </main></div></section><section class="blk" id="s2"><h2 class="sec">2 · Mobile: the top bar finally has a job for its right side</h2>
+<p class="caption">v2 made the top bar the brand mark alone and moved <b>New contact</b> into the title row. The right of the bar was empty, so the icon fits without adding a row or touching New. Button is 40px (rows in the menu are 44px). The glyph sits on the 16px gutter edge. The tab bar is unchanged, and the Account sheet drops its Theme row and is exactly v2 again (identity, Sign out). Tablet uses the desktop layout, so the icon sits in the page header, and the 64px rail needs no theme item.</p>
+<div class="strip"><div class="fcol"><p class="tag cur">v2 as approved · /contacts</p><div class="phone"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div></header><div class="mmain"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary newc"><svg class="i " viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="search"><svg class="i " viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><div class="mrow"><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>Sort: Follow-up</button></div><div class="mscroll"><nav class="seg"><a class="on" href="#">All <span class="c tnum">1,284</span></a><a href="#">Overdue <span class="c hot tnum">38</span></a><a href="#">Due today <span class="c tnum">12</span></a></nav></div><div class="cards tnum"><div class="card"><span class="nm">Kevin O'Donnell</span><span class="fu over">Overdue · 5d</span><span class="meta">Criminal defense <span class="st lead">Lead</span> (512) 555-0131</span></div><div class="card"><span class="nm">Marisol Ortega</span><span class="fu over">Overdue · 2d</span><span class="meta">Personal injury <span class="st lead">Lead</span> (512) 555-0148</span></div><div class="card"><span class="nm">Daniel Kessler</span><span class="fu today">Today</span><span class="meta">Employment <span class="st active">Active</span> (512) 555-0103</span></div><div class="card"><span class="nm">Hana Yoshida</span><span class="fu today">Today</span><span class="meta">Immigration <span class="st lead">Lead</span> (737) 555-0166</span></div><div class="card"><span class="nm">Aisha Bello</span><span class="fu later">Fri, Nov 20</span><span class="meta">Family <span class="st active">Active</span> (737) 555-0192</span></div><div class="card"><span class="nm">Priya Raman</span><span class="fu later">Mon, Nov 23</span><span class="meta">Immigration <span class="st lead">Lead</span> (512) 555-0177</span></div><div class="card"><span class="nm">Luis Carrillo</span><span class="fu later">Tue, Nov 24</span><span class="meta">Personal injury <span class="st active">Active</span> No phone</span></div></div></div><nav class="mtabs"><a class="on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div><div class="fcol"><p class="tag new">Recommended · /contacts · 375</p><div class="phone"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><div class="mcorner"><span class="tw hl"><button class="tbtn  " aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span></div></header><div class="mmain"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary newc"><svg class="i " viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="search"><svg class="i " viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><div class="mrow"><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>Sort: Follow-up</button></div><div class="mscroll"><nav class="seg"><a class="on" href="#">All <span class="c tnum">1,284</span></a><a href="#">Overdue <span class="c hot tnum">38</span></a><a href="#">Due today <span class="c tnum">12</span></a></nav></div><div class="cards tnum"><div class="card"><span class="nm">Kevin O'Donnell</span><span class="fu over">Overdue · 5d</span><span class="meta">Criminal defense <span class="st lead">Lead</span> (512) 555-0131</span></div><div class="card"><span class="nm">Marisol Ortega</span><span class="fu over">Overdue · 2d</span><span class="meta">Personal injury <span class="st lead">Lead</span> (512) 555-0148</span></div><div class="card"><span class="nm">Daniel Kessler</span><span class="fu today">Today</span><span class="meta">Employment <span class="st active">Active</span> (512) 555-0103</span></div><div class="card"><span class="nm">Hana Yoshida</span><span class="fu today">Today</span><span class="meta">Immigration <span class="st lead">Lead</span> (737) 555-0166</span></div><div class="card"><span class="nm">Aisha Bello</span><span class="fu later">Fri, Nov 20</span><span class="meta">Family <span class="st active">Active</span> (737) 555-0192</span></div><div class="card"><span class="nm">Priya Raman</span><span class="fu later">Mon, Nov 23</span><span class="meta">Immigration <span class="st lead">Lead</span> (512) 555-0177</span></div><div class="card"><span class="nm">Luis Carrillo</span><span class="fu later">Tue, Nov 24</span><span class="meta">Personal injury <span class="st active">Active</span> No phone</span></div></div></div><nav class="mtabs"><a class="on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div><div class="fcol"><p class="tag new">Recommended · detail · 375</p><div class="phone"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><div class="mcorner"><span class="tw hl"><button class="tbtn  " aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span></div></header><div class="mmain"><a class="back"><svg class="i " viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Contacts</a><div><h1 class="dname">Marisol Ortega</h1><div class="dmeta"><span class="st lead">Lead</span><span>Personal injury</span><span>·</span><span class="tnum">waiting 4d</span></div></div><div class="mact"><a class="btn primary" style="margin:0">Call</a><button class="btn ghost">Move to… <svg class="i " viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button><button class="btn ghost fix">Edit</button></div><section class="panel"><h2>Follow-up</h2><div class="furow"><span class="fu over">Overdue · 2d</span><span class="tnum">Sat, Nov 14</span></div></section><section class="panel"><h2>Details</h2><dl class="kv tnum"><dt>Phone</dt><dd>(512) 555-0148</dd><dt>Email</dt><dd>m.ortega@gmail.com</dd><dt>Source</dt><dd>Google search</dd></dl></section><section class="panel"><h2>Notes <span class="cnt">2</span></h2><div class="composer"><div class="ta">Add a note…</div></div><article class="note"><div class="nmeta tnum">Nov 13, 4:12 PM</div><p>Left voicemail. Asked her not to speak to the other insurer.</p></article></section></div><nav class="mtabs"><a class="on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div></div></section><section class="blk" id="s3"><h2 class="sec">3 · Login: yes, same corner, same button</h2>
+<p class="caption">Consistency wins. The control is in one place everywhere, so anyone who learns it once finds it on the sign-in screen. It also fixes the cases the first proposal accepted as a cost: a shared computer, and a dark-preferring reviewer who lands cold on a light page when their OS reports light. Cost: one more tab stop. The button stays first in the DOM so focus order matches its position, and the email field takes focus on load, so keyboard users only meet it if they shift-tab. The card stays untouched and centred. The control needs no sign-in, since the cookie is not tied to a user.</p>
+<div class="lgrid3"><div><p class="tag new">Login · closed</p><div class="lframe" style="position:relative"><div class="lwrap"><div class="lcorner"><span class="tw hl"><button class="tbtn  " aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span></div><div class="lcard"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><h1>Sign in</h1><p class="sub">Client intake for the firm.</p><div class="field"><label>Email</label><div class="in">name@firm.com</div></div><div class="pw"><div class="field"><label>Password</label><div class="in" style="position:relative">Password<span class="eye" style="position:absolute;right:8px;color:var(--ink-2);display:grid"><svg class="i " viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span></div></div></div><button class="btn primary block">Sign in</button></div></div></div></div><div><p class="tag new">Login · menu open (System, light)</p><div class="lframe" style="position:relative"><div class="lwrap"><div class="lcorner"><span class="tw "><button class="tbtn foc open" aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="true"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span><div class="tmenu " role="menu" aria-label="Theme"><div class="tlabel" role="presentation">Theme</div><div class="tmi sel " role="menuitemradio" aria-checked="true"><svg class="i " viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>System</span><svg class="i ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Light</span></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Dark</span></div></div></div><div class="lcard"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><h1>Sign in</h1><p class="sub">Client intake for the firm.</p><div class="field"><label>Email</label><div class="in">name@firm.com</div></div><div class="pw"><div class="field"><label>Password</label><div class="in" style="position:relative">Password<span class="eye" style="position:absolute;right:8px;color:var(--ink-2);display:grid"><svg class="i " viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span></div></div></div><button class="btn primary block">Sign in</button></div></div></div></div><div><p class="tag new">Login · saved Dark, moon icon</p><div class="lframe" data-theme="dark" style="position:relative"><div class="lwrap"><div class="lcorner"><span class="tw hl"><button class="tbtn  " aria-label="Theme: Dark" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button></span></div><div class="lcard"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><h1>Sign in</h1><p class="sub">Client intake for the firm.</p><div class="field"><label>Email</label><div class="in">name@firm.com</div></div><div class="pw"><div class="field"><label>Password</label><div class="in" style="position:relative">Password<span class="eye" style="position:absolute;right:8px;color:var(--ink-2);display:grid"><svg class="i " viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></span></div></div></div><button class="btn primary block">Sign in</button></div></div></div></div></div></section><section class="blk" id="s4"><h2 class="sec">4 · Menu, states and keyboard focus</h2>
+<p class="caption">Menu is a Radix DropdownMenu with a radio group. A small "Theme" label names it for sighted users (the icon alone does not). The current choice carries a check mark and semibold text, never colour alone. Rows are 32px on desktop, 44px on touch. Choosing an item applies instantly and closes the menu.</p>
+<div class="strip"><div class="fcol"><p class="tag new">Open · light · System selected (OS is light)</p><div class="crop" style="width:580px;height:330px"><div style="margin-left:-868px;width:1440px"><div class="desk"><nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><a class="nav on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav " href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><div class="acct2"><div class="who"><b>Alex Morgan</b><span class="role">Admin</span></div><a class="so" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</a></div></nav>
+<main class="main"><div class="head"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary"><svg class="i " viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="tcorner"><span class="tw "><button class="tbtn  open" aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="true"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span><div class="tmenu " role="menu" aria-label="Theme"><div class="tlabel" role="presentation">Theme</div><div class="tmi sel " role="menuitemradio" aria-checked="true"><svg class="i " viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>System</span><svg class="i ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Light</span></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Dark</span></div></div></div>
+<div class="toolbar"><div class="search"><svg class="i " viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button><nav class="seg" aria-label="Quick views"><a class="on" href="#">All <span class="c tnum">1,284</span></a><a href="#">Overdue <span class="c hot tnum">38</span></a><a href="#">Due today <span class="c tnum">12</span></a></nav></div>
+<div class="tablewrap"><table><thead><tr><th>Name</th><th>Matter</th><th>Status</th><th class="sorted">Follow-up<svg class="i " viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></th><th>Phone</th><th>Email</th><th>Source</th><th>Waiting</th></tr></thead><tbody class="tnum"><tr><td class="name">Kevin O'Donnell</td><td>Criminal defense</td><td><span class="st lead">Lead</span></td><td><span class="fu over">Overdue · 5d</span></td><td>(512) 555-0131</td><td class="muted em">kodonnell@fastmail.com</td><td class="muted">Bar referral</td><td class="muted">9d</td></tr><tr><td class="name">Marisol Ortega</td><td>Personal injury</td><td><span class="st lead">Lead</span></td><td><span class="fu over">Overdue · 2d</span></td><td>(512) 555-0148</td><td class="muted em">m.ortega@gmail.com</td><td class="muted">Google search</td><td class="muted">4d</td></tr><tr><td class="name">Daniel Kessler</td><td>Employment</td><td><span class="st active">Active</span></td><td><span class="fu today">Today</span></td><td>(512) 555-0103</td><td class="muted em">dkessler@proton.me</td><td class="muted">Past client</td><td class="muted">21d</td></tr><tr><td class="name">Hana Yoshida</td><td>Immigration</td><td><span class="st lead">Lead</span></td><td><span class="fu today">Today</span></td><td>(737) 555-0166</td><td class="muted em">No email</td><td class="muted">Website form</td><td class="muted">1d</td></tr><tr><td class="name">Aisha Bello</td><td>Family</td><td><span class="st active">Active</span></td><td><span class="fu later">Fri, Nov 20</span></td><td>(737) 555-0192</td><td class="muted em">aisha.bello@outlook.com</td><td class="muted">Attorney referral</td><td class="muted">14d</td></tr><tr><td class="name">Priya Raman</td><td>Immigration</td><td><span class="st lead">Lead</span></td><td><span class="fu later">Mon, Nov 23</span></td><td>(512) 555-0177</td><td class="muted em">priya.r@gmail.com</td><td class="muted">Website form</td><td class="muted">2d</td></tr><tr><td class="name">Luis Carrillo</td><td>Personal injury</td><td><span class="st active">Active</span></td><td><span class="fu later">Tue, Nov 24</span></td><td class="muted">No phone</td><td class="muted em">lcarrillo@yahoo.com</td><td class="muted">Google search</td><td class="muted">33d</td></tr><tr><td class="name">Grace Whitfield</td><td>Estate planning</td><td><span class="st lead">Lead</span></td><td><span class="fu later">Wed, Nov 25</span></td><td>(512) 555-0120</td><td class="muted em">gwhitfield@icloud.com</td><td class="muted">Past client</td><td class="muted">6d</td></tr><tr><td class="name">Omar Haddad</td><td>Employment</td><td><span class="st active">Active</span></td><td><span class="fu later">Mon, Nov 30</span></td><td>(512) 555-0185</td><td class="muted em">ohaddad@gmail.com</td><td class="muted">Attorney referral</td><td class="muted">40d</td></tr><tr><td class="name">Thomas Whitfield</td><td>Estate planning</td><td><span class="st closed">Closed</span></td><td><span class="fu later">Not set</span></td><td>(512) 555-0120</td><td class="muted em">twhitfield@icloud.com</td><td class="muted">Past client</td><td class="muted">61d</td></tr><tr><td class="name">Nadia Petrov</td><td>Immigration</td><td><span class="st closed">Closed</span></td><td><span class="fu later">Not set</span></td><td>(737) 555-0101</td><td class="muted em">nadia.p@gmail.com</td><td class="muted">Website form</td><td class="muted">73d</td></tr></tbody></table></div>
+<div class="foot"><span class="pp">Rows 250 <svg class="i " viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span><span class="tnum">1–250 of 1,284</span><span class="pager"><a class="dim">‹</a><a class="on">1</a><a>2</a><a>3</a><a>…</a><a>6</a><a>›</a></span></div></main></div></div></div></div><div class="fcol"><p class="tag new">Open · dark · Dark selected, moon icon</p><div class="crop" style="width:580px;height:330px"><div style="margin-left:-868px;width:1440px"><div class="desk" data-theme="dark"><nav class="side" aria-label="Main"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><a class="nav on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a class="nav " href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><div class="acct2"><div class="who"><b>Alex Morgan</b><span class="role">Admin</span></div><a class="so" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>Sign out</a></div></nav>
+<main class="main"><div class="head"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary"><svg class="i " viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="tcorner"><span class="tw "><button class="tbtn  open" aria-label="Theme: Dark" aria-haspopup="menu" aria-expanded="true"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button></span><div class="tmenu " role="menu" aria-label="Theme"><div class="tlabel" role="presentation">Theme</div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>System</span></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Light</span></div><div class="tmi sel " role="menuitemradio" aria-checked="true"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Dark</span><svg class="i ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div></div></div>
+<div class="toolbar"><div class="search"><svg class="i " viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button><nav class="seg" aria-label="Quick views"><a class="on" href="#">All <span class="c tnum">1,284</span></a><a href="#">Overdue <span class="c hot tnum">38</span></a><a href="#">Due today <span class="c tnum">12</span></a></nav></div>
+<div class="tablewrap"><table><thead><tr><th>Name</th><th>Matter</th><th>Status</th><th class="sorted">Follow-up<svg class="i " viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg></th><th>Phone</th><th>Email</th><th>Source</th><th>Waiting</th></tr></thead><tbody class="tnum"><tr><td class="name">Kevin O'Donnell</td><td>Criminal defense</td><td><span class="st lead">Lead</span></td><td><span class="fu over">Overdue · 5d</span></td><td>(512) 555-0131</td><td class="muted em">kodonnell@fastmail.com</td><td class="muted">Bar referral</td><td class="muted">9d</td></tr><tr><td class="name">Marisol Ortega</td><td>Personal injury</td><td><span class="st lead">Lead</span></td><td><span class="fu over">Overdue · 2d</span></td><td>(512) 555-0148</td><td class="muted em">m.ortega@gmail.com</td><td class="muted">Google search</td><td class="muted">4d</td></tr><tr><td class="name">Daniel Kessler</td><td>Employment</td><td><span class="st active">Active</span></td><td><span class="fu today">Today</span></td><td>(512) 555-0103</td><td class="muted em">dkessler@proton.me</td><td class="muted">Past client</td><td class="muted">21d</td></tr><tr><td class="name">Hana Yoshida</td><td>Immigration</td><td><span class="st lead">Lead</span></td><td><span class="fu today">Today</span></td><td>(737) 555-0166</td><td class="muted em">No email</td><td class="muted">Website form</td><td class="muted">1d</td></tr><tr><td class="name">Aisha Bello</td><td>Family</td><td><span class="st active">Active</span></td><td><span class="fu later">Fri, Nov 20</span></td><td>(737) 555-0192</td><td class="muted em">aisha.bello@outlook.com</td><td class="muted">Attorney referral</td><td class="muted">14d</td></tr><tr><td class="name">Priya Raman</td><td>Immigration</td><td><span class="st lead">Lead</span></td><td><span class="fu later">Mon, Nov 23</span></td><td>(512) 555-0177</td><td class="muted em">priya.r@gmail.com</td><td class="muted">Website form</td><td class="muted">2d</td></tr><tr><td class="name">Luis Carrillo</td><td>Personal injury</td><td><span class="st active">Active</span></td><td><span class="fu later">Tue, Nov 24</span></td><td class="muted">No phone</td><td class="muted em">lcarrillo@yahoo.com</td><td class="muted">Google search</td><td class="muted">33d</td></tr><tr><td class="name">Grace Whitfield</td><td>Estate planning</td><td><span class="st lead">Lead</span></td><td><span class="fu later">Wed, Nov 25</span></td><td>(512) 555-0120</td><td class="muted em">gwhitfield@icloud.com</td><td class="muted">Past client</td><td class="muted">6d</td></tr><tr><td class="name">Omar Haddad</td><td>Employment</td><td><span class="st active">Active</span></td><td><span class="fu later">Mon, Nov 30</span></td><td>(512) 555-0185</td><td class="muted em">ohaddad@gmail.com</td><td class="muted">Attorney referral</td><td class="muted">40d</td></tr><tr><td class="name">Thomas Whitfield</td><td>Estate planning</td><td><span class="st closed">Closed</span></td><td><span class="fu later">Not set</span></td><td>(512) 555-0120</td><td class="muted em">twhitfield@icloud.com</td><td class="muted">Past client</td><td class="muted">61d</td></tr><tr><td class="name">Nadia Petrov</td><td>Immigration</td><td><span class="st closed">Closed</span></td><td><span class="fu later">Not set</span></td><td>(737) 555-0101</td><td class="muted em">nadia.p@gmail.com</td><td class="muted">Website form</td><td class="muted">73d</td></tr></tbody></table></div>
+<div class="foot"><span class="pp">Rows 250 <svg class="i " viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span><span class="tnum">1–250 of 1,284</span><span class="pager"><a class="dim">‹</a><a class="on">1</a><a>2</a><a>3</a><a>…</a><a>6</a><a>›</a></span></div></main></div></div></div></div></div>
+<div class="strip"><div class="fcol"><p class="tag new">Mobile · open · light</p><div class="pcrop" style="width:390px"><div class="phone"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><div class="mcorner"><span class="tw "><button class="tbtn  open" aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="true"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span><div class="tmenu m" role="menu" aria-label="Theme"><div class="tlabel" role="presentation">Theme</div><div class="tmi sel " role="menuitemradio" aria-checked="true"><svg class="i " viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>System</span><svg class="i ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Light</span></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Dark</span></div></div></div></header><div class="mmain"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary newc"><svg class="i " viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="search"><svg class="i " viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><div class="mrow"><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>Sort: Follow-up</button></div><div class="mscroll"><nav class="seg"><a class="on" href="#">All <span class="c tnum">1,284</span></a><a href="#">Overdue <span class="c hot tnum">38</span></a><a href="#">Due today <span class="c tnum">12</span></a></nav></div><div class="cards tnum"><div class="card"><span class="nm">Kevin O'Donnell</span><span class="fu over">Overdue · 5d</span><span class="meta">Criminal defense <span class="st lead">Lead</span> (512) 555-0131</span></div><div class="card"><span class="nm">Marisol Ortega</span><span class="fu over">Overdue · 2d</span><span class="meta">Personal injury <span class="st lead">Lead</span> (512) 555-0148</span></div><div class="card"><span class="nm">Daniel Kessler</span><span class="fu today">Today</span><span class="meta">Employment <span class="st active">Active</span> (512) 555-0103</span></div><div class="card"><span class="nm">Hana Yoshida</span><span class="fu today">Today</span><span class="meta">Immigration <span class="st lead">Lead</span> (737) 555-0166</span></div><div class="card"><span class="nm">Aisha Bello</span><span class="fu later">Fri, Nov 20</span><span class="meta">Family <span class="st active">Active</span> (737) 555-0192</span></div><div class="card"><span class="nm">Priya Raman</span><span class="fu later">Mon, Nov 23</span><span class="meta">Immigration <span class="st lead">Lead</span> (512) 555-0177</span></div><div class="card"><span class="nm">Luis Carrillo</span><span class="fu later">Tue, Nov 24</span><span class="meta">Personal injury <span class="st active">Active</span> No phone</span></div></div></div><nav class="mtabs"><a class="on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div></div><div class="fcol"><p class="tag new">Mobile · open · dark · Dark selected</p><div class="pcrop" style="width:390px"><div class="phone" data-theme="dark"><header class="mtop"><div class="mark"><i aria-hidden="true"></i>Caseflow</div><div class="mcorner"><span class="tw "><button class="tbtn  open" aria-label="Theme: Dark" aria-haspopup="menu" aria-expanded="true"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></button></span><div class="tmenu m" role="menu" aria-label="Theme"><div class="tlabel" role="presentation">Theme</div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>System</span></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Light</span></div><div class="tmi sel " role="menuitemradio" aria-checked="true"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Dark</span><svg class="i ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div></div></div></header><div class="mmain"><div class="mhead"><h1>Contacts</h1><span class="of tnum">1,284 of 2,437</span><button class="btn primary newc"><svg class="i " viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New contact</button></div><div class="search"><svg class="i " viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search name, email, phone…</div><div class="mrow"><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M7 12h10"/><path d="M10 18h4"/></svg>Filters</button><button class="btn ghost"><svg class="i " viewBox="0 0 24 24"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>Sort: Follow-up</button></div><div class="mscroll"><nav class="seg"><a class="on" href="#">All <span class="c tnum">1,284</span></a><a href="#">Overdue <span class="c hot tnum">38</span></a><a href="#">Due today <span class="c tnum">12</span></a></nav></div><div class="cards tnum"><div class="card"><span class="nm">Kevin O'Donnell</span><span class="fu over">Overdue · 5d</span><span class="meta">Criminal defense <span class="st lead">Lead</span> (512) 555-0131</span></div><div class="card"><span class="nm">Marisol Ortega</span><span class="fu over">Overdue · 2d</span><span class="meta">Personal injury <span class="st lead">Lead</span> (512) 555-0148</span></div><div class="card"><span class="nm">Daniel Kessler</span><span class="fu today">Today</span><span class="meta">Employment <span class="st active">Active</span> (512) 555-0103</span></div><div class="card"><span class="nm">Hana Yoshida</span><span class="fu today">Today</span><span class="meta">Immigration <span class="st lead">Lead</span> (737) 555-0166</span></div><div class="card"><span class="nm">Aisha Bello</span><span class="fu later">Fri, Nov 20</span><span class="meta">Family <span class="st active">Active</span> (737) 555-0192</span></div><div class="card"><span class="nm">Priya Raman</span><span class="fu later">Mon, Nov 23</span><span class="meta">Immigration <span class="st lead">Lead</span> (512) 555-0177</span></div><div class="card"><span class="nm">Luis Carrillo</span><span class="fu later">Tue, Nov 24</span><span class="meta">Personal injury <span class="st active">Active</span> No phone</span></div></div></div><nav class="mtabs"><a class="on" href="#"><svg class="i " viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Contacts</a><a href="#"><svg class="i " viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>Pipeline</a><a class="" href="#"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Account</a></nav></div></div></div><div class="fcol"><p class="tag new">Keyboard · focus-visible on trigger, tooltip</p><div class="stage" style="width:300px;height:110px;align-items:flex-end;padding:16px 20px"><span class="tw "><button class="tbtn foc " aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button><span class="tip2 b">Theme: System (light)</span></span></div><p class="tag new" style="margin-top:14px">Keyboard · arrow-key on Light, item focused</p><div class="stage" style="width:300px;height:190px;padding:16px 20px;position:relative"><div class="tcorner" style="top:16px;right:20px"><span class="tw "><button class="tbtn  open" aria-label="Theme: System (light)" aria-haspopup="menu" aria-expanded="true"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></button></span><div class="tmenu " role="menu" aria-label="Theme"><div class="tlabel" role="presentation">Theme</div><div class="tmi sel " role="menuitemradio" aria-checked="true"><svg class="i " viewBox="0 0 24 24"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>System</span><svg class="i ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></div><div class="tmi  foc" role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg><span>Light</span></div><div class="tmi  " role="menuitemradio" aria-checked="false"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg><span>Dark</span></div></div></div></div></div></div></section><section class="blk" id="s5"><h2 class="sec">5 · Options compared</h2>
+<div class="cmp">
+<div class="card2 rc"><h4>A · Icon button + menu, top-right <span class="rec">Recommended</span></h4><div class="wfs"><div class="wf"><div class="sb"></div><div class="ln" style="left:40px;top:12px;width:50px"></div><div class="dot" style="right:34px;top:8px;width:30px;height:12px"></div><div class="dot" style="right:8px;top:6px;width:16px;height:16px;outline:2px dashed #1F5C4A;outline-offset:2px"></div><div class="ln" style="left:40px;top:34px;right:8px;height:50px;background:#fff;border:1px solid #E3E8E2;border-radius:4px"></div></div><div class="wf m"><div class="tb"><div class="dot" style="right:4px;top:2px;width:10px;height:10px;outline:2px dashed #1F5C4A;outline-offset:1px"></div></div><div class="tabbar"></div></div></div><ul><li>Same corner, same control, on every screen including login.</li><li>2 clicks to switch, visible without leaving the page.</li><li>The familiar pattern (docs sites, GitHub, Vercel).</li></ul></div>
+<div class="card2"><h4>B · Theme inside an account menu</h4><div class="wfs"><div class="wf"><div class="sb"><div class="ln" style="left:4px;right:4px;bottom:6px;height:8px;background:#1F5C4A"></div></div><div class="ln" style="left:40px;top:12px;width:50px"></div></div><div class="wf m"><div class="tb"></div><div class="tabbar"><div class="dot" style="right:4px;top:2px;width:10px;height:10px"></div></div></div></div><ul><li>The shell has no account menu, so we would build one for a single preference.</li><li>3 clicks and a hover submenu on desktop; hidden on login; submenus are poor on touch.</li><li>Buries the control we want people to find.</li></ul></div>
+<div class="card2"><h4>C · Better sidebar-footer control</h4><div class="wfs"><div class="wf"><div class="sb"><div class="ln" style="left:4px;right:4px;bottom:6px;height:8px;background:#1F5C4A"></div></div><div class="ln" style="left:40px;top:12px;width:50px"></div></div><div class="wf m"><div class="tb"></div><div class="tabbar"><div class="dot" style="right:4px;top:2px;width:10px;height:10px"></div></div></div></div><ul><li>Fastest on desktop (1 click) but only there.</li><li>Mobile still lives in the Account sheet, login has nothing, the rail needs a variant.</li><li>Three layouts for one setting; the footer stays crowded.</li></ul></div>
+<div class="card2"><h4>D · Icon that cycles on click</h4><div class="wfs"><div class="wf"><div class="sb"></div><div class="dot" style="right:8px;top:6px;width:16px;height:16px"></div><div class="ln" style="left:40px;top:12px;width:50px"></div></div><div class="wf m"><div class="tb"><div class="dot" style="right:4px;top:2px;width:10px;height:10px"></div></div><div class="tabbar"></div></div></div><ul><li>Same spot as A, but three clicks to reach a target and no way to see which options exist.</li><li>"System" is easy to miss, and a screen reader hears a changing value.</li><li>Rejected: A costs one more click and fixes both.</li></ul></div></div>
+<div class="doc"><table><thead><tr><th>Criterion</th><th>A · Icon + menu</th><th>B · Account menu</th><th>C · Sidebar footer</th><th>D · Cycle button</th></tr></thead><tbody>
+<tr><td>Discoverability</td><td><span class="st3 g">Strong</span> visible on every screen</td><td><span class="st3 w">Weak</span> hidden two levels deep</td><td><span class="st3 o">OK</span> desktop only, mobile in sheet</td><td><span class="st3 g">Strong</span></td></tr>
+<tr><td>Effort per switch</td><td><span class="st3 o">2 clicks</span></td><td><span class="st3 w">3 clicks</span></td><td><span class="st3 g">1 click desktop</span>, 2 taps mobile</td><td><span class="st3 o">1 to 3 clicks</span></td></tr>
+<tr><td>Same on desktop, tablet, mobile, login</td><td><span class="st3 g">Yes</span></td><td><span class="st3 w">No, no login</span></td><td><span class="st3 w">No, three layouts</span></td><td><span class="st3 g">Yes</span></td></tr>
+<tr><td>Calm shell</td><td><span class="st3 g">One 34px icon, footer simpler</span></td><td><span class="st3 o">New menu</span></td><td><span class="st3 w">Heavier footer</span></td><td><span class="st3 g">One icon</span></td></tr>
+<tr><td>Accessibility (24px, name, state, keyboard)</td><td><span class="st3 g">Menu radios announce state</span></td><td><span class="st3 o">Submenu keyboard is fiddly</span></td><td><span class="st3 g">Radiogroup, fine</span></td><td><span class="st3 w">State changes under the user</span></td></tr>
+<tr><td>Familiar convention</td><td><span class="st3 g">Yes</span></td><td><span class="st3 o">Some apps</span></td><td><span class="st3 o">Some apps</span></td><td><span class="st3 o">Some apps</span></td></tr></tbody></table></div></section><section class="blk" id="s6"><h2 class="sec">6 · Interaction spec</h2><div class="doc"><div class="cols"><div>
+<h3>Icon logic: shows the theme in effect</h3><table><thead><tr><th>Preference</th><th>Effective</th><th>Icon</th><th>aria-label</th></tr></thead><tbody>
+<tr><td>System</td><td>light (OS)</td><td><span class="iconcell"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>sun</td><td><code>Theme: System (light)</code></td></tr>
+<tr><td>System</td><td>dark (OS)</td><td><span class="iconcell d"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>moon</td><td><code>Theme: System (dark)</code></td></tr>
+<tr><td>Light</td><td>light</td><td><span class="iconcell"><svg class="i " viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg></span>sun</td><td><code>Theme: Light</code></td></tr>
+<tr><td>Dark</td><td>dark</td><td><span class="iconcell d"><svg class="i " viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg></span>moon</td><td><code>Theme: Dark</code></td></tr></tbody></table>
+<p style="margin-top:8px">The monitor icon appears only on the System row inside the menu. The trigger never shows it, so the glyph always matches what you see. Both svgs are in the markup and CSS shows one from <code>data-theme</code> or <code>prefers-color-scheme</code>, so server HTML is already right and nothing flickers. The same text appears in the tooltip (LazyTooltip, on hover and focus).</p>
+<h3>Menu semantics (Radix DropdownMenu)</h3><ul><li><code>DropdownMenu.Trigger</code> is a real <code>button</code> with the aria-label above, <code>aria-haspopup="menu"</code>, <code>aria-expanded</code>.</li><li><code>DropdownMenu.Label</code> "Theme", then <code>RadioGroup</code> with three <code>RadioItem</code>s (<code>menuitemradio</code>, <code>aria-checked</code>) and an <code>ItemIndicator</code> check.</li><li>Keys: Enter/Space/ArrowDown opens, arrows and typeahead move, Enter selects, Esc closes and returns focus to the button. Selecting closes the menu and applies at once.</li><li>Targets: 34px trigger (40px on mobile), 32px rows (44px on mobile). Focus ring is the shell's 2px accent outline.</li><li>Tab order: first control of the page's first row. On /login the email field takes focus on load.</li></ul></div>
+<div><h3>Persistence (unchanged)</h3><ul><li>Cookie <code>theme=system|light|dark</code>, 1 year, <code>SameSite=Lax; Path=/</code>, plus <code>Secure</code> in production. Zod parses it on the server.</li><li>Root layout renders <code>&lt;html data-theme&gt;</code> from the cookie (none for System). The first byte of HTML has the right tokens and <code>color-scheme</code>, so no flash and no inline script. The strict nonce CSP stays as it is.</li><li>The menu handler sets the cookie and <code>documentElement.dataset.theme</code>. No fetch, no reload.</li></ul>
+<h3>System when the OS changes</h3><ul><li>With no <code>data-theme</code>, CSS uses <code>@media (prefers-color-scheme: dark)</code>. When the OS flips (sunset, a manual change), tokens and the icon swap live, with no JS and no reload. The cookie keeps saying <code>system</code>.</li><li>The only JS: a <code>matchMedia</code> listener, mounted while the button exists, refreshes the aria-label and tooltip ("System (dark)"). Server HTML renders "Theme: System" and hydration fills in the effective theme, to avoid a mismatch.</li><li>Light or Dark explicitly chosen ignores the OS entirely.</li></ul>
+<h3>Where it lives in code</h3><p>One <code>ThemeMenu</code> in <code>components/shell</code>, rendered once by the shared page header (desktop/tablet), the mobile top bar, and the login layout. The Account sheet and sidebar footer lose their theme code. The <code>viewport.themeColor</code> pair is unchanged.</p></div></div>
+<h3>Decisions for Khubaib</h3><ol style="margin:0;padding-left:20px"><li>Approve A, or prefer C for the 1-click desktop trade?</li><li>Login: show the button (recommended) or keep the card bare?</li><li>Icon shows effective theme (recommended) or a monitor when System is selected?</li><li>Still open from before: lift "light mode only" in AGENTS.md and DESIGN.md.</li></ol></div></section></body></html>
