@@ -12,6 +12,7 @@ import type { ReactNode } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { usePathname, useRouter } from 'next/navigation';
 import { useForm, useWatch } from 'react-hook-form';
+import '@/lib/contracts/zod-config';
 import { z } from 'zod';
 import type { Resolver, SubmitHandler } from 'react-hook-form';
 
