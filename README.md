@@ -7,6 +7,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
 - App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
+- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22. The filters panel is T15.
 - Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` in T22. `/dev/auth` shows every state with canned results (404 in production).
 - Contact detail is done (T16): `/contacts/[id]` (`app/(app)/contacts/[id]`, `features/contacts/detail`). Breadcrumb, header (status, matter, "Enquired Nov 12 · waiting 4d", **Move to…**, **Edit**, a 44px **Call** button below 768px), Follow-up card (**Reschedule** saves on pick; Clear removes the date), Details, Notes and the Activity timeline. `loading.tsx` mirrors the layout, `error.tsx` retries with `retry()`, and `not-found.tsx` reads "This contact doesn't exist." with Back to contacts (it also serves `/contacts/[id]/edit`).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
@@ -83,7 +84,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 - `checks`: format check, typecheck, lint (including the colour-literal check), unit tests, build.
 - `integration-e2e`: local Supabase (CLI 3.2), `db reset`, seed when `scripts/seed.ts` exists, integration tests, and e2e when `tests/e2e` exists.
-- `checks` also runs `pnpm size` after the build: gzipped first-load JS per route (root chunks plus the chunks in each route's client-reference manifest) must stay at or under 220 kB. `/dev/*` is exempt. Shell routes are about 173 kB, `/` about 164 kB; the Next runtime alone is about 131 kB. Anything heavy that isn't needed on first paint is lazy (every tooltip, the mobile Account sheet).
+- `checks` also runs `pnpm size` after the build: gzipped first-load JS per route (root chunks plus the chunks in each route's client-reference manifest) must stay at or under 220 kB. `/dev/*` is exempt. Shell routes are about 179 kB, `/contacts` about 215 kB, `/` about 169 kB; the Next runtime alone is about 131 kB. Anything heavy that isn't needed on first paint is lazy (every tooltip, the mobile Account sheet).
 - `gitleaks`: secret scan of each PR's or push's commits.
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
@@ -111,6 +112,17 @@ Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variabl
 - `docs/DECISIONS.md` and `docs/adr/`: decisions and ADRs
 - `DESIGN.md`: design system
 - `AGENTS.md`: rules for agents and contributors
+
+## Contacts list
+
+`/contacts` is a Server Component: it parses the URL with `loadListQuery`, fetches rows and facet counts in parallel, and redirects a stale `?page=` to the last page. Bad params fall back to defaults.
+
+- **URL is the state.** Search, filters, sort, page and page size live in the query string (nuqs, `useListQuery`), so a list can be shared, refreshed and walked with back and forward. Any change except the page itself resets to page 1. Search updates the box at once and the URL 250ms after the last key, so only the final query reaches the server.
+- **Toolbar:** search (Esc clears), the Filters button with an applied-group count, quick views (All, Overdue, Due today) as links with live counts, removable chips (focus moves to the next chip, then the Filters button), and a Sort menu below 768px.
+- **Table** (768px and up): TanStack Table in manual mode with TanStack Virtual (36px rows, overscan 12) inside real `<table>` markup with `aria-rowcount` and `aria-rowindex`. Sortable headers are buttons inside `th[aria-sort]`. Columns are fixed width, so long names and emails truncate with a `title` tooltip and never widen the table; Name stays pinned when the table scrolls sideways. Changing page scrolls to the top and focuses the table caption.
+- **Cards** (below 768px): name and follow-up, then matter, status and a `tel:` link. `content-visibility: auto` keeps 500 cards cheap without virtualizing.
+- **States:** a table-shaped `loading.tsx`; while the next rows load the old ones stay at full contrast, the list is `aria-busy` and a thin accent bar runs along its top edge; first-run and filtered empty states (the filtered one lists what's applied and offers Clear filters); `error.tsx` names the reason class, keeps the filters and retries the segment with Next's `retry()`.
+- **Budget:** about 215 kB gzipped first-load JS. Date labels are computed on the server, zod stays off the client, and the sort menu loads lazily.
 
 ## RBAC in the UI
 
