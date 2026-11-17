@@ -90,7 +90,7 @@ export function Pagination({
     );
 
   return (
-    <div className="text-13 text-ink-2 tnum flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div className="text-13 text-ink-2 tnum flex flex-wrap items-center gap-x-4 gap-y-2 max-md:justify-between">
       <span>
         {fmt(from)}–{fmt(to)} of {fmt(matching)}
       </span>
@@ -116,8 +116,11 @@ export function Pagination({
         />
       </label>
       {last > 1 && (
-        <nav aria-label="Pagination" className="ml-auto">
-          <ul className="m-0 flex list-none items-center gap-0.5 p-0">
+        <nav
+          aria-label="Pagination"
+          className="ml-auto max-md:ml-0 max-md:w-full"
+        >
+          <ul className="m-0 flex list-none items-center gap-0.5 p-0 max-md:justify-center">
             <li>{step(page - 1, 'Previous page', ChevronLeft)}</li>
             {pageItems(page, last).map((p, i) => (
               <li key={p === '…' ? `gap-${i}` : p}>
@@ -133,7 +136,7 @@ export function Pagination({
                     className={cn(
                       item,
                       p === page
-                        ? 'bg-accent text-on-accent font-semibold'
+                        ? 'bg-accent text-on-accent font-semibold forced-colors:bg-[Highlight] forced-colors:text-[HighlightText] forced-colors:forced-color-adjust-none'
                         : 'hover:bg-track',
                     )}
                   >

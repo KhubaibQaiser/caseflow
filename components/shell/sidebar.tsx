@@ -32,7 +32,7 @@ export function Sidebar({ signOut }: { signOut: SignOut }) {
             <Link
               href={href}
               aria-current={isCurrent(pathname, href) ? 'page' : undefined}
-              className="rounded-ctl text-ink-2 hover:bg-canvas hover:text-ink aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent flex h-8.5 items-center gap-2.5 px-2.5 text-sm font-medium no-underline transition-colors duration-150 aria-[current=page]:font-semibold max-lg:justify-center max-lg:px-0"
+              className="rounded-ctl text-ink-2 hover:bg-canvas hover:text-ink aria-[current=page]:bg-accent-soft aria-[current=page]:text-accent flex h-8.5 items-center gap-2.5 px-2.5 text-sm font-medium no-underline transition-colors duration-150 aria-[current=page]:font-semibold max-lg:justify-center max-lg:px-0 forced-colors:aria-[current=page]:bg-[Highlight] forced-colors:aria-[current=page]:text-[HighlightText] forced-colors:aria-[current=page]:forced-color-adjust-none"
             >
               <Icon aria-hidden className="size-4 shrink-0" />
               <span className="max-lg:sr-only">{label}</span>

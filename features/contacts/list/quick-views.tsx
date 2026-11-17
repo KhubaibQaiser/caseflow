@@ -56,7 +56,7 @@ export function QuickViews({
                   setQuery(patch);
                 }}
                 // The checked segment's ink-2 outline is deliberate: it gives the state 3:1 non-text contrast (WCAG 1.4.11).
-                className="text-13 text-ink-2 hover:text-ink aria-[current=true]:border-ink-2 aria-[current=true]:bg-surface aria-[current=true]:text-ink aria-[current=true]:shadow-raised rounded-ctl flex min-h-7 items-center gap-1.5 border border-transparent px-2.5 font-medium whitespace-nowrap no-underline transition-colors duration-150 forced-colors:aria-[current=true]:border-[Highlight]"
+                className="text-13 text-ink-2 hover:text-ink aria-[current=true]:border-ink-2 aria-[current=true]:bg-surface aria-[current=true]:text-ink aria-[current=true]:shadow-raised rounded-ctl flex min-h-7 items-center gap-1.5 border border-transparent px-2.5 font-medium whitespace-nowrap no-underline transition-colors duration-150 forced-colors:aria-[current=true]:border-[Highlight] forced-colors:aria-[current=true]:bg-[Highlight] forced-colors:aria-[current=true]:text-[HighlightText] forced-colors:aria-[current=true]:forced-color-adjust-none"
               >
                 {v.label}
                 {n !== undefined && ' '}

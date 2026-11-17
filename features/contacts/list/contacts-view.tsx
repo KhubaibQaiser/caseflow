@@ -104,11 +104,14 @@ function Results({
                   matching={matching}
                 />
               </BusyRegion>
-              <Pagination
-                page={query.page}
-                pageSize={query.size}
-                matching={matching}
-              />
+              {/* Clear of the open panel, which would otherwise cover the pager. */}
+              <div className={cn(panel.open && 'lg:pr-58')}>
+                <Pagination
+                  page={query.page}
+                  pageSize={query.size}
+                  matching={matching}
+                />
+              </div>
             </>
           )}
           {panel.mounted && (
