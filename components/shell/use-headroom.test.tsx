@@ -41,13 +41,30 @@ describe('headroomStep', () => {
 describe('Headroom', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  const mount = (reduced: boolean) => {
-    vi.stubGlobal('matchMedia', (q: string) => ({
-      matches: reduced && q.includes('reduce'),
-      media: q,
-      addEventListener() {},
+  let widen: () => void = () => {};
+  const mount = (reduced: boolean, wide = false) => {
+    Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+    const wideMq = {
+      matches: wide,
+      media: '(min-width: 768px)',
+      addEventListener: (_: string, cb: () => void) => {
+        widen = () => {
+          wideMq.matches = true;
+          cb();
+        };
+      },
       removeEventListener() {},
-    }));
+    };
+    vi.stubGlobal('matchMedia', (q: string) =>
+      q.includes('min-width')
+        ? wideMq
+        : {
+            matches: reduced && q.includes('reduce'),
+            media: q,
+            addEventListener() {},
+            removeEventListener() {},
+          },
+    );
     vi.stubGlobal('requestAnimationFrame', (cb: FrameRequestCallback) => {
       cb(0);
       return 0;
@@ -88,5 +105,33 @@ describe('Headroom', () => {
     el.querySelector('input')!.focus();
     scrollTo(400);
     expect(el).not.toHaveAttribute('inert');
+  });
+
+  it('never hides at md and up', () => {
+    const el = mount(false, true);
+    scrollTo(400);
+    expect(el).not.toHaveAttribute('inert');
+    expect(el).not.toHaveAttribute('aria-hidden');
+  });
+
+  it('comes back when the window widens while hidden', () => {
+    const el = mount(false);
+    scrollTo(400);
+    expect(el).toHaveAttribute('inert');
+    act(() => widen());
+    expect(el).not.toHaveAttribute('inert');
+    scrollTo(500);
+    expect(el).not.toHaveAttribute('inert');
+  });
+
+  it('ignores a closed menu left in the page', () => {
+    const el = mount(false);
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      '<div role="menu" data-state="closed"></div>',
+    );
+    scrollTo(400);
+    expect(el).toHaveAttribute('inert');
+    document.querySelector('[role="menu"]')!.remove();
   });
 });

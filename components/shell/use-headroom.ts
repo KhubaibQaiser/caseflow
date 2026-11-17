@@ -26,7 +26,8 @@ export function headroomStep(
 }
 
 // A menu or sheet is open anywhere on the page.
-const OPEN_LAYER = '[role="menu"],[role="dialog"]';
+const OPEN_LAYER =
+  '[role="menu"][data-state="open"],[role="dialog"][data-state="open"]';
 
 /**
  * Hides `el` as the page scrolls down and brings it back on scroll up. Passive, one rAF per burst of events.
@@ -56,6 +57,8 @@ export function useHeadroom(
       peak: window.scrollY,
       lastY: window.scrollY,
     };
+    // Only a phone-width layout has a floating subheader; from md up nothing may hide.
+    const wide = window.matchMedia('(min-width: 768px)');
     let frame = 0;
     let keyboardUntil = 0;
     const update = () => {
@@ -68,6 +71,7 @@ export function useHeadroom(
         max > 0 ? Math.min(window.scrollY, max) : window.scrollY,
       );
       const hold =
+        wide.matches ||
         node.contains(document.activeElement) ||
         document.querySelector(OPEN_LAYER) !== null ||
         Date.now() < keyboardUntil;
@@ -82,10 +86,17 @@ export function useHeadroom(
     const onResize = () => {
       keyboardUntil = Date.now() + 400;
     };
+    // A rotate or resize while hidden: show again, and start over from where the page is.
+    const onWide = () => {
+      state = { hidden: false, peak: window.scrollY, lastY: window.scrollY };
+      setHidden(false);
+    };
+    wide.addEventListener('change', onWide);
     window.addEventListener('scroll', onScroll, { passive: true });
     window.visualViewport?.addEventListener('resize', onResize);
     return () => {
       cancelAnimationFrame(frame);
+      wide.removeEventListener('change', onWide);
       window.removeEventListener('scroll', onScroll);
       window.visualViewport?.removeEventListener('resize', onResize);
     };
