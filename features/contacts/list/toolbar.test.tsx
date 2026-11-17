@@ -1,18 +1,53 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { useRef } from 'react';
+import type { ReactNode } from 'react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { ListTransition } from '../url-state';
+import { useFiltersPanel } from '../filters/use-filters-panel';
+import { ListTransition, useListQuery } from '../url-state';
 import { FACETS, VIEWER, wrapper } from './test-utils';
 import { Toolbar } from './toolbar';
+
+afterEach(() => vi.unstubAllGlobals());
 
 const lastUrl = (spy: ReturnType<typeof vi.fn>) =>
   spy.mock.calls.at(-1)![0].searchParams as URLSearchParams;
 
-function renderToolbar(opts: Parameters<typeof wrapper>[0] = {}) {
+function WithPanel() {
+  const filtersButton = useRef<HTMLButtonElement>(null);
+  const panel = useFiltersPanel(false, filtersButton);
+  return (
+    <Toolbar
+      facets={FACETS}
+      isPending={false}
+      panel={panel}
+      filtersButton={filtersButton}
+    />
+  );
+}
+
+function renderToolbar(
+  opts: Parameters<typeof wrapper>[0] = {},
+  extra?: ReactNode,
+) {
+  // matchMedia is absent in jsdom; the panel hook reads it.
+  vi.stubGlobal('matchMedia', (media: string) => ({
+    matches: true,
+    media,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }));
   return render(
     <ListTransition>
-      <Toolbar facets={FACETS} isPending={false} />
+      <WithPanel />
+      {extra}
     </ListTransition>,
     { wrapper: wrapper(opts) },
   );
@@ -28,23 +63,88 @@ describe('Toolbar search', () => {
       screen.getByRole('searchbox', { name: 'Search contacts' }),
       'ana',
     );
-    // nuqs debounces each key on its own timer, so q and page can land a tick apart on a slow runner.
-    await waitFor(() => {
-      expect(lastUrl(onUrlUpdate).get('q')).toBe('ana');
-      expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
-    });
+    // One write carries both q and the page reset: never `?q=ana&page=5` first.
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalledTimes(1));
+    expect(lastUrl(onUrlUpdate).get('q')).toBe('ana');
+    expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
     expect(lastUrl(onUrlUpdate).get('sort')).toBe('name');
   });
 
-  it('rapid typing sends only the final query, after the 250ms debounce', async () => {
+  it('typing several characters from page 5 writes the URL exactly once', async () => {
     const user = userEvent.setup();
     const onUrlUpdate = vi.fn();
-    renderToolbar({ onUrlUpdate, rateLimitFactor: 1 });
+    renderToolbar({ searchParams: '?page=5', onUrlUpdate, rateLimitFactor: 1 });
 
     await user.type(screen.getByRole('searchbox'), 'kessler');
-    expect(onUrlUpdate).not.toHaveBeenCalled();
-    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    // Let any straggling timer fire before counting.
+    await new Promise((r) => setTimeout(r, 400));
+    expect(onUrlUpdate).toHaveBeenCalledTimes(1);
     expect(lastUrl(onUrlUpdate).get('q')).toBe('kessler');
+    expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
+  });
+
+  it('never writes q with a stale page, even when timers fire one at a time', () => {
+    vi.useFakeTimers();
+    try {
+      const onUrlUpdate = vi.fn();
+      renderToolbar({
+        searchParams: '?page=5',
+        onUrlUpdate,
+        rateLimitFactor: 1,
+      });
+      const box = screen.getByRole('searchbox');
+      fireEvent.change(box, { target: { value: 'k' } });
+      fireEvent.change(box, { target: { value: 'ke' } });
+      // A slow machine runs nuqs's per-key timers a tick apart; step through them singly.
+      for (let i = 0; i < 6; i++) act(() => void vi.advanceTimersToNextTimer());
+      for (const [update] of onUrlUpdate.mock.calls) {
+        const url = update.searchParams as URLSearchParams;
+        expect(url.get('q') === 'ke' && url.get('page') === '5').toBe(false);
+      }
+      expect(onUrlUpdate).toHaveBeenCalledTimes(1);
+      expect(lastUrl(onUrlUpdate).get('q')).toBe('ke');
+      expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('holds q and the page together until the debounce ends (one commit, not per-key)', () => {
+    vi.useFakeTimers();
+    try {
+      function Probe() {
+        const [q] = useListQuery();
+        return <output aria-label="url q">{q.q ?? ''}</output>;
+      }
+      renderToolbar({ searchParams: '?page=5' }, <Probe />);
+      const box = screen.getByRole('searchbox');
+      fireEvent.change(box, { target: { value: 'ke' } });
+      act(() => void vi.advanceTimersByTime(200));
+      expect(box).toHaveValue('ke');
+      expect(screen.getByLabelText('url q')).toHaveTextContent('');
+      act(() => void vi.advanceTimersByTime(100));
+      expect(screen.getByLabelText('url q')).toHaveTextContent('ke');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('the box follows q when the URL changes from outside', async () => {
+    const user = userEvent.setup();
+    function Outside() {
+      const [, setQuery] = useListQuery();
+      return (
+        <button type="button" onClick={() => setQuery({ q: 'zed' })}>
+          Outside
+        </button>
+      );
+    }
+    renderToolbar({ searchParams: '?q=ortega' }, <Outside />);
+    const box = screen.getByRole('searchbox');
+    expect(box).toHaveValue('ortega');
+    await user.click(screen.getByRole('button', { name: 'Outside' }));
+    await waitFor(() => expect(box).toHaveValue('zed'));
   });
 
   it('Esc clears the search', async () => {
@@ -128,6 +228,28 @@ describe('Toolbar filters', () => {
       searchParams: '?fu=custom&fuFrom=2026-11-03&fuTo=2026-11-20',
     });
     expect(screen.getByText('Nov 3, 2026 – Nov 20, 2026')).toBeInTheDocument();
+  });
+});
+
+describe('Toolbar without a panel (error screen)', () => {
+  it('keeps the Filters button but says why it cannot open yet', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('matchMedia', (media: string) => ({
+      matches: true,
+      media,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    function Bare() {
+      const ref = useRef<HTMLButtonElement>(null);
+      return <Toolbar isPending={false} filtersButton={ref} />;
+    }
+    render(<Bare />, { wrapper: wrapper({ searchParams: '?status=lead' }) });
+    const button = screen.getByRole('button', { name: 'Filters, 1 applied' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    await user.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 });
 

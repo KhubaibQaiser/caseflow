@@ -176,6 +176,66 @@ test('keyboard reaches toolbar, headers and rows in order', async ({
   ).toBeFocused();
 });
 
+test('the filters panel applies once, resets the page, remembers it is open and passes axe', async ({
+  page,
+}) => {
+  await page.goto('/contacts?page=2');
+  const button = page.getByRole('button', { name: /^Filters/ });
+  await page.waitForLoadState('networkidle');
+  await button.click();
+  const panel = page.getByRole('complementary', { name: 'Filters' });
+  await expect(panel).toBeFocused();
+  await expect(button).toHaveAttribute('aria-expanded', 'true');
+  await expect(panel.getByRole('checkbox', { name: /^Lead / })).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]);
+
+  // Nothing reaches the URL until Apply.
+  await panel.getByRole('checkbox', { name: /^Lead / }).check();
+  await panel.getByRole('checkbox', { name: /^Active / }).check();
+  await expect(page).toHaveURL(/page=2/);
+  await panel.getByRole('button', { name: 'Apply' }).dblclick();
+  await expect(page).toHaveURL(/\/contacts\?status=lead,active$/);
+  await expect(panel).toBeHidden();
+  await expect(button).toBeFocused();
+  await settled(page);
+  const pills = await table(page)
+    .locator('tbody td:nth-child(3)')
+    .allTextContents();
+  expect(pills.length).toBeGreaterThan(0);
+  for (const p of pills) expect(p).not.toMatch(/Closed/);
+
+  // Left open, it is open on the next load (cookie); Esc discards and returns to the button.
+  await button.click();
+  await page.reload();
+  await expect(panel).toBeVisible();
+  await panel.getByRole('checkbox', { name: /^Closed / }).check();
+  await page.keyboard.press('Escape');
+  await expect(panel).toBeHidden();
+  await expect(button).toBeFocused();
+  await expect(page).toHaveURL(/status=lead,active$/);
+});
+
+test('the filters sheet opens on a phone, traps focus and applies @mobile', async ({
+  page,
+}) => {
+  await page.goto('/contacts');
+  await page.waitForLoadState('networkidle');
+  const button = page.getByRole('button', { name: 'Filters' });
+  await expect(button).toHaveAttribute('aria-expanded', 'false');
+  await button.click();
+  const sheet = page.getByRole('dialog', { name: /^Filters/ });
+  await expect(sheet).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]);
+
+  await sheet.getByRole('checkbox', { name: /^Closed / }).check();
+  await sheet.getByRole('button', { name: 'Apply' }).click();
+  await expect(page).toHaveURL(/status=closed/);
+  await expect(sheet).toBeHidden();
+  await expect(
+    page.getByRole('button', { name: 'Filters, 1 applied' }),
+  ).toBeFocused();
+});
+
 test('a viewer gets the list without New contact', async ({
   page,
   context,

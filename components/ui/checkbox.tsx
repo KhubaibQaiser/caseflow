@@ -34,7 +34,7 @@ export function Checkbox({ label, count, className, ...props }: CheckboxProps) {
           className="text-on-accent pointer-events-none absolute hidden size-3 peer-checked:block forced-colors:text-[HighlightText] forced-colors:forced-color-adjust-none"
         />
       </span>
-      {label}
+      {label}{' '}
       {count !== undefined && (
         <span className="tnum text-ink-2 ml-auto">
           {count.toLocaleString('en-US')}
