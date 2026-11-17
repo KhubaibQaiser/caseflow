@@ -6,7 +6,7 @@ import Check from 'lucide-react/icons/check';
 
 import { cn } from '@/utils/cn';
 
-import { floatingClass } from './popover';
+import { floatingClass } from './floating';
 
 // Non-modal, like the WAI-ARIA menu button: no aria-hidden over the page (axe aria-hidden-focus) and no scroll lock.
 export function DropdownMenu({
