@@ -109,6 +109,15 @@ What `deploy.yml` does, in order:
 
 `keep-alive.yml` pings Supabase daily so the project does not pause.
 
+## Security
+
+- **XSS:** React escapes every value; there is no `innerHTML` or `dangerouslySetInnerHTML`. Rich text, when it lands, is stored and rendered through an allowlist of nodes and marks, never raw HTML.
+- **CSRF:** every write is a Server Action, which is a POST that Next checks against the `Origin` header. Session cookies are HttpOnly and SameSite=Lax (Secure in production), so a cross-site request carries no session on a POST.
+- **CSP:** `proxy.ts` sets a strict, nonce-based policy on every response (`lib/security/csp.ts`): scripts only from `'self'` plus the per-request nonce (`'strict-dynamic'`), `connect-src 'self'` (the browser never talks to Supabase), no framing, no plugins, `form-action 'self'`, and `upgrade-insecure-requests` in production. Styles allow `'unsafe-inline'`, because sonner and Radix's scroll lock inject `<style>` at runtime with no nonce hook and React renders `style=""` attributes; scripts stay strict. The root layout awaits `connection()`, so every route renders per request and can carry a nonce. Zod runs `jitless` so its `new Function` probe doesn't raise a violation.
+- **Headers** (`next.config.ts`): `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy` (camera, microphone, geolocation and more denied), `Cross-Origin-Opener-Policy: same-origin`, HSTS (two years, preload) in production only, and no `X-Powered-By`.
+- **Auth layers:** the proxy checks sign-in, `requirePermission` and `assertPermission` check the role on the server, Postgres RLS is the real enforcement, and `usePermission` only shapes the UI.
+- `tests/e2e/csp.spec.ts` loads the main screens and fails on any CSP violation or console error.
+
 ## Docs
 
 - `docs/SPEC.md`: the binding spec
