@@ -30,6 +30,8 @@ A legal-intake mini CRM. Track every prospective client, a **contact**, from fir
 
 **A Move menu instead of drag and drop.** Dragging alone fails WCAG 2.2 (2.5.7). It's awkward on phones and with a keyboard. Cards are ordered by urgency, so there's no manual order to drag into. The cost is one extra click for mouse users. Other decisions are in [`docs/adr/`](docs/adr/README.md).
 
+**Phone migration assumptions:** existing bare 10-digit numbers became US (+1), and text around a number such as "(cell)" was dropped. Safe for the all-US data it ran on.
+
 ## With more time
 
 - **Real-time concurrency.** Edits are already version-checked. Next: version-check moves too, and stream changes over Server-Sent Events (Postgres `LISTEN`), so open screens update live ([ADR-0011](docs/adr/0011-concurrent-edits-and-change-feed.md)).

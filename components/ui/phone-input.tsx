@@ -223,6 +223,7 @@ function CountryButton({
         <div className="border-line border-b p-2">
           <input
             role="combobox"
+            aria-autocomplete="list"
             aria-expanded
             aria-controls={list}
             aria-activedescendant={current && `${list}-${current.code}`}
@@ -264,7 +265,14 @@ function CountryButton({
             </li>
           ))}
           {shown.length === 0 && (
-            <li className="text-13 text-ink-2 px-2.5 py-2">No country found</li>
+            <li
+              role="option"
+              aria-disabled="true"
+              aria-selected="false"
+              className="text-13 text-ink-2 px-2.5 py-2"
+            >
+              No country found
+            </li>
           )}
         </ul>
       </PopoverContent>

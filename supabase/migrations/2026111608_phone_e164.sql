@@ -1,4 +1,6 @@
 -- Phones are stored as E.164 (+15125550148). phone_digits is generated from phone, so search by digits keeps working.
+-- Assumptions: a bare 10-digit number is treated as US (+1), and text around a number such as "(cell)" is dropped
+-- (non-digits are stripped). Safe for the current all-US data. The helpers below exist only for this one-off pass and are dropped.
 create function public.phone_to_e164(p text)
 returns text
 language sql immutable
@@ -33,6 +35,8 @@ revoke execute on function public.normalize_contact_phones() from public, anon, 
 grant execute on function public.normalize_contact_phones() to service_role;
 
 select public.normalize_contact_phones();
+drop function public.normalize_contact_phones();
+drop function public.phone_to_e164(text);
 
 -- seed_firm: phones are written as E.164.
 create or replace function public.seed_firm(n int default 2500, actor uuid default null)

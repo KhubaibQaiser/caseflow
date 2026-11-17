@@ -1,5 +1,28 @@
+import { execFileSync } from 'node:child_process';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { adminClient, resetData, rpc, serviceClient } from './setup';
+
+// Re-runs the migration file (its helpers drop themselves; seed_firm is create-or-replace) so its effect on rows is tested.
+function runMigration() {
+  const env = execFileSync('supabase', ['status', '-o', 'env'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+  const url = /^DB_URL="?(.*?)"?$/m.exec(env)?.[1];
+  if (!url) throw new Error('no DB_URL');
+  execFileSync(
+    'psql',
+    [
+      url,
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-q',
+      '-f',
+      'supabase/migrations/2026111608_phone_e164.sql',
+    ],
+    { stdio: 'ignore' },
+  );
+}
 
 async function add(full_name: string, phone: string | null): Promise<void> {
   const { error } = await serviceClient().rpc('seed_insert_contact', {
@@ -31,10 +54,7 @@ describe('phone numbers as E.164', () => {
     await add('H none', null);
     const before = await phones();
 
-    const changed = await rpc<number>(
-      serviceClient(),
-      'normalize_contact_phones',
-    );
+    runMigration();
     const after = await phones();
 
     expect(after.map((r) => r.phone)).toEqual([
@@ -47,7 +67,6 @@ describe('phone numbers as E.164', () => {
       'ext 5',
       null,
     ]);
-    expect(changed).toBe(4);
     // Rows left as they were: not E.164 after the pass.
     expect(
       after.filter((r) => r.phone && !/^\+\d+$/.test(r.phone)),
@@ -56,10 +75,9 @@ describe('phone numbers as E.164', () => {
     expect(after.map((r) => r.updated_at)).toEqual(
       before.map((r) => r.updated_at),
     );
-    // Running it again changes nothing.
-    expect(await rpc<number>(serviceClient(), 'normalize_contact_phones')).toBe(
-      0,
-    );
+    // The privileged helper does not stay behind.
+    const gone = await serviceClient().rpc('normalize_contact_phones');
+    expect(gone.error).not.toBeNull();
   });
 
   it('keeps phone_digits, so search by digits still finds E.164 numbers', async () => {
