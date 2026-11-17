@@ -31,6 +31,8 @@ type FieldProps = {
   id: string;
   label: string;
   required?: boolean;
+  /** A note in the required slot when the rule is conditional (e.g. "required if no phone"); does not set aria-required. */
+  requiredNote?: string;
   hint?: ReactNode;
   error?: string;
   children: ReactNode;
@@ -40,6 +42,7 @@ export function Field({
   id,
   label,
   required = false,
+  requiredNote,
   hint,
   error,
   children,
@@ -51,12 +54,12 @@ export function Field({
     <div className="flex flex-col gap-1.5">
       <label htmlFor={id} className="text-13 text-ink font-semibold">
         {label}
-        {required && (
+        {(required || requiredNote) && (
           <span
             aria-hidden="true"
             className="text-ink-2 ml-1.5 text-xs font-medium"
           >
-            Required
+            {required ? 'required' : requiredNote}
           </span>
         )}
       </label>
