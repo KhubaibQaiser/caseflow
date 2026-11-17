@@ -18,14 +18,17 @@ export function PageSizeMenu({
   from,
   to,
   matching,
+  defaultOpen = false,
 }: {
   from: number;
   to: number;
   matching: number;
+  /** Set when the stand-in was clicked while this code was loading. */
+  defaultOpen?: boolean;
 }) {
   const [query, setQuery] = useListQuery();
   return (
-    <DropdownMenu>
+    <DropdownMenu defaultOpen={defaultOpen}>
       <DropdownMenuTrigger asChild>
         <CountButton from={from} to={to} matching={matching} />
       </DropdownMenuTrigger>

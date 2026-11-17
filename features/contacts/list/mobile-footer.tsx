@@ -2,7 +2,7 @@
 
 import ChevronLeft from 'lucide-react/icons/chevron-left';
 import ChevronRight from 'lucide-react/icons/chevron-right';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useState } from 'react';
 
 import { footerBar } from '@/components/shell/footer-bar';
 import { cn } from '@/utils/cn';
@@ -10,8 +10,9 @@ import { cn } from '@/utils/cn';
 import { CountButton } from './count-button';
 import { usePageLink } from './pagination';
 
+const loadMenu = () => import('./page-size-menu');
 const PageSizeMenu = lazy(() =>
-  import('./page-size-menu').then((m) => ({ default: m.PageSizeMenu })),
+  loadMenu().then((m) => ({ default: m.PageSizeMenu })),
 );
 
 const arrow =
@@ -28,6 +29,8 @@ export function MobileFooter({
   matching: number;
 }) {
   const link = usePageLink();
+  // A tap on the stand-in, before the menu code arrives, opens the menu as soon as it mounts.
+  const [wantOpen, setWantOpen] = useState(false);
   const last = Math.max(1, Math.ceil(matching / pageSize));
   const from = Math.min((page - 1) * pageSize + 1, matching);
   const to = Math.min(page * pageSize, matching);
@@ -54,9 +57,23 @@ export function MobileFooter({
       )}
     >
       <Suspense
-        fallback={<CountButton from={from} to={to} matching={matching} />}
+        fallback={
+          <CountButton
+            from={from}
+            to={to}
+            matching={matching}
+            onPointerDown={() => void loadMenu()}
+            onFocus={() => void loadMenu()}
+            onClick={() => setWantOpen(true)}
+          />
+        }
       >
-        <PageSizeMenu from={from} to={to} matching={matching} />
+        <PageSizeMenu
+          from={from}
+          to={to}
+          matching={matching}
+          defaultOpen={wantOpen}
+        />
       </Suspense>
       {last > 1 && (
         <nav aria-label="Pagination" className="flex items-center gap-1">
