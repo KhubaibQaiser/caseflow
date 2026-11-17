@@ -45,7 +45,7 @@ A client-intake CRM for a law firm. Each prospective client is a **contact** wit
 ## UI/UX decisions
 
 - **Urgency first.** Default sort: overdue, due today, soonest follow-up, none. Warm colour is reserved for urgency, and it is always written as text too.
-- **Dense and calm.** 36px rows, one accent, no decoration, built for someone working a queue all day. Light and dark themes, System by default.
+- **Dense and calm.** 36px rows (phone and email are tap-to-call and tap-to-mail links), one accent, no decoration, built for someone working a queue all day. Light and dark themes, System by default.
 - **Filters draft, then apply,** with live counts per option, so the list never jumps mid-query. Search clears with × or Esc.
 - **One account menu.** The sidebar ends in "Name · Role" (an initials avatar on the tablet rail) that opens a menu with Sign out.
 - **Every state is designed:** skeletons that match the loaded layout (also while a filter, sort or page reloads), filtered and first-run empty states, errors with Retry, 404 and 403. Viewers see disabled controls that say why.
