@@ -1,6 +1,6 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { ContactRow } from '@/lib/contracts/contact';
 import { ok, type Result } from '@/lib/contracts/result';
@@ -92,5 +92,86 @@ describe('MoveMenu', () => {
 
     await user.keyboard('{Enter}');
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+
+  it('announces a menu button before the menu code loads', () => {
+    render(<MoveMenu current="lead" onMove={vi.fn()} />);
+    expect(trigger()).toHaveAttribute('aria-haspopup', 'menu');
+    expect(trigger()).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('clears pending when onMove rejects, with nothing unhandled', async () => {
+    const user = userEvent.setup();
+    const unhandled = vi.fn();
+    process.on('unhandledRejection', unhandled);
+    const onMove = vi.fn().mockRejectedValue(new Error('network'));
+    render(<MoveMenu current="lead" onMove={onMove} />);
+    await user.click(trigger());
+    await user.click(await screen.findByRole('menuitem', { name: 'Active' }));
+
+    expect(
+      await screen.findByRole('button', { name: 'Move to…' }),
+    ).toBeEnabled();
+    await new Promise((r) => setTimeout(r, 0));
+    process.off('unhandledRejection', unhandled);
+    expect(unhandled).not.toHaveBeenCalled();
+  });
+
+  it('stays usable after a failed Result', async () => {
+    const user = userEvent.setup();
+    const onMove = vi.fn().mockResolvedValue({
+      ok: false,
+      error: { code: 'server', message: 'x' },
+    });
+    render(<MoveMenu current="lead" onMove={onMove} />);
+    await user.click(trigger());
+    await user.click(await screen.findByRole('menuitem', { name: 'Active' }));
+    expect(
+      await screen.findByRole('button', { name: 'Move to…' }),
+    ).toBeEnabled();
+
+    await user.click(trigger());
+    expect(
+      await screen.findByRole('menuitem', { name: 'Closed' }),
+    ).toBeVisible();
+  });
+
+  it('returns focus to the trigger after a select and after Escape', async () => {
+    const user = userEvent.setup();
+    const onMove = vi.fn().mockResolvedValue(ok(contact()));
+    render(<MoveMenu current="lead" onMove={onMove} />);
+    await user.click(trigger());
+    await user.keyboard('{Escape}');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(trigger()).toHaveFocus();
+
+    await user.click(trigger());
+    await user.click(await screen.findByRole('menuitem', { name: 'Active' }));
+    expect(
+      await screen.findByRole('button', { name: 'Move to…' }),
+    ).toHaveFocus();
+  });
+
+  it('opens with Space', async () => {
+    const user = userEvent.setup();
+    render(<MoveMenu current="lead" onMove={vi.fn()} />);
+    await user.tab();
+    await user.keyboard(' ');
+    expect(
+      await screen.findByRole('menuitem', { name: 'Active' }),
+    ).toHaveFocus();
+  });
+
+  it('calls onMove once for two selects in one tick', async () => {
+    const user = userEvent.setup();
+    const onMove = vi.fn(() => new Promise<Result<ContactRow>>(() => {}));
+    render(<MoveMenu current="lead" onMove={onMove} />);
+    await user.click(trigger());
+    const items = await screen.findAllByRole('menuitem');
+    act(() => {
+      items[0]!.click();
+      items[1]!.click();
+    });
+    expect(onMove).toHaveBeenCalledTimes(1);
   });
 });
