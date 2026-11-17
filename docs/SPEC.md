@@ -1,6 +1,6 @@
 # Caseflow: Mini CRM for legal intake. Design spec
 
-Status: **draft for approval** · Date: 2026-11-16 · Owner: Khubaib (decides) · Author: Claude (proposes)
+Status: **as built (v1)** · Date: 2026-11-17 · Owner: Khubaib · Drafted with Claude Code
 
 Companion files: `PRODUCT.md` (product truth, Impeccable), `docs/BRIEF.md` (the case study, verbatim), `docs/DECISIONS.md` (decision log), `docs/adr/` (architecture decisions), `design/mockups/direction-c-v5.html` + `design/mockups/screens-v1.html` (approved visual direction).
 
@@ -81,7 +81,7 @@ Every row was decided by Khubaib in the spec interview, unless it is marked *(Cl
 | 18 | Visual direction | **C v5, "Intake Desk", refined:** sage, Figtree only, 36px rows, neutral status pills, warm colours only for urgency, left nav, right filters panel, bottom tab bar on mobile. Critiqued with Impeccable (25/40 before the fixes; contrast findings cleared after). | A "Counsel" (letterhead serif); B "Docket" (Linear-like) | n/a (PRODUCT/DESIGN) |
 | 19 | Test strategy | TDD on critical paths only: Vitest unit tests, integration tests against a local Supabase, Playwright e2e with axe. | Coverage targets | n/a |
 | 20 | RBAC scope | **Two roles: Admin and Viewer.** Four layers: proxy (logged in?) → server `requirePermission` → Postgres RLS (the real enforcement) → client `usePermission` (UI only). The role is read from `profiles`, so changes take effect immediately. | A role claim in the JWT via the custom access token hook (stale for up to 1h; a scaling option); three or four roles | 0003 |
-| 21 | Concurrent edits | **Version checks on every write, plus a server change feed.** Every write is a compare-and-swap (edits on `updated_at`, moves on the status seen, reschedules on the date seen) and returns `conflict` when stale. An append-only change log feeds `GET /api/changes` (Server-Sent Events, resumable with `Last-Event-ID`). LISTEN/NOTIFY is only a wake-up behind a `ChangeFeed` interface, so it works with any backend. See §8.14. | Client polling; Supabase Realtime (vendor-specific); WebSockets (stateful, not for serverless); correctness only (stale screens) | 0011 |
+| 21 | Concurrent edits | **v1: version checks on contact edits; moves and reschedules are last-write-wins.** Designed next step (ADR-0011, deferred): version checks on every write, plus a server change feed. Every write is a compare-and-swap (edits on `updated_at`, moves on the status seen, reschedules on the date seen) and returns `conflict` when stale. An append-only change log feeds `GET /api/changes` (Server-Sent Events, resumable with `Last-Event-ID`). LISTEN/NOTIFY is only a wake-up behind a `ChangeFeed` interface, so it works with any backend. See §8.14. | Client polling; Supabase Realtime (vendor-specific); WebSockets (stateful, not for serverless); correctness only (stale screens) | 0011 |
 
 ## 5. Architecture
 
@@ -209,8 +209,8 @@ Quick views are presets that write `followUp`. The pipeline uses the same filter
 ### 7.5 Server Actions (each returns `Result<T> = {ok:true,data:T} | {ok:false,error:{code,message,fieldErrors?}}`; codes include `forbidden`, `unauthorized`, `conflict`, `validation`, `not_found`, `server`)
 - `createContactAction(raw)` and `updateContactAction(id, raw, expectedUpdatedAt)`.
   - `updateContactAction` uses **optimistic concurrency**: it returns `conflict` if the row changed since the form opened. The firm workspace is shared, and reviewers are signed in as the same admin.
-- `moveContactAction(id, status, expectedStatus)` returns the updated row. It returns `conflict` if the contact is no longer in `expectedStatus`, for example "Already moved to Closed by Sam". *(ADR-0011. The `expectedStatus` parameter lands in T22d; until then the last write wins.)*
-- `rescheduleAction(id, followUpOn, expectedFollowUpOn)` likewise returns `conflict` if the follow-up date is no longer the one the user saw. *(ADR-0011. `expectedFollowUpOn` lands in T22d.)*
+- `moveContactAction(id, status, expectedStatus)` returns the updated row. It returns `conflict` if the contact is no longer in `expectedStatus`, for example "Already moved to Closed by Sam". *(Future, ADR-0011. v1 is `moveContactAction(id, status)`: the last write wins.)*
+- `rescheduleAction(id, followUpOn, expectedFollowUpOn)` likewise returns `conflict` if the follow-up date is no longer the one the user saw. *(Future, ADR-0011. v1 is `rescheduleAction(id, followUpOn)`: the last write wins.)*
 - ~~`deleteContact(id)` (soft) and `restoreContact(id)`, which backs Undo.~~ Out of scope for v1.
 - `addNoteAction(contactId, body)`.
 
@@ -345,7 +345,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - Double-clicking Save, Move or Apply runs once.
 - A stale or invalid URL (`?page=999`, `?status=foo`) clamps to the last page or ignores the bad value.
 - ~~Deleting a contact while on its detail page goes back to the list, with a toast offering Undo.~~ Out of scope for v1.
-- Two reviewers signed in as the admin and editing the same contact triggers the conflict banner. A concurrent move or reschedule returns `conflict`, shows a toast ("Already moved to Closed by Sam") and refreshes the screen once T22d lands (ADR-0011). Until then, the last write wins.
+- Two reviewers signed in as the admin and editing the same contact triggers the conflict banner. In v1 a concurrent move or reschedule is last-write-wins; the version-checked toast ("Already moved to Closed by Sam") is the ADR-0011 next step.
 - A role or permission that changes mid-session: the next server action returns `forbidden`, the optimistic change is rolled back, and a toast says what wasn't allowed. The next navigation re-renders with the new permissions.
 - A Viewer opening `/contacts/new`, `/contacts/[id]/edit`, or calling an action directly gets the forbidden page or a `forbidden` result, and the database rejects it as well.
 - An edit conflict, then Reload, restores the form from the server values.
@@ -385,16 +385,16 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - Surfaces: canvas `#F4F6F3`, surface `#FFFFFF`, panel `#FAFBF9`
   - Lines: line `#E3E8E2`, line-soft `#EEF1ED`
   - Text: ink `#1E2A26`, ink-2 `#56645E`
-  - Accent `#1F5C4A`, accent-soft `#E6F0EB`
+  - Accent `#07557C`, accent-soft `#EBF5FA` (blue since ADR-0012; it was green `#1F5C4A` in the first iteration)
   - Urgency: overdue `#9E3426` on `#FCE8E4`, today `#7A4B00` on `#FFF1D6`
   - Status pills: Lead outline `#C3CEC8`, Active `accent-soft`, Closed `#ECEFED`
-- **Dark theme: a nice-to-have, not in the first iteration.** v1 shipped light only; dark landed with ADR-0012 (accent is now blue, `#07557C`). All colours are CSS variables from day one, and no component uses a literal colour, so dark mode is just a second token set plus a theme switch (stretch milestone S1). Proposed values: canvas `#0F1513`, surface `#161D1A`, panel `#131A17`, line `#27312D`, ink `#E4EBE7`, ink-2 `#A3B3AB`, accent `#6FC3A0`, overdue `#FFB4A6` on `#3A1D18`, today `#F5C46B` on `#3A2A0E`. Every pair is re-checked for 4.5:1 contrast. Theme choice (system, light, dark) is stored in a cookie so there's no flash.
+- **Dark theme: shipped (ADR-0012).** All colours are CSS variables and no component uses a literal colour, so dark is a second token set in `app/globals.css` (for example canvas `#0F1512`, surface `#161E1A`, ink `#E6ECE8`, ink-2 `#9FADA6`, accent `#82CFF6`). Every pair is checked for 4.5:1 contrast. System, Light or Dark is remembered in a per-device cookie and rendered on the server, so there's no flash.
 - **Radii:** 6 (controls), 10 (surfaces), 999 (pills). **Shadows:** only on floating layers (menus, panel, toast). **Spacing:** a 4px base.
 - **States per component:** default, hover, focus-visible, active, disabled, loading, error, all built in M2 and shown in the dev gallery at `/dev/components` (guarded so it isn't reachable in production).
 - **Browser surfaces:** `::selection`, caret colour, scrollbars, focus rings and underline offset are all themed from the tokens.
 
-### 8.14 Live updates (ADR-0011; built in T22d)
-Every screen that shows contact data listens to `GET /api/changes` and applies changes from other users.
+### 8.14 Live updates (ADR-0011; designed, not built in v1)
+Not in v1: screens show other people's changes on the next navigation or action. The design: every screen that shows contact data listens to `GET /api/changes` and applies changes from other users.
 - **Pipeline:** cards move between columns and counts update. An in-flight optimistic move is reconciled with the incoming change.
 - **Contacts list:** rows update in place. While the user is typing or paging, the list holds still and shows "N updates · Refresh".
 - **Detail:** the header, follow-up, notes and timeline update.
@@ -481,7 +481,7 @@ ETAs are focused agent hours. "Wall" is elapsed time with the tracks running in 
 | **M3d FE pipeline** | Board, Move to… menu, optimistic move, per-column paging, mobile tabs | 1.5h | M2 |
 | **M5a OPS CI** | `ci.yml` (checks, integration and e2e with Supabase in Docker, gitleaks), Dependabot, PR template, branch protection | 1h | M0 |
 | **M5b OPS deploy** | `deploy.yml` (migrate, deploy, smoke test), the `seed` workflow, keep-alive cron, Vercel and Supabase configuration | 1h | M5a + Khubaib's accounts |
-| **M4 Integration** | Swap fixtures for real data, e2e suite green, first production deploy. In PLAN.md this is T22a (auth go-live, done), T22b (real data and e2e), T22c (security headers), T22d (concurrency, ADR-0011), then T23 | 1.5h | M1b, M1c, M3*, M5b |
+| **M4 Integration** | Swap fixtures for real data, e2e suite green, first production deploy. In PLAN.md this is T22a (auth go-live, done), T22b (real data and e2e), T22c (security headers), T22d (concurrency, ADR-0011, deferred past v1), then T23 | 1.5h | M1b, M1c, M3*, M5b |
 | **M6 Hardening** | The edge-case pass, Impeccable `polish` on each screen then `audit`, a manual VoiceOver pass, mobile at 320px, the performance budget | 1.5h | M4 |
 | **M7 Docs and submit** | README (one page), final review, a submission checklist (live link, repo access, history) | 0.75h | M6 |
 | **T26 Hygiene audit** | The last task, after M7 and all features. Recommend only: arbitrary Tailwind values, dead and duplicate code, security and performance findings go to Khubaib, and nothing changes without his answer | n/a | M7 |
