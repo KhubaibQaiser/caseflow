@@ -201,7 +201,10 @@ function Aside({
       aria-hidden={closing || undefined}
       data-closing={closing || undefined}
       // Docked to the window edge: -right-6 and -bottom-4 undo main's gutter (px-6, pb-4). The entrance slides in (tokens go to none under reduced motion).
-      className="bg-panel border-line rounded-tl-surface shadow-raised animate-sheet-in absolute top-0 -right-6 -bottom-4 z-20 flex w-64 flex-col border-t border-l transition-opacity duration-150 outline-none data-closing:opacity-0 motion-reduce:transition-none max-lg:hidden"
+      className={cn(
+        focusOnOpen && 'animate-sheet-in',
+        'bg-panel border-line rounded-tl-surface shadow-raised absolute top-0 -right-6 -bottom-4 z-20 flex w-64 flex-col border-t border-l transition-opacity duration-150 outline-none data-closing:opacity-0 motion-reduce:transition-none max-lg:hidden',
+      )}
     >
       <header className="border-line bg-panel flex items-center justify-between gap-3 border-b py-2.5 pr-2.5 pl-4">
         <h2 className="text-ink m-0 text-sm font-semibold">{title}</h2>
@@ -383,7 +386,7 @@ function Group({
         id={id}
         className={cn(
           headingClass,
-          'hover:text-ink rounded-ctl mb-1 flex min-h-7 cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden',
+          'hover:text-ink border-line mb-1 flex min-h-7 cursor-pointer list-none items-center justify-between border-t py-1.5 [&::-webkit-details-marker]:hidden',
         )}
       >
         <span className="tnum">{label}</span>
