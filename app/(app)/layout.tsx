@@ -1,16 +1,38 @@
+import { redirect } from 'next/navigation';
+
 import { MobileTopBar } from '@/components/shell/mobile-top-bar';
 import { Sidebar } from '@/components/shell/sidebar';
 import { TabBar } from '@/components/shell/tab-bar';
 import { TimezoneSync } from '@/components/shell/timezone-sync';
+import { NoAccessState } from '@/components/shell/no-access-state';
+import { signOutAction as signOut } from '@/features/auth/actions';
 import { PermissionsProvider } from '@/lib/auth/permissions-context';
-import { getViewer } from '@/lib/auth/viewer';
-
-import { signOut } from './sign-out';
+import { getViewer, NoProfileError } from '@/lib/auth/viewer';
 
 export default async function AppLayout({ children }: LayoutProps<'/'>) {
-  const viewer = await getViewer();
+  let viewer;
+  try {
+    viewer = await getViewer();
+  } catch (e) {
+    // Never /login: the proxy would bounce a signed-in user straight back.
+    if (e instanceof NoProfileError)
+      return (
+        <main id="main" tabIndex={-1} className="flex min-h-dvh flex-col">
+          <NoAccessState signOut={signOut} />
+        </main>
+      );
+    throw e;
+  }
+  // The proxy normally catches this first; this covers AUTH_ENFORCED=false and races.
+  if (!viewer) redirect('/login?reason=expired');
   return (
-    <PermissionsProvider viewer={viewer}>
+    <PermissionsProvider
+      viewer={{
+        displayName: viewer.displayName,
+        role: viewer.role,
+        permissions: viewer.permissions,
+      }}
+    >
       <TimezoneSync />
       <a
         href="#main"

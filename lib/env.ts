@@ -20,5 +20,5 @@ export function supabaseEnv() {
 
 export const secretKey = () => read(Secret).SUPABASE_SECRET_KEY;
 
-// Off until T22 wires real auth into the app.
-export const authEnforced = () => process.env.AUTH_ENFORCED === 'true';
+// On unless explicitly "false": a missing variable must never switch sign-in off.
+export const authEnforced = () => process.env.AUTH_ENFORCED !== 'false';

@@ -276,6 +276,9 @@ describe('ContactForm', () => {
       ),
     );
     expect(success).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('caseflow:return')).toContain(
+      '/contacts/c1/edit',
+    );
   });
 
   it('blocks page unload only while the form is dirty', async () => {

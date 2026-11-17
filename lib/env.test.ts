@@ -21,10 +21,12 @@ describe('env', () => {
     expect(() => secretKey()).toThrow(/SUPABASE_SECRET_KEY/);
   });
 
-  it('reads AUTH_ENFORCED as a boolean that defaults to false', () => {
+  it('enforces auth unless AUTH_ENFORCED is exactly "false"', () => {
     vi.stubEnv('AUTH_ENFORCED', '');
-    expect(authEnforced()).toBe(false);
+    expect(authEnforced()).toBe(true);
     vi.stubEnv('AUTH_ENFORCED', 'true');
+    expect(authEnforced()).toBe(true);
+    vi.stubEnv('AUTH_ENFORCED', 'FALSE');
     expect(authEnforced()).toBe(true);
     vi.stubEnv('AUTH_ENFORCED', 'false');
     expect(authEnforced()).toBe(false);

@@ -11,7 +11,7 @@ import { getRequestTimeZone } from '@/lib/dates/server';
 export const metadata: Metadata = { title: 'New contact · Caseflow' };
 
 export default async function NewContactPage() {
-  const { permissions } = await getViewer();
+  const permissions = (await getViewer())?.permissions ?? [];
   if (!permissions.includes('contacts.write'))
     return (
       <ForbiddenState

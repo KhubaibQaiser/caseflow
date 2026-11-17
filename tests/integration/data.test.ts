@@ -13,7 +13,12 @@ const redirect = vi.hoisted(() =>
     throw new Error(`REDIRECT ${to}`);
   }),
 );
-vi.mock('next/navigation', () => ({ redirect }));
+const forbidden = vi.hoisted(() =>
+  vi.fn(() => {
+    throw new Error('FORBIDDEN');
+  }),
+);
+vi.mock('next/navigation', () => ({ redirect, forbidden }));
 
 import {
   assertPermission,
@@ -173,15 +178,15 @@ describe('getViewer and permissions', () => {
     expect(u.ok).toBe(false);
   });
 
-  it('requirePermission redirects with no session and throws ForbiddenError without the permission', async () => {
+  it('requirePermission redirects with no session and calls forbidden() without the permission', async () => {
     current = anonClient();
     await expect(requirePermission('contacts.read')).rejects.toThrow(
       'REDIRECT /login?reason=expired',
     );
     current = (await viewerClient()).client;
-    await expect(requirePermission('contacts.write')).rejects.toMatchObject({
-      name: 'ForbiddenError',
-    });
+    await expect(requirePermission('contacts.write')).rejects.toThrow(
+      'FORBIDDEN',
+    );
   });
 });
 
