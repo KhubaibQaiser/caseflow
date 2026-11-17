@@ -14,7 +14,7 @@ import type { Result } from '@/lib/contracts/result';
 import { formatEnquired, waitingLabel } from '@/lib/dates/labels';
 
 import { VIEWER_EDIT_REASON } from '../reasons';
-import { telHref } from './details-list';
+import { telHref } from '@/utils/tel-href';
 import { MoveMenu } from './move-menu';
 
 type ContactHeaderProps = {

@@ -1,5 +1,5 @@
 // Per-request nonce CSP, set by proxy.ts. Next reads the nonce from the header and stamps its own scripts and styles.
-export type CspMode = { dev: boolean; production: boolean };
+type CspMode = { dev: boolean; production: boolean };
 
 export function createNonce(): string {
   return btoa(

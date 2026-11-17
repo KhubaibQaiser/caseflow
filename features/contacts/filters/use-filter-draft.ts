@@ -48,7 +48,7 @@ function tidy(d: FilterDraft): FilterDraft {
 const reversed = (from: string | null, to: string | null) =>
   !!from && !!to && from > to;
 
-export type DraftErrors = { fu?: 'empty' | 'reversed'; created?: 'reversed' };
+type DraftErrors = { fu?: 'empty' | 'reversed'; created?: 'reversed' };
 
 /** The panel's working copy. Nothing reaches the URL until the caller applies `apply()`. */
 export function useFilterDraft(applied: FilterDraft) {

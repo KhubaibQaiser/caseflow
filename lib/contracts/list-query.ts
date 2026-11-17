@@ -19,7 +19,7 @@ import type { Filters } from './filters';
 
 export const PAGE_SIZES = [25, 50, 100, 250, 500] as const;
 export const DEFAULT_PAGE_SIZE = 250;
-export const SORT_KEYS = [
+const SORT_KEYS = [
   'follow_up',
   'name',
   'waiting',

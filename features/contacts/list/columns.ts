@@ -12,9 +12,6 @@ export const matterLabel = (r: ContactRow) => MATTER_TYPE_LABEL[r.matterType];
 export const sourceLabel = (r: ContactRow) =>
   r.referralSource ? REFERRAL_SOURCE_LABEL[r.referralSource] : 'Not set';
 
-// `tel:` takes digits and a leading +; the visible number keeps its formatting.
-export const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
-
 /**
  * Sorts the table headers and the mobile menu offer, in one order.
  * `waiting` sorts by created date, so ascending (oldest first) shows the most days waiting first.

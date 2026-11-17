@@ -1,9 +1,10 @@
 import Link from 'next/link';
 
+import { PhoneLink } from '@/components/ui/phone-link';
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
 import { cn } from '@/utils/cn';
 
-import { matterLabel, telHref } from './columns';
+import { matterLabel } from './columns';
 import type { ListRow } from './list-rows';
 
 type ContactCardsProps = {
@@ -57,12 +58,7 @@ export function ContactCards({
             <span className="truncate">{matterLabel(r)}</span>
             <StatusPill status={r.status} />
             {r.phone ? (
-              <a
-                href={telHref(r.phone)}
-                className="text-ink-2 hover:text-ink relative z-[1] inline-flex min-h-6 shrink-0 items-center underline-offset-3 hover:underline"
-              >
-                {r.phone}
-              </a>
+              <PhoneLink phone={r.phone} />
             ) : (
               <span className="shrink-0">No phone</span>
             )}

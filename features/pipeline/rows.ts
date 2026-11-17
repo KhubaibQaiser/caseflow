@@ -39,7 +39,7 @@ function before(a: PipelineRow, b: PipelineRow): boolean {
 }
 
 /** Where a column has this id, if anywhere. */
-export const columnOf = (c: Columns, id: string): Status | undefined =>
+const columnOf = (c: Columns, id: string): Status | undefined =>
   STATUSES.find((s) => c[s].rows.some((r) => r.id === id));
 
 /**

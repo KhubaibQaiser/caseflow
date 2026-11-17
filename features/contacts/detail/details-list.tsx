@@ -6,12 +6,11 @@ import {
   REFERRAL_SOURCE_LABEL,
 } from '@/lib/contracts/enums';
 
+import { telHref } from '@/utils/tel-href';
+
 import { Panel } from './panel';
 
 const link = 'text-accent underline-offset-3 hover:underline wrap-anywhere';
-
-/** Digits and a leading +, so any typed format dials. */
-export const telHref = (phone: string) => `tel:${phone.replace(/[^\d+]/g, '')}`;
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (

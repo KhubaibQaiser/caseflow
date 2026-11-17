@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/shell/page-header';
 import { ContactsView } from '@/features/contacts/list/contacts-view';
+import { listPageFrame } from '@/features/contacts/list/frame';
 import { NewContactLink } from '@/features/contacts/list/new-contact-link';
 import { toListRows } from '@/features/contacts/list/list-rows';
 import {
@@ -38,7 +39,7 @@ export default async function ContactsPage({
 
   return (
     // md+: the page fills the viewport (main's 34px padding aside) and the table scrolls inside it.
-    <div className="flex flex-col gap-3 md:h-[calc(100dvh-34px)] md:min-h-[480px]">
+    <div className={listPageFrame}>
       <PageHeader
         title="Contacts"
         meta={`${fmt(result.matching)} of ${fmt(result.total)}`}

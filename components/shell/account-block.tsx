@@ -12,7 +12,7 @@ import { cn } from '@/utils/cn';
 export type SignOut = () => Promise<void>;
 
 /** `rail` collapses to icons below lg (the tablet rail); elsewhere it is always full. */
-export function RoleBadge({ rail = false }: { rail?: boolean }) {
+function RoleBadge({ rail = false }: { rail?: boolean }) {
   const { role } = useViewer();
   const viewer = role === 'viewer';
   return (
