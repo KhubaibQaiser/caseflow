@@ -215,6 +215,10 @@ describe('data layer against the local stack', () => {
   it('getContact returns null for a missing id', async () => {
     expect(await getContact('00000000-0000-0000-0000-000000000000')).toBeNull();
   });
+
+  it('getContact returns null for an id that is not a uuid, not an error', async () => {
+    expect(await getContact('no-such-contact')).toBeNull();
+  });
 });
 
 describe('getViewer and permissions', () => {
