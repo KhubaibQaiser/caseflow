@@ -230,22 +230,58 @@ export async function getPipelineColumn(
   return { rows: hit.slice(offset, offset + limit), matching: hit.length };
 }
 
+const ACTOR = 'Alex Morgan';
+const at = (iso: string, mins: number) =>
+  new Date(Date.parse(iso) + mins * 60_000).toISOString();
+
+// Deterministic by id: even-numbered contacts have two notes, odd ones none (both states stay reachable).
 export async function getContact(id: string): Promise<ContactDetail | null> {
   const { rows } = await load();
   const r = rows.find((x) => x.id === id);
   if (!r) return null;
-  return {
-    ...r,
-    summary: summaryOf(r),
-    notes: [],
-    activities: [
-      {
-        id: `${r.id}-a1`,
-        type: 'created',
-        payload: {},
-        createdAt: r.createdAt,
-        actor: { name: 'Khubaib' },
-      },
-    ],
-  };
+  const withNotes = Number(r.id.replace(/\D/g, '')) % 2 === 0;
+  const notes = withNotes
+    ? [
+        {
+          id: `${r.id}-n2`,
+          body: 'Called back and confirmed the details.\nPrefers calls after 5pm.',
+          createdAt: at(r.createdAt, 180),
+          author: { name: ACTOR, role: 'admin' as const },
+        },
+        {
+          id: `${r.id}-n1`,
+          body: 'Left voicemail. Asked them not to speak to the other side before we call back.',
+          createdAt: at(r.createdAt, 30),
+          author: { name: ACTOR, role: 'admin' as const },
+        },
+      ]
+    : [];
+  const activities: ContactDetail['activities'] = [
+    ...notes.map((n) => ({
+      id: `${n.id}-a`,
+      type: 'note_added' as const,
+      payload: {},
+      createdAt: n.createdAt,
+      actor: { name: ACTOR },
+    })),
+    ...(r.followUpOn
+      ? [
+          {
+            id: `${r.id}-a2`,
+            type: 'follow_up_changed' as const,
+            payload: { from: null, to: r.followUpOn },
+            createdAt: at(r.createdAt, 5),
+            actor: { name: ACTOR },
+          },
+        ]
+      : []),
+    {
+      id: `${r.id}-a1`,
+      type: 'created' as const,
+      payload: {},
+      createdAt: r.createdAt,
+      actor: { name: ACTOR },
+    },
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return { ...r, summary: summaryOf(r), notes, activities };
 }

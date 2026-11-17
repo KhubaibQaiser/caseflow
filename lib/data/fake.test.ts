@@ -70,6 +70,16 @@ describe('fake data layer', () => {
     expect(await getContact('nope')).toBeNull();
   });
 
+  it('detail: even ids have notes, odd ids none; activity is newest first and ends at creation', async () => {
+    const even = await getContact('c-00002');
+    const odd = await getContact('c-00001');
+    expect(even?.notes).toHaveLength(2);
+    expect(odd?.notes).toHaveLength(0);
+    const stamps = even?.activities.map((a) => a.createdAt) ?? [];
+    expect(stamps).toEqual([...stamps].sort().reverse());
+    expect(even?.activities.at(-1)?.type).toBe('created');
+  });
+
   it('clamps out-of-range page', async () => {
     const r = await searchContacts(
       q({ status: ['lead'], page: 9999, size: 25 }),
