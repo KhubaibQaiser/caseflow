@@ -439,7 +439,7 @@ test('@mobile one column with a large Call button', async ({
   await page.goto(`/contacts/${withNotes.id}`);
 
   const call = page.getByRole('link', { name: `Call ${withNotes.fullName}` });
-  await expect(call).toHaveAttribute('href', /^tel:\d+$/);
+  await expect(call).toHaveAttribute('href', /^tel:\+?\d+$/);
   expect((await call.boundingBox())!.height).toBeGreaterThanOrEqual(44);
   // The top bar has no back link (just the mark and the theme button); the way back is a 32px "Contacts" link above the name.
   await expect(
