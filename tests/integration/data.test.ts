@@ -117,6 +117,35 @@ describe('data layer against the local stack', () => {
     expect((await getPipelineColumn('lead', {}, 50, 25)).rows).toHaveLength(0);
   });
 
+  it('getPipelineColumn orders each column by its sort', async () => {
+    const lead = { status: 'lead', updated_at: '2026-04-01T00:00:00Z' };
+    const a = await seed({
+      ...lead,
+      full_name: 'Bea Sort',
+      follow_up_on: addDaysDateOnly(today, 5),
+      created_at: '2026-03-01T00:00:00Z',
+    });
+    const b = await seed({
+      ...lead,
+      full_name: 'Al Sort',
+      follow_up_on: addDaysDateOnly(today, 9),
+      created_at: '2026-01-01T00:00:00Z',
+    });
+    const c = await seed({
+      ...lead,
+      full_name: 'Cy Sort',
+      follow_up_on: addDaysDateOnly(today, -2),
+      created_at: '2026-02-01T00:00:00Z',
+      updated_at: '2026-05-01T00:00:00Z',
+    });
+    const order = async (sort: 'urgency' | 'name' | 'updated' | 'created') =>
+      (await getPipelineColumn('lead', {}, 0, 50, sort)).rows.map((r) => r.id);
+    expect(await order('urgency')).toEqual([c, a, b]);
+    expect(await order('name')).toEqual([b, a, c]);
+    expect(await order('created')).toEqual([a, c, b]);
+    expect((await order('updated'))[0]).toBe(c);
+  });
+
   it('getContact still opens a contact whose stored note document is malformed, showing it as plain text', async () => {
     const id = await seed({ full_name: 'Tolerant Read' });
     const admin = current as SupabaseClient;

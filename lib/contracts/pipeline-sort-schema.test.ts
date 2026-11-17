@@ -14,7 +14,7 @@ describe('parsePipelineSorts', () => {
   });
 
   it('ignores invalid values', () => {
-    const q = loadListQuery({ leadSort: 'nope', activeSort: ['name'] });
+    const q = loadListQuery({ leadSort: 'nope', activeSort: 'Name' });
     expect(parsePipelineSorts(q)).toEqual({
       lead: 'urgency',
       active: 'urgency',
