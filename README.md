@@ -165,6 +165,7 @@ Moving cards only by dragging would fail WCAG 2.2 SC 2.5.7 (Dragging Movements) 
 ## With more time
 
 - Keyboard shortcuts (after the BRIEF requirements are fully met).
+- A CSP report endpoint (`report-to`); v1 has none, so violations only show in the browser console.
 - Undo for pipeline moves (for later review).
 
 ## Decisions that differ from the spec
