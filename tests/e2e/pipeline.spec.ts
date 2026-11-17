@@ -2,11 +2,11 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+import { inDays, newContact } from './data';
 import { settleAnimations, storage } from './helpers';
 
-// Runs signed in as the seeded Admin (global setup) on the fake data layer until T22b. Fake contact ids aren't
-// database rows, so a move can't succeed for real: the move action is answered here, and the client code under
-// test (optimistic move, rollback, toasts) is the real one. Show 50 more goes through the real action.
+// Runs signed in as the seeded Admin (global setup) on real data: moves, notes and paging are real round trips.
+// A test that moves a card makes its own contact, so other specs' counts and rows are not disturbed.
 const axe = async (page: Page) => {
   await settleAnimations(page);
   return new AxeBuilder({ page })
@@ -35,37 +35,18 @@ const count = async (page: Page, status: string) =>
     ),
   );
 
-/** Answers moveContactAction (a Server Action POST with [id, status]) as the database would. */
-async function answerMoves(page: Page, ok: boolean) {
-  await page.route('**/pipeline**', async (route) => {
+/** Drops the next Server Action POST on the wire, as a lost connection would. */
+async function dropNextAction(page: Page) {
+  let dropped = false;
+  await page.route('**/pipeline**', (route) => {
     const req = route.request();
-    const body = req.method() === 'POST' ? req.postData() : null;
-    const args: unknown = body ? JSON.parse(body) : null;
-    const isMove =
-      Array.isArray(args) &&
-      args.length === 2 &&
-      typeof args[0] === 'string' &&
-      typeof args[1] === 'string';
-    if (!isMove) return route.fallback();
-    if (!ok) return route.fulfill({ status: 500, body: 'down' });
-    const now = new Date().toISOString();
-    const row = JSON.stringify({
-      ok: true,
-      data: { id: args[0], updatedAt: now },
-    });
-    return route.fulfill({
-      status: 200,
-      contentType: 'text/x-component',
-      body: `0:{"a":"$@1","f":"","b":"x"}\n1:${row}\n`,
-    });
+    if (!dropped && req.method() === 'POST' && req.headers()['next-action']) {
+      dropped = true;
+      return route.abort('connectionreset');
+    }
+    return route.continue();
   });
 }
-
-const openMove = async (page: Page, status: string, index = 0) => {
-  const card = cards(page, status).nth(index);
-  await card.getByRole('button', { name: /Move to/ }).click();
-  return card;
-};
 
 test('the board shows three columns, counts and passes axe', async ({
   page,
@@ -82,72 +63,64 @@ test('the board shows three columns, counts and passes axe', async ({
     (await count(page, 'Lead')) +
       (await count(page, 'Active')) +
       (await count(page, 'Closed')),
-  ).toBe(1200);
+  ).toBeGreaterThanOrEqual(2500);
   expect((await axe(page)).violations).toEqual([]);
 });
 
-test('Move to… moves the card, updates the counts and toasts', async ({
+test('Move to… moves the card, updates the counts, toasts and persists', async ({
   page,
 }) => {
-  await answerMoves(page, true);
+  // The most overdue lead sorts first in Lead, and stays first once Active.
+  const c = await newContact({ status: 'lead', followUpOn: inDays(-60) });
   await board(page, '/pipeline');
   const lead = await count(page, 'Lead');
   const active = await count(page, 'Active');
-  const first = cards(page, 'Lead').first();
-  const name = await first.getByRole('link').first().innerText();
-  const id = (await first.getAttribute('data-card')) ?? '';
+  const first = column(page, 'Lead').locator(`[data-card="${c.id}"]`);
+  await expect(first).toBeVisible();
 
   await first.getByRole('button', { name: /Move to/ }).click();
   expect((await axe(page)).violations).toEqual([]);
   await page.getByRole('menuitem', { name: 'Active' }).click();
 
-  await expect(page.getByText(`${name} moved to Active.`)).toBeVisible();
-  await expect(page.locator(`[data-card="${id}"]`)).toHaveCount(1);
-  await expect(column(page, 'Lead').locator(`[data-card="${id}"]`)).toHaveCount(
-    0,
-  );
+  await expect(page.getByText(`${c.fullName} moved to Active.`)).toBeVisible();
   await expect(
-    column(page, 'Active').locator(`[data-card="${id}"]`),
+    column(page, 'Lead').locator(`[data-card="${c.id}"]`),
+  ).toHaveCount(0);
+  await expect(
+    column(page, 'Active').locator(`[data-card="${c.id}"]`),
   ).toHaveCount(1);
-  expect(await count(page, 'Lead')).toBe(lead - 1);
-  expect(await count(page, 'Active')).toBe(active + 1);
-  // The keyboard lands on the neighbour, not on the page.
+  expect(await count(page, 'Lead')).toBeLessThan(lead);
+  expect(await count(page, 'Active')).toBeGreaterThan(active - 1);
+
+  // It was saved, not just shown.
+  await board(page, '/pipeline');
   await expect(
-    cards(page, 'Lead').first().locator('[data-card-link]'),
-  ).toBeFocused();
+    column(page, 'Active').locator(`[data-card="${c.id}"]`),
+  ).toHaveCount(1);
+  await expect(
+    column(page, 'Lead').locator(`[data-card="${c.id}"]`),
+  ).toHaveCount(0);
 });
 
 test('a failed move puts the card back and Retry moves it', async ({
   page,
 }) => {
-  await answerMoves(page, false);
+  const c = await newContact({ status: 'lead', followUpOn: inDays(-61) });
+  await dropNextAction(page);
   await board(page, '/pipeline');
-  const lead = await count(page, 'Lead');
-  const name = await cards(page, 'Lead')
-    .first()
-    .getByRole('link')
-    .first()
-    .innerText();
-
-  await openMove(page, 'Lead');
+  const card = column(page, 'Lead').locator(`[data-card="${c.id}"]`);
+  await card.getByRole('button', { name: /Move to/ }).click();
   await page.getByRole('menuitem', { name: 'Closed' }).click();
 
   await expect(page.getByText('Move failed. Retry.')).toBeVisible();
-  await expect(
-    cards(page, 'Lead').first().getByRole('link').first(),
-  ).toHaveText(name);
-  expect(await count(page, 'Lead')).toBe(lead);
-  await expect(
-    cards(page, 'Lead')
-      .first()
-      .getByRole('button', { name: /Move to/ }),
-  ).toBeFocused();
+  await expect(card).toHaveCount(1);
+  await expect(card.getByRole('button', { name: /Move to/ })).toBeFocused();
 
-  await page.unroute('**/pipeline**');
-  await answerMoves(page, true);
   await page.getByRole('button', { name: 'Retry' }).click();
-  await expect(page.getByText(`${name} moved to Closed.`)).toBeVisible();
-  expect(await count(page, 'Lead')).toBe(lead - 1);
+  await expect(page.getByText(`${c.fullName} moved to Closed.`)).toBeVisible();
+  await expect(
+    column(page, 'Lead').locator(`[data-card="${c.id}"]`),
+  ).toHaveCount(0);
 });
 
 test('Show 50 more appends the next rows and counts what is left', async ({
@@ -158,12 +131,13 @@ test('Show 50 more appends the next rows and counts what is left', async ({
   const more = column(page, 'Lead').getByRole('button', {
     name: /Show 50 more/,
   });
-  await expect(more).toHaveText(`Show 50 more · ${lead - 50} left`);
+  await expect(more).toHaveText(/^Show 50 more · [\d,]+ left$/);
+  expect(lead).toBeGreaterThan(100);
   await more.click();
   await expect(cards(page, 'Lead')).toHaveCount(100);
   await expect(
     column(page, 'Lead').getByRole('button', { name: /Show 50 more/ }),
-  ).toHaveText(`Show 50 more · ${lead - 100} left`);
+  ).toHaveText(/^Show 50 more · [\d,]+ left$/);
   // Focus follows the button to the first new card.
   await expect(
     cards(page, 'Lead').nth(50).getByRole('link').first(),
