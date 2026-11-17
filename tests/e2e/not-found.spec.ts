@@ -1,6 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
+import { settleAnimations } from './helpers';
+
 test('an unknown URL returns 404 and names the path', async ({ page }) => {
   const response = await page.goto('/no-such-page/at-all');
 
@@ -20,6 +22,7 @@ test('an unknown URL returns 404 and names the path', async ({ page }) => {
     /noindex/,
   );
 
+  await settleAnimations(page);
   const axe = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
