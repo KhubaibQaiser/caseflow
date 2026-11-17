@@ -58,6 +58,19 @@ test('/contacts hydrates, and the filters panel opens', async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
+test('the theme toggle is CSP-clean, and the choice still shows after a reload', async ({
+  page,
+}) => {
+  const problems = await watch(page);
+  await open(page, '/contacts');
+  await page.getByRole('button', { name: /^Theme/ }).click();
+  await page.getByRole('menuitemradio', { name: 'Dark' }).click();
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  expect(problems).toEqual([]);
+});
+
 test('/contacts/new opens the date picker', async ({ page }) => {
   const problems = await watch(page);
   await open(page, '/contacts/new');
