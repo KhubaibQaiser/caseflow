@@ -147,17 +147,15 @@ describe('Filters panel in the list', () => {
     expect(document.cookie).not.toContain('filters_open');
   });
 
-  it('centres the empty state in the visible list while the side panel is open', async () => {
+  it('does not pad the empty state for the side panel, which floats out of flow', async () => {
     const user = userEvent.setup();
     renderView({ matching: 0, searchParams: '?status=closed' });
-    const empty = () =>
-      screen
-        .getByText('No contacts match these filters.')
-        .closest('[data-empty]')!;
-    expect(empty().className).not.toContain('lg:pr-58');
     await user.click(filtersButton());
     await screen.findByRole('complementary', { name: 'Filters' });
-    expect(empty().className).toContain('lg:pr-58');
+    const empty = screen
+      .getByText('No contacts match these filters.')
+      .closest('[data-empty]')!;
+    expect(empty.className).toBe('');
   });
 
   it('is still there when nothing matches, so the filters can be changed', async () => {
@@ -179,12 +177,9 @@ describe('BusyRegion', () => {
     );
     const region = screen.getByText('Kevin Carrillo').parentElement!;
     expect(region).toHaveAttribute('aria-busy', 'true');
-    // Text keeps full contrast (spec 8.11); a thin bar carries the signal instead.
+    // Text keeps full contrast (spec 8.11), and no bar or line is drawn over the table.
     expect(region.className).not.toMatch(/opacity/);
-    expect(region.querySelector('[data-loading-bar]')).toHaveAttribute(
-      'aria-hidden',
-      'true',
-    );
+    expect(region.children).toHaveLength(1);
 
     rerender(
       <BusyRegion busy={false}>
@@ -192,6 +187,5 @@ describe('BusyRegion', () => {
       </BusyRegion>,
     );
     expect(region).not.toHaveAttribute('aria-busy');
-    expect(region.querySelector('[data-loading-bar]')).toBeNull();
   });
 });

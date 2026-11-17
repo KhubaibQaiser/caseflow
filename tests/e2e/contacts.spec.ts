@@ -261,6 +261,31 @@ test('keyboard reaches toolbar, headers and rows in order', async ({
   ).toBeFocused();
 });
 
+test('opening the filters panel moves nothing; the backdrop and Esc close it and focus returns', async ({
+  page,
+}) => {
+  await page.goto('/contacts');
+  await page.waitForLoadState('networkidle');
+  const button = page.getByRole('button', { name: /^Filters/ });
+  const table = page.getByRole('table').first();
+  const before = [await table.boundingBox(), await button.boundingBox()];
+  await button.click();
+  const panel = page.getByRole('complementary', { name: 'Filters' });
+  await expect(panel).toBeVisible();
+  await settleAnimations(page);
+  expect([await table.boundingBox(), await button.boundingBox()]).toEqual(
+    before,
+  );
+  await page.mouse.click(300, 600); // the backdrop, over the table
+  await expect(panel).toHaveCount(0);
+  await expect(button).toBeFocused();
+  await button.click();
+  await expect(panel).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(panel).toHaveCount(0);
+  await expect(button).toBeFocused();
+});
+
 test('the filters panel applies once, resets the page, remembers it is open and passes axe', async ({
   page,
 }) => {
@@ -272,6 +297,7 @@ test('the filters panel applies once, resets the page, remembers it is open and 
   await expect(panel).toBeFocused();
   await expect(button).toHaveAttribute('aria-expanded', 'true');
   await expect(panel.getByRole('checkbox', { name: /^Lead / })).toBeVisible();
+  await settleAnimations(page); // the panel slides in
   // Docked flush to the window's right and bottom edges, as in the comp.
   const box = (await panel.boundingBox())!;
   expect(Math.round(box.x + box.width)).toBe(1440);

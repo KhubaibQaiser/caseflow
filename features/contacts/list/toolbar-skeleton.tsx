@@ -1,9 +1,10 @@
+import { stickyTop } from '@/components/shell/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 
 /** Heading row of the loading screens; `titleWidth` is the heading's Tailwind width. */
 export function HeaderSkeleton({ titleWidth }: { titleWidth: string }) {
   return (
-    <div className="flex h-8.5 items-center gap-3">
+    <div className={`flex h-8.5 items-center gap-x-2.5 md:h-13 ${stickyTop}`}>
       <Skeleton className={`h-5 ${titleWidth}`} />
       <Skeleton className="w-20" />
     </div>

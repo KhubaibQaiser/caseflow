@@ -2,10 +2,11 @@
 
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { format } from 'date-fns';
+import { format, max, min as earliestOf } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import type { ChevronProps } from 'react-day-picker';
 import CalendarDays from 'lucide-react/icons/calendar-days';
+import ChevronDown from 'lucide-react/icons/chevron-down';
 import ChevronLeft from 'lucide-react/icons/chevron-left';
 import ChevronRight from 'lucide-react/icons/chevron-right';
 
@@ -35,7 +36,12 @@ const navButton =
   'grid size-8 cursor-pointer place-items-center rounded-ctl text-ink-2 transition-colors duration-150 hover:bg-track hover:text-ink aria-disabled:cursor-not-allowed aria-disabled:opacity-45 aria-disabled:hover:bg-transparent';
 
 function Chevron({ orientation }: ChevronProps) {
-  const Icon = orientation === 'left' ? ChevronLeft : ChevronRight;
+  const Icon =
+    orientation === 'left'
+      ? ChevronLeft
+      : orientation === 'down'
+        ? ChevronDown
+        : ChevronRight;
   return <Icon aria-hidden className="size-4" />;
 }
 
@@ -51,8 +57,20 @@ export function DatePicker({
   const [open, setOpen] = useState(defaultOpen);
   const panel = useRef<HTMLDivElement>(null);
   const field = useFieldControl();
+  const today = new Date();
   const selected = value ? parseDateOnly(value) : undefined;
   const minDate = min ? parseDateOnly(min) : undefined;
+  // The dropdowns always reach the value and min, however far from today. Nothing before min is pickable, so min is the floor.
+  const startMonth = earliestOf(
+    [minDate ?? new Date(today.getFullYear() - 10, 0), selected].filter(
+      (d) => d !== undefined,
+    ),
+  );
+  const endMonth = max(
+    [new Date(today.getFullYear() + 10, 11), selected, minDate].filter(
+      (d) => d !== undefined,
+    ),
+  );
   // ponytail: "today" is the render clock, so a server/browser year boundary could differ for a moment on Dec 31.
   const display = value
     ? formatDateShort(value, toDateOnly(new Date()))
@@ -102,7 +120,9 @@ export function DatePicker({
           required
           selected={selected}
           defaultMonth={selected ?? minDate}
-          startMonth={minDate}
+          captionLayout="dropdown"
+          startMonth={startMonth}
+          endMonth={endMonth}
           disabled={minDate && { before: minDate }}
           onSelect={(date: Date) => commit(toDateOnly(date))}
           components={{ Chevron }}
@@ -113,7 +133,14 @@ export function DatePicker({
           }}
           classNames={{
             root: 'text-13 text-ink relative',
-            month_caption: 'flex h-8 items-center pl-2 text-sm font-semibold',
+            month_caption: 'flex h-8 items-center text-sm font-semibold',
+            // A native select, invisible but on top, shows through the styled label: keyboard, screen readers and the OS list stay native.
+            dropdowns: 'flex items-center gap-0.5',
+            dropdown_root:
+              'rounded-ctl hover:bg-track has-focus-visible:outline-2 has-focus-visible:outline-offset-1 outline-ring relative inline-flex h-8 items-center',
+            dropdown:
+              'bg-surface text-ink absolute inset-0 size-full cursor-pointer appearance-none opacity-0',
+            caption_label: 'flex items-center gap-1 px-2 text-sm font-semibold',
             nav: 'absolute top-0 right-0 flex gap-0.5',
             button_previous: navButton,
             button_next: navButton,

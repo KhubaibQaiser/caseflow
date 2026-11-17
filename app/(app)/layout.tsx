@@ -50,8 +50,8 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
             tabIndex={-1}
             className="relative flex flex-1 flex-col px-4 pt-3.5 pb-4 outline-none md:px-6 md:pt-4.5"
           >
-            {/* One button for every screen; page header rows reserve md:pe-11 for it. */}
-            <div className="absolute end-6 top-4.5 z-10 max-md:hidden">
+            {/* One button for every screen, fixed so it stays with the sticky header; page header rows reserve pe-17 for it. */}
+            <div className="fixed end-6 top-4.5 z-25 max-md:hidden">
               <ThemeToggle />
             </div>
             {children}

@@ -1,6 +1,8 @@
+import { stickyTop } from '@/components/shell/page-header';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const panel = 'border-line bg-surface rounded-surface border px-4 py-3.5';
+const panel =
+  'border-line bg-surface rounded-surface overflow-hidden border px-4 py-3.5';
 
 // Heights match the real elements (20px heading line, 20px rows) so the page lands without a jump.
 function Heading({ w }: { w: string }) {
@@ -30,13 +32,16 @@ export default function ContactLoading() {
       <span className="sr-only" role="status">
         Loading contact
       </span>
-      <div className="flex h-4.5 items-center">
+      <div className={`flex items-center max-md:h-6 md:min-h-13 ${stickyTop}`}>
         <Skeleton className="h-3 w-40" />
       </div>
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-1.5">
-          <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-5.5 w-72 max-w-full" />
+          <Skeleton className="h-7 w-56 md:h-8" />
+          {/* Two wrapped lines of meta on a phone, one row from md. */}
+          <div className="flex h-[45.5px] items-start md:h-5.5">
+            <Skeleton className="h-5.5 w-72 max-w-full" />
+          </div>
         </div>
         <div className="flex gap-2">
           <Skeleton className="rounded-ctl h-8.5 w-28 max-md:h-11 max-md:flex-1" />
@@ -45,7 +50,7 @@ export default function ContactLoading() {
       </div>
       <div className="grid items-start gap-3.5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-3.5">
-          <section className={panel}>
+          <section className={`${panel} h-[89.5px]`}>
             <Heading w="w-20" />
             <div className="flex h-7.5 items-center gap-3">
               <Skeleton className="h-5 w-24 rounded-full" />
@@ -53,18 +58,18 @@ export default function ContactLoading() {
               <Skeleton className="rounded-ctl ml-auto h-7.5 w-24" />
             </div>
           </section>
-          <section className={panel}>
+          <section className={`${panel} h-[211.8px] md:h-[190.6px]`}>
             <Heading w="w-16" />
             <Rows widths={['w-3/5', 'w-2/5', 'w-1/3', 'w-1/2', 'w-4/5']} />
           </section>
-          <section className={panel}>
+          <section className={`${panel} h-[436.4px] md:h-[408.9px]`}>
             <Heading w="w-14" />
             <Skeleton className="rounded-ctl h-20.5 w-full" />
             <Skeleton className="rounded-ctl mt-2 mb-3 ml-auto h-7.5 w-24" />
             <Rows widths={['w-4/5', 'w-3/5', 'w-2/3']} />
           </section>
         </div>
-        <section className={panel}>
+        <section className={`${panel} h-[95px]`}>
           <Heading w="w-16" />
           <Rows widths={['w-4/5', 'w-3/5', 'w-2/3', 'w-1/2']} />
         </section>

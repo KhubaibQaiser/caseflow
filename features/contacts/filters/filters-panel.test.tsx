@@ -157,6 +157,48 @@ describe('FiltersPanel draft, Apply and Cancel', () => {
   });
 });
 
+describe('FiltersPanel overlay, backdrop and dismissal', () => {
+  it('is fixed to the viewport, never in flow, with a backdrop beside it', () => {
+    setup();
+    expect(screen.getByRole('complementary').className).toContain('fixed');
+    expect(document.querySelector('[data-filters-backdrop]')).not.toBeNull();
+  });
+
+  it('clicking the backdrop closes without writing', async () => {
+    const user = userEvent.setup();
+    const { onOpenChange, onUrlUpdate } = setup();
+    await user.click(document.querySelector('[data-filters-backdrop]')!);
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+    expect(onUrlUpdate).not.toHaveBeenCalled();
+  });
+
+  it('Esc closes it even when focus is outside the panel', async () => {
+    const user = userEvent.setup();
+    const { onOpenChange } = setup();
+    document.body.focus();
+    await user.keyboard('{Escape}');
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it('exits with a slide and a fade (it stays mounted while it plays)', () => {
+    const { rerender } = setup({ focusOnOpen: true });
+    rerender(false);
+    const aside = screen.getByRole('complementary', { hidden: true });
+    expect(aside).toHaveAttribute('data-closing');
+    expect(aside.className).toContain('data-closing:animate-panel-out');
+    expect(
+      document.querySelector('[data-filters-backdrop]')!.className,
+    ).toContain('data-closing:animate-scrim-out');
+  });
+
+  it('a restored panel shows the backdrop without fading it in', () => {
+    setup();
+    expect(
+      document.querySelector('[data-filters-backdrop]')!.className,
+    ).not.toContain('animate-scrim-in');
+  });
+});
+
 describe('FiltersPanel groups and facets', () => {
   it('shows every group with its facet count beside each option', () => {
     setup();
@@ -243,14 +285,14 @@ describe('FiltersPanel groups and facets', () => {
   it('slides in only when the user opens it, not when restored from the cookie', () => {
     setup({ focusOnOpen: true });
     expect(screen.getByRole('complementary').className).toContain(
-      'animate-sheet-in',
+      'animate-panel-in',
     );
   });
 
   it('does not slide in when it was open on page load', () => {
     setup();
     expect(screen.getByRole('complementary').className).not.toContain(
-      'animate-sheet-in',
+      'animate-panel-in',
     );
   });
 

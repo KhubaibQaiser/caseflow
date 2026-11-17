@@ -22,4 +22,9 @@ describe('MobileTopBar', () => {
     expect(screen.queryByRole('link')).toBeNull();
     expect(screen.getByRole('button', { name: /^Theme/ })).toBeInTheDocument();
   });
+
+  it('stays at the top while the page scrolls', () => {
+    render(<MobileTopBar />);
+    expect(screen.getByRole('banner').className).toContain('sticky top-0');
+  });
 });

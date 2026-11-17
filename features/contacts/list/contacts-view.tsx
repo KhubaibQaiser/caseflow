@@ -2,7 +2,6 @@
 
 import { Suspense, lazy, useRef } from 'react';
 
-import { cn } from '@/utils/cn';
 import type { ContactFacets } from '@/lib/contracts/facets';
 import { serializeListQuery } from '@/lib/contracts/list-query';
 
@@ -77,11 +76,10 @@ function Results({
       {total === 0 ? (
         <FirstRun />
       ) : (
-        // The panel floats over the right edge of this region, under the toolbar, so the table never reflows.
+        // The panel is fixed over the page, so the table never reflows.
         <div className="relative flex min-h-0 flex-1 flex-col gap-3">
           {matching === 0 ? (
-            // The side panel covers 232px of this region (256 less main's gutter), so centre in what is left.
-            <div data-empty className={cn(panel.open && 'lg:pr-58')}>
+            <div data-empty>
               <Filtered />
             </div>
           ) : (
@@ -104,14 +102,11 @@ function Results({
                   matching={matching}
                 />
               </BusyRegion>
-              {/* Clear of the open panel, which would otherwise cover the pager. */}
-              <div className={cn(panel.open && 'lg:pr-58')}>
-                <Pagination
-                  page={query.page}
-                  pageSize={query.size}
-                  matching={matching}
-                />
-              </div>
+              <Pagination
+                page={query.page}
+                pageSize={query.size}
+                matching={matching}
+              />
             </>
           )}
           {panel.mounted && (

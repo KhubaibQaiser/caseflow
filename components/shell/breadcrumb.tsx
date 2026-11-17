@@ -1,6 +1,8 @@
 import ChevronLeft from 'lucide-react/icons/chevron-left';
 import Link from 'next/link';
 
+import { stickyTop } from './page-header';
+
 /**
  * "Contacts / Name": ancestors are links, the last item is the current page. Below md it is a back
  * link only ("‹ Contacts", a 32px target): the page's own heading already names the current page.
@@ -11,7 +13,9 @@ export function Breadcrumb({
   crumbs: { label: string; href?: string }[];
 }) {
   return (
-    <div className="flex min-h-8.5 items-center max-md:min-h-0 md:pe-11">
+    <div
+      className={`flex min-h-8.5 items-center max-md:min-h-0 md:min-h-13 ${stickyTop}`}
+    >
       <nav aria-label="Breadcrumb">
         <ol className="text-13 text-ink-2 m-0 flex list-none flex-wrap gap-x-1.5 p-0">
           {crumbs.map((c, i) => (
