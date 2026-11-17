@@ -164,7 +164,8 @@ function FormDemo() {
       next.push({
         id: 'demo-email',
         label: 'Email or phone',
-        message: 'Add an email or a phone number.',
+        message:
+          "Add an email or a phone number. Intake can't follow up without one.",
       });
     setErrors(next);
     setAttempt((n) => n + 1);

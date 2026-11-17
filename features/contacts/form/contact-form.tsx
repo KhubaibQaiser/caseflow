@@ -91,6 +91,8 @@ type Props = {
 
 // What survives a session expiry in history.state: the typed values plus the stamp they were made against.
 const DraftSchema = z.object({
+  mode: z.enum(['create', 'edit']),
+  id: z.string().nullable(),
   values: z.object({
     fullName: z.string(),
     email: z.string(),
@@ -138,6 +140,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
   const [attempt, setAttempt] = useState(0);
   const busy = useRef(false);
   // Frozen at open: a conflict refresh hands us a newer `initial`, but Save must keep proving what the edits were based on.
+  const initialId = initial?.id;
   const stamp = useRef(initial?.updatedAt ?? '');
 
   const resolver = zodResolver(
@@ -163,7 +166,13 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
   // Back from the sign-in page after a session expiry: put the typed values (and their stamp) back.
   useEffect(() => {
     const draft = DraftSchema.safeParse(window.history.state?.caseflowDraft);
-    if (!draft.success) return;
+    // A draft belongs to one form: another contact's, or create vs edit, is not ours.
+    if (
+      !draft.success ||
+      draft.data.mode !== mode ||
+      draft.data.id !== (initialId ?? null)
+    )
+      return;
     const rest = Object.fromEntries(
       Object.entries(window.history.state).filter(
         ([k]) => k !== 'caseflowDraft',
@@ -172,7 +181,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
     window.history.replaceState(rest, '');
     stamp.current = draft.data.stamp;
     reset(draft.data.values, { keepDefaultValues: true }); // differs from the defaults, so dirty
-  }, [reset]);
+  }, [reset, mode, initialId]);
 
   const status = useWatch({ control, name: 'status' });
   const followUpOn = useWatch({ control, name: 'followUpOn' });
@@ -207,7 +216,12 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
       window.history.replaceState(
         {
           ...window.history.state,
-          caseflowDraft: { values: form.getValues(), stamp: stamp.current },
+          caseflowDraft: {
+            mode,
+            id: initial?.id ?? null,
+            values: form.getValues(),
+            stamp: stamp.current,
+          },
         },
         '',
       );
