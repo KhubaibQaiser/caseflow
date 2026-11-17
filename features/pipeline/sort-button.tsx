@@ -37,7 +37,10 @@ export function SortButton({
         'text-13 rounded-ctl flex h-7 shrink-0 cursor-pointer items-center justify-center gap-1.5 border font-medium',
         active
           ? 'border-accent bg-accent-soft text-accent'
-          : 'text-ink-2 hover:bg-track hover:text-ink data-[state=open]:bg-track border-transparent',
+          : cn(
+              'text-ink-2 hover:bg-track hover:text-ink data-[state=open]:bg-track',
+              iconOnly ? 'border-line bg-surface' : 'border-transparent',
+            ),
         active && !iconOnly ? 'px-2' : 'w-7',
         iconOnly && 'max-md:size-10',
         className,

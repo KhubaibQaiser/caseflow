@@ -52,7 +52,6 @@ export function MobileTabs({
           sort={sorts[value]}
           onChange={(sort) => onSortChange(value, sort)}
           iconOnly
-          className="border-line bg-surface"
         />
       </div>
       <p className="text-ink-2 text-13 m-0 mt-2">
