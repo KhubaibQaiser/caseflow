@@ -2,7 +2,7 @@
 
 A legal-intake mini CRM. Track every prospective client, a **contact**, from first enquiry to retained or closed, so no follow-up is missed. Each contact carries a matter, a referral source and a next follow-up date, and moves through **Lead, Active and Closed**. Overdue follow-ups come first.
 
-**Live:** <LIVE_URL>
+**Live:** [caseflow-drab.vercel.app](https://caseflow-drab.vercel.app)
 
 **Demo access:** two accounts, an **Admin** (full access) and a read-only **Viewer**. Credentials are in the submission message, not in this repo.
 
