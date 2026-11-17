@@ -28,8 +28,11 @@ describe('Toolbar search', () => {
       screen.getByRole('searchbox', { name: 'Search contacts' }),
       'ana',
     );
-    await waitFor(() => expect(lastUrl(onUrlUpdate).get('q')).toBe('ana'));
-    expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
+    // nuqs debounces each key on its own timer, so q and page can land a tick apart on a slow runner.
+    await waitFor(() => {
+      expect(lastUrl(onUrlUpdate).get('q')).toBe('ana');
+      expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
+    });
     expect(lastUrl(onUrlUpdate).get('sort')).toBe('name');
   });
 
