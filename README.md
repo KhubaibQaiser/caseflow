@@ -40,7 +40,7 @@ M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or 
 - `pnpm lint`: ESLint plus the colour-literal check
 - `pnpm test`: unit tests
 - `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
-- `pnpm e2e`: Playwright end-to-end tests
+- `pnpm e2e`: Playwright end-to-end tests. Needs the local stack seeded (`pnpm seed`) and `SUPABASE_*` and `SEED_*_PASSWORD` in the environment. Global setup signs in Admin and Viewer once (sessions saved under `tests/e2e/.auth/`); specs run as Admin, and opt in to `storage.viewer` or `storage.signedOut` from `tests/e2e/helpers.ts`. `E2E_PORT` moves the local server off 3000
 - `pnpm format`, `pnpm format:check`: Prettier
 - `pnpm seed`: create the role accounts and reset the firm data (see Seeding below)
 - `pnpm db:types`: regenerate Supabase types from the local stack
@@ -147,14 +147,16 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - RPC replies are snake_case. They are mapped to camelCase and parsed with the contract schemas. A bad row throws `DataError` (message only, no row data).
 - `getContact` returns `null` when the contact is missing or deleted. Notes and activities are newest first (ties by `id`); the timeline hides `deleted` and `restored`.
 - `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
-- `lib/auth/viewer.ts` is the entry point the app imports and is still the fake (T13). The real one is `lib/auth/viewer-supabase.ts`; T22 flips `viewer.ts` to re-export it, like `lib/data/index.ts`.
-- `getViewer()` (viewer-supabase) verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and throws `ForbiddenError` otherwise (`forbidden()` is still experimental). `assertPermission` returns a `Result` for actions.
-- Auth enforcement in `proxy.ts` is off until T22 sets `AUTH_ENFORCED=true` (locally, in CI and in Vercel). While off, the proxy passes every request through; only the production `/dev/*` 404 stays on.
+- `lib/auth/viewer.ts` is the entry point the app imports. It re-exports the real `lib/auth/viewer-supabase.ts` (the `fake-role` cookie viewer is gone).
+- `getViewer()` verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and calls Next's `forbidden()` otherwise, which renders `app/(app)/forbidden.tsx` (`experimental.authInterrupts`). `assertPermission` returns a `Result` (`forbidden` or `unauthorized`) for Server Actions, so the form keeps what was typed.
+- Auth enforcement in `proxy.ts` is on when `AUTH_ENFORCED=true`: set in `.env.example`, the CI e2e job and Playwright's `webServer`. **Vercel needs `AUTH_ENFORCED=true` too** (the T23 deploy sets it). Without it the proxy passes every request through.
 - `proxy.ts` only checks sign-in: refreshes the session, sends anonymous requests to `/login?next=…` (plus `reason=expired` if an `sb-` cookie exists), and sends signed-in users from `/login` to `/contacts`. `/dev/*` is a 404 when `VERCEL_ENV=production`.
 - There is no browser Supabase client. Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (all server-only).
-- Signed in without a `profiles` row: `getViewer` throws `NoProfileError` (and `requirePermission` rethrows it; `assertPermission` returns `forbidden`). It never redirects to `/login`, which would loop. The `(app)` layer (T13/T22) must catch it and render the No access state: "No access." / "Your account isn't set up yet. Ask an admin." with Sign out. A failed `profiles` query throws a plain `Error` (error boundary).
+- Signed in without a `profiles` row: `getViewer` throws `NoProfileError` (and `requirePermission` rethrows it; `assertPermission` returns `forbidden`). It never redirects to `/login`, which would loop. The `(app)` layout catches it and renders the No access state: "No access." / "Your account isn't set up yet. Ask an admin." with Sign out. A failed `profiles` query throws a plain `Error` (error boundary).
 - `requirePermission(p, next?)` redirects to `/login?next=…&reason=expired`.
 - Revocation lag: `getClaims()` checks the JWT signature, not the user record, so a banned or deleted user keeps access until the access token expires (up to 1 hour). Roles are read live from `profiles`, and RLS applies on every query.
+- Sign-in throttle: Supabase limits by IP, and `signInAction` forwards `x-forwarded-for`'s first entry only when `net.isIP` accepts it; otherwise nothing is forwarded and the limit falls on the server's own IP. Trade-off: the throttle is per IP only, with no per-account lockout, so the seeded passwords must be strong (a spread-out guesser is not slowed).
+- After an expiry, the sign-in form tells the action to skip the redirect (`back=1`) when the login page was reached by an in-app push (the first document loaded was not `/login`), then calls `history.back()`, so the form's saved draft comes back. A fresh load of `/login?reason=expired` redirects to `next` as usual.
 - The proxy only URL-encodes `next`. T10's `safeNext` must reject values starting with `//` or `/\`.
 - Auth responses carry `Cache-Control: private, no-store` from `@supabase/ssr` (proxy and redirects).
 
@@ -166,7 +168,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
 - Conflict: the banner triggers `router.refresh()`; Reload latest resets the form to the refreshed record (the user re-applies their edits). There is no Overwrite. Save keeps sending the `updatedAt` the form opened with, even after the refresh hands it a newer record; only Reload latest moves the stamp.
 - `unauthorized`: before pushing `/login?reason=expired&next=<page>`, the form writes its typed values and the `updatedAt` they were made against into the current history entry (`history.state.caseflowDraft`; nothing goes to sessionStorage or localStorage). Back from sign-in restores them (dirty) and clears the draft. A draft is ignored if its mode or contact id differs. A tab that is closed, or a fresh visit, starts empty.
-- Limit: the draft comes back only when the user presses Back to the form after signing in. The normal sign-in redirect (`next=`) opens a fresh form. Returning through history after an expiry, with an end-to-end test against real auth, is planned for T22.
+- Limit: the draft comes back only when the user presses Back to the form after signing in. The normal sign-in redirect (`next=`) opens a fresh form. Sign-in after an expiry now goes Back (T22a), with an end-to-end test in `tests/e2e/auth.spec.ts`.
 - The unsaved guard: `beforeunload` for reload and close, plus a capture-phase click handler that turns same-origin link clicks (sidebar, breadcrumb, any `Link`) into the "Discard changes?" dialog while dirty. Cancel keeps the input. Programmatic pushes and the Back button can't be intercepted.
 - Matter type has no default ("Choose a matter type"); an empty submit reports it with the name and the email-or-phone rule.
 - `/dev/contact-form?outcome=conflict|slow|fail` is a dev fixture with a scripted save (404 in production).

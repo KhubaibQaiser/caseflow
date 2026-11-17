@@ -19,3 +19,6 @@ next-env.d.ts
 
 # Impeccable review captures
 /.impeccable/
+
+# Playwright signed-in sessions (global setup writes them)
+/tests/e2e/.auth/

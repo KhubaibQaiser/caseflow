@@ -1,16 +1,22 @@
 import { defineConfig, devices } from '@playwright/test';
 
+import { storage } from './tests/e2e/helpers';
+
 // BASE_URL points the suite at an already-running deployment (the post-deploy smoke test).
-const baseURL = process.env.BASE_URL ?? 'http://localhost:3000';
+// E2E_PORT moves the local server off 3000.
+const port = process.env.E2E_PORT ?? '3000';
+const baseURL = process.env.BASE_URL ?? `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: './tests/e2e',
+  globalSetup: './tests/e2e/global-setup.ts',
   reporter: process.env.CI ? [['html', { open: 'never' }], ['list']] : 'list',
   forbidOnly: !!process.env.CI,
   webServer: process.env.BASE_URL
     ? undefined
     : {
-        command: 'pnpm build && pnpm start',
+        command: `pnpm build && pnpm start -p ${port}`,
+        env: { AUTH_ENFORCED: 'true' },
         // `/` redirects to a screen that may 404 (it stalls readiness); a static file is always 200.
         url: `${baseURL}/favicon.ico`,
         reuseExistingServer: !process.env.CI,
@@ -18,7 +24,7 @@ export default defineConfig({
         stdout: 'pipe',
         stderr: 'pipe',
       },
-  use: { baseURL },
+  use: { baseURL, storageState: storage.admin },
   projects: [
     {
       name: 'desktop',
