@@ -5,6 +5,7 @@ import { Suspense, lazy, useEffect, useRef, useTransition } from 'react';
 
 import { PageHeader } from '@/components/shell/page-header';
 import { ErrorState } from '@/components/ui/error-state';
+import { NewContactLink } from '@/features/contacts/list/empty-states';
 import { listFrame } from '@/features/contacts/list/frame';
 
 import { reasonClass, useOffline } from '../../error-content';
@@ -24,15 +25,15 @@ const REASON: Record<ReasonClass, string> = {
 };
 
 // Next only resets this boundary on a new pathname. When the committed URL moves to a new list
-// (not the typed, still-debounced one), retry so the boundary renders that list.
-function RetryOnChange({ retry }: { retry: () => void }) {
+// (not the typed, still-debounced one), the navigation has already fetched it: reset() just shows it.
+function ResetOnNavigate({ reset }: { reset: () => void }) {
   const url = useSearchParams()?.toString() ?? '';
   const last = useRef(url);
   useEffect(() => {
     if (url === last.current) return;
     last.current = url;
-    retry();
-  }, [url, retry]);
+    reset();
+  }, [url, reset]);
   return null;
 }
 
@@ -40,9 +41,11 @@ function RetryOnChange({ retry }: { retry: () => void }) {
 // Never error.message: it can carry server detail.
 export default function ContactsError({
   error,
+  reset,
   retry,
 }: {
   error: unknown;
+  reset: () => void;
   retry: () => void;
 }) {
   const offline = useOffline();
@@ -50,14 +53,17 @@ export default function ContactsError({
   return (
     <div className="flex flex-col gap-3">
       <title>Contacts didn&apos;t load · Caseflow</title>
-      <PageHeader title="Contacts" />
+      <PageHeader
+        title="Contacts"
+        actions={<NewContactLink className="max-md:hidden" />}
+      />
       {/* min-h holds the toolbar's row while its code loads. */}
       <div className="md:min-h-[34px]">
         <Suspense fallback={null}>
           <ErrorToolbar />
         </Suspense>
       </div>
-      <RetryOnChange retry={() => startTransition(() => retry())} />
+      <ResetOnNavigate reset={reset} />
       <div className={listFrame}>
         <ErrorState
           title="Contacts didn't load."

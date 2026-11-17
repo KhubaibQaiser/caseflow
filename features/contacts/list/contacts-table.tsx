@@ -51,8 +51,11 @@ const columns = helper.columns([
     cell: ({ row: { original: r } }) => (
       <Link
         href={`/contacts/${r.id}`}
+        // 250 rows of links would otherwise prefetch 250 detail pages.
+        prefetch={false}
         title={r.fullName}
-        className="text-ink block truncate font-semibold no-underline hover:underline"
+        // Inset ring: the truncating (and pinned) cell clips anything drawn outside it.
+        className="text-ink block truncate font-semibold no-underline hover:underline focus-visible:shadow-none focus-visible:-outline-offset-2"
       >
         {r.fullName}
       </Link>

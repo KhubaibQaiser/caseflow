@@ -93,6 +93,8 @@ describe('ContactsTable', () => {
     expect(link).toHaveAttribute('href', '/contacts/c-1');
     expect(link).toHaveAttribute('title', LONG_NAME);
     expect(link).toHaveClass('truncate');
+    // The truncating cell clips anything outside it, so the focus ring is drawn inside.
+    expect(link).toHaveClass('focus-visible:-outline-offset-2');
     const email = screen.getByTitle(LONG_EMAIL);
     expect(email).toHaveClass('truncate');
   });
