@@ -40,7 +40,7 @@ export function ContactCards({
           key={r.id}
           aria-posinset={matching ? offset + i + 1 : undefined}
           aria-setsize={matching}
-          className="hover:bg-panel text-13 relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.75 px-3 py-2.5 [contain-intrinsic-size:auto_51px] [content-visibility:auto]"
+          className="hover:bg-panel text-13 relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.75 px-3 py-2.5 [contain-intrinsic-size:auto_72px] [content-visibility:auto]"
         >
           {/* The link's ::after covers the card, so the whole card is the target.
               Intrinsic size is the content box of a 72px card (less 20px padding and the 1px divider):

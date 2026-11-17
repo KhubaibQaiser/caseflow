@@ -47,7 +47,9 @@ export function DetailsList({
         <Row label="Email">
           {email ? (
             <a href={`mailto:${email}`} className={link}>
-              {email}
+              {email.slice(0, email.indexOf('@') + 1)}
+              <wbr />
+              {email.slice(email.indexOf('@') + 1)}
             </a>
           ) : (
             missing

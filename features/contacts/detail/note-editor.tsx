@@ -184,6 +184,8 @@ export default function NoteEditor({
   const [linkOpen, setLinkOpen] = useState(false);
   const linkRef = useRef<() => void>(() => {});
   const toolbarId = useId();
+  // Roving tabindex: the toolbar is one Tab stop, and Left/Right move between its tools.
+  const [stop, setStop] = useState(0);
 
   const editor = useEditor({
     extensions,
@@ -285,6 +287,15 @@ export default function NoteEditor({
         role="toolbar"
         id={toolbarId}
         aria-label="Formatting"
+        onKeyDown={(e) => {
+          const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+          if (!step) return;
+          const tools = [...e.currentTarget.querySelectorAll('button')];
+          const at = tools.indexOf(document.activeElement as HTMLButtonElement);
+          if (at < 0) return;
+          e.preventDefault();
+          tools[(at + step + tools.length) % tools.length]?.focus();
+        }}
         className="border-line-soft flex flex-wrap items-center gap-0.5 border-b px-1.5 py-1 max-md:gap-1"
       >
         {TOOLS.map((t, i) => (
@@ -295,6 +306,8 @@ export default function NoteEditor({
               aria-pressed={state?.pressed[i] ?? false}
               aria-keyshortcuts={t.keys}
               disabled={readOnly}
+              tabIndex={stop === i ? 0 : -1}
+              onFocus={() => setStop(i)}
               // Keep the selection in the editor while a button is pressed.
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => t.run(editor)}
@@ -312,6 +325,8 @@ export default function NoteEditor({
             aria-expanded={linkOpen}
             aria-keyshortcuts="Control+K Meta+K"
             disabled={readOnly}
+            tabIndex={stop === TOOLS.length ? 0 : -1}
+            onFocus={() => setStop(TOOLS.length)}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setLinkOpen((o) => !o)}
             className={toolClass}

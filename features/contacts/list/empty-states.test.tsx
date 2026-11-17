@@ -31,6 +31,16 @@ describe('EmptyStates', () => {
     );
   });
 
+  it('says "this search" when only the text search is applied', () => {
+    render(<Filtered />, {
+      wrapper: wrapper({ searchParams: '?q=zz&size=50' }),
+    });
+    expect(
+      screen.getByText('No contacts match this search.'),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Search: “zz”')).toBeInTheDocument();
+  });
+
   it('first run offers New contact to an admin', () => {
     render(<FirstRun />, { wrapper: wrapper() });
     expect(screen.getByText('No contacts yet.')).toBeInTheDocument();

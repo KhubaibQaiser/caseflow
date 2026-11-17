@@ -45,11 +45,16 @@ export function Filtered() {
     ...(text ? [`Search: “${text}”`] : []),
     ...activeFilters(query).map((f) => `${f.label}: ${f.value}`),
   ].join(' · ');
+  const searchOnly = Boolean(text) && activeFilters(query).length === 0;
   return (
     <div className={listFrame}>
       <EmptyState
         icon={SearchX}
-        title="No contacts match these filters."
+        title={
+          searchOnly
+            ? 'No contacts match this search.'
+            : 'No contacts match these filters.'
+        }
         description={applied}
         action={
           <Button
