@@ -36,7 +36,8 @@ export function Toolbar({
   /** Omitted on the error screen, where the counts are unknown. */
   facets?: ContactFacets;
   isPending: boolean;
-  panel: FiltersPanelState;
+  /** Omitted on the error screen: the panel needs the facets that failed to load. */
+  panel?: FiltersPanelState;
   filtersButton: RefObject<HTMLButtonElement | null>;
   /** Hover or focus on the Filters button: start loading the panel's code. */
   onFiltersIntent?: () => void;
@@ -88,13 +89,14 @@ export function Toolbar({
         <Button
           ref={filtersButton}
           variant="ghost"
-          aria-expanded={panel.open}
-          aria-controls={panel.open ? 'filters-panel' : undefined}
+          aria-expanded={panel?.open ?? false}
+          disabledReason={panel ? undefined : 'Filters load with the list.'}
+          aria-controls={panel?.open ? 'filters-panel' : undefined}
           onPointerEnter={onFiltersIntent}
           onFocus={onFiltersIntent}
           // One name in every browser; a flex badge would read "Filters , 2 applied".
           aria-label={applied > 0 ? `Filters, ${applied} applied` : undefined}
-          onClick={() => panel.setOpen(!panel.open)}
+          onClick={() => panel?.setOpen(!panel.open)}
           className="max-md:h-9 max-md:flex-1"
         >
           <ListFilter aria-hidden className="size-4" />

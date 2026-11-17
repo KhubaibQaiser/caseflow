@@ -155,6 +155,28 @@ describe('Toolbar filters', () => {
   });
 });
 
+describe('Toolbar without a panel (error screen)', () => {
+  it('keeps the Filters button but says why it cannot open yet', async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal('matchMedia', (media: string) => ({
+      matches: true,
+      media,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    function Bare() {
+      const ref = useRef<HTMLButtonElement>(null);
+      return <Toolbar isPending={false} filtersButton={ref} />;
+    }
+    render(<Bare />, { wrapper: wrapper({ searchParams: '?status=lead' }) });
+    const button = screen.getByRole('button', { name: 'Filters, 1 applied' });
+    expect(button).toHaveAttribute('aria-disabled', 'true');
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+    await user.click(button);
+    expect(button).toHaveAttribute('aria-expanded', 'false');
+  });
+});
+
 describe('Toolbar sort (mobile)', () => {
   it('names the current sort and sets a new one from the menu', async () => {
     const user = userEvent.setup();
