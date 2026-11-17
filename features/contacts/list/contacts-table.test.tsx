@@ -46,8 +46,8 @@ describe('ContactsTable', () => {
     render(
       table({
         rows: [
-          row({ id: 'a', phone: '+15125550148', email: 'm@example.com' }),
-          row({ id: 'b', phone: null, email: null }),
+          row(0, { phone: '+15125550148', email: 'm@example.com' }),
+          row(1, { phone: null, email: null }),
         ],
         matching: 2,
       }),
