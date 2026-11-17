@@ -33,7 +33,8 @@ export const board = (): Columns => ({
       pipelineRow('b', 'lead'),
     ],
     matching: 2,
+    pages: 1,
   },
-  active: { rows: [pipelineRow('c', 'active')], matching: 1 },
-  closed: { rows: [], matching: 0 },
+  active: { rows: [pipelineRow('c', 'active')], matching: 1, pages: 1 },
+  closed: { rows: [], matching: 0, pages: 1 },
 });

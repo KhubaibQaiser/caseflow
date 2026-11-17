@@ -13,11 +13,12 @@ import { usePermission } from '@/lib/auth/permissions-context';
 
 import { useFiltersPanel } from '../contacts/filters/use-filters-panel';
 import { Filtered, FirstRun } from '../contacts/list/empty-states';
-import { BusyRegion } from '../contacts/list/contacts-view';
+import { BusyRegion } from '../contacts/list/busy-region';
 import { Toolbar } from '../contacts/list/toolbar';
 import { ListTransition, useListQuery } from '../contacts/url-state';
 import { Column } from './column';
 import { MobileTabs } from './mobile-tabs';
+import { hasMore } from './rows';
 import type { ColumnData, Columns } from './rows';
 import { useBoardMoves } from './use-board-moves';
 
@@ -40,8 +41,8 @@ type BoardProps = {
   onLoadMore(input: {
     status: Status;
     filters: Filters;
-    offset: number;
-  }): Promise<Result<ColumnData>>;
+    page: number;
+  }): Promise<Result<Pick<ColumnData, 'rows' | 'matching'>>>;
 };
 
 export function Board(props: BoardProps) {
@@ -137,6 +138,7 @@ function Results({
                       status={s}
                       rows={columns[s].rows}
                       matching={columns[s].matching}
+                      exhausted={!hasMore(columns[s])}
                       onMove={moveAndKeepFocus}
                       disabledReason={canMove ? undefined : VIEWER_REASON}
                       className={s === tab ? undefined : 'max-md:hidden'}
@@ -144,7 +146,7 @@ function Results({
                         const r = await onLoadMore({
                           status: s,
                           filters,
-                          offset: columns[s].rows.length,
+                          page: columns[s].pages,
                         });
                         if (r.ok) append(s, r.data.rows, r.data.matching);
                         return r.ok;

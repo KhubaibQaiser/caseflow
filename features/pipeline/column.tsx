@@ -12,14 +12,15 @@ import type { Result } from '@/lib/contracts/result';
 import { cn } from '@/utils/cn';
 
 import { PipelineCard } from './pipeline-card';
+import { PAGE_SIZE } from './rows';
 import type { PipelineRow } from './rows';
-
-export const PAGE = 50;
 
 type ColumnProps = {
   status: Status;
   rows: PipelineRow[];
   matching: number;
+  /** No page left to ask for. */
+  exhausted?: boolean;
   onMove(id: string, to: Status): Promise<Result<ContactRow>>;
   /** Resolves true once the next rows are in, false when the request failed. */
   onLoadMore(): Promise<boolean>;
@@ -33,6 +34,7 @@ export function Column({
   status,
   rows,
   matching,
+  exhausted = false,
   onMove,
   onLoadMore,
   disabledReason,
@@ -122,7 +124,7 @@ export function Column({
             Couldn&apos;t load more.
           </p>
         )}
-        {left > 0 && (
+        {left > 0 && !exhausted && (
           <Button
             variant="ghost"
             pending={loading}
@@ -130,7 +132,7 @@ export function Column({
             onClick={() => void loadMore()}
             className="border-lead-border text-ink-2 tnum mt-auto h-8 shrink-0 border-dashed bg-transparent"
           >
-            {failed ? 'Retry' : `Show ${Math.min(PAGE, left)} more`} ·{' '}
+            {failed ? 'Retry' : `Show ${Math.min(PAGE_SIZE, left)} more`} ·{' '}
             {fmt(left)} left
           </Button>
         )}

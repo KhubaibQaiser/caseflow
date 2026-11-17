@@ -3,6 +3,8 @@ import { STATUSES } from '@/lib/contracts/enums';
 import type { Status } from '@/lib/contracts/enums';
 import type { FollowUpTone } from '@/lib/dates/labels';
 
+export const PAGE_SIZE = 50;
+
 /** A follow-up as the card shows it, with its place in the urgency order (0 overdue … 4 none). */
 export type FollowUpView = { tone: FollowUpTone; text: string; rank: number };
 
@@ -15,7 +17,12 @@ export type PipelineRow = ContactRow & {
   closed: FollowUpView;
 };
 
-export type ColumnData = { rows: PipelineRow[]; matching: number };
+export type ColumnData = {
+  rows: PipelineRow[];
+  matching: number;
+  /** 50-row server pages fetched so far. The RPC pages by number, so "Show 50 more" asks for page `pages`. */
+  pages: number;
+};
 export type Columns = Record<Status, ColumnData>;
 
 export const followUpOf = (r: PipelineRow): FollowUpView =>
@@ -66,14 +73,18 @@ export function applyMove(
   return {
     ...columns,
     [from]: {
+      ...columns[from],
       rows: columns[from].rows.filter((r) => r.id !== id),
       matching: Math.max(0, columns[from].matching - 1),
     },
-    [to]: { rows, matching: target.matching + 1 },
+    [to]: { ...target, rows, matching: target.matching + 1 },
   };
 }
 
-/** Rows loaded by "Show 50 more": never twice, and the server's count wins. */
+/**
+ * The next page of a column. Moves shift the server's pages (a card that left pulls later rows up),
+ * so the action also sends the page before; rows already here win, and the merge keeps urgency order.
+ */
 export function appendRows(
   columns: Columns,
   status: Status,
@@ -83,11 +94,16 @@ export function appendRows(
   const have = new Set(
     STATUSES.flatMap((s) => columns[s].rows.map((r) => r.id)),
   );
+  const rows = [
+    ...columns[status].rows,
+    ...more.filter((r) => !have.has(r.id)),
+  ].sort((a, b) => (before(a, b) ? -1 : before(b, a) ? 1 : 0));
   return {
     ...columns,
-    [status]: {
-      rows: [...columns[status].rows, ...more.filter((r) => !have.has(r.id))],
-      matching,
-    },
+    [status]: { rows, matching, pages: columns[status].pages + 1 },
   };
 }
+
+/** Is there a page left to ask for? (Rows can be missing from a stale count; the page number is the truth.) */
+export const hasMore = (c: ColumnData) =>
+  c.rows.length < c.matching && c.pages * PAGE_SIZE < c.matching;
