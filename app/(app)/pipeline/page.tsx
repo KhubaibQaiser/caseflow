@@ -41,6 +41,7 @@ export default async function PipelinePage({
   const col = (c: typeof lead) => ({
     rows: toPipelineRows(c.rows, today),
     matching: c.matching,
+    pages: 1,
   });
 
   return (
