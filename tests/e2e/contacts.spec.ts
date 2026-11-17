@@ -187,6 +187,10 @@ test('the filters panel applies once, resets the page, remembers it is open and 
   await expect(panel).toBeFocused();
   await expect(button).toHaveAttribute('aria-expanded', 'true');
   await expect(panel.getByRole('checkbox', { name: /^Lead / })).toBeVisible();
+  // Docked flush to the window's right and bottom edges, as in the comp.
+  const box = (await panel.boundingBox())!;
+  expect(Math.round(box.x + box.width)).toBe(1440);
+  expect(Math.round(box.y + box.height)).toBe(900);
   expect((await axe(page)).violations).toEqual([]);
 
   // Nothing reaches the URL until Apply.
@@ -213,6 +217,16 @@ test('the filters panel applies once, resets the page, remembers it is open and 
   await expect(panel).toBeHidden();
   await expect(button).toBeFocused();
   await expect(page).toHaveURL(/status=lead,active$/);
+});
+
+test('applied filters keep every accessible name matching its visible text (axe)', async ({
+  page,
+}) => {
+  await page.goto('/contacts?status=lead,active&fu=overdue');
+  await expect(
+    page.getByRole('button', { name: 'Filters, 2 applied' }),
+  ).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]);
 });
 
 test('the filters sheet opens on a phone, traps focus and applies @mobile', async ({

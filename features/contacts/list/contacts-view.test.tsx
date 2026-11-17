@@ -147,6 +147,19 @@ describe('Filters panel in the list', () => {
     expect(document.cookie).not.toContain('filters_open');
   });
 
+  it('centres the empty state in the visible list while the side panel is open', async () => {
+    const user = userEvent.setup();
+    renderView({ matching: 0, searchParams: '?status=closed' });
+    const empty = () =>
+      screen
+        .getByText('No contacts match these filters.')
+        .closest('[data-empty]')!;
+    expect(empty().className).not.toContain('lg:pr-58');
+    await user.click(filtersButton());
+    await screen.findByRole('complementary', { name: 'Filters' });
+    expect(empty().className).toContain('lg:pr-58');
+  });
+
   it('is still there when nothing matches, so the filters can be changed', async () => {
     const user = userEvent.setup();
     renderView({ matching: 0, searchParams: '?status=closed' });
