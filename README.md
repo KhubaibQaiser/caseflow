@@ -48,6 +48,6 @@ Claude Code wrote the code. I made every product and design decision.
 - **Reviews.** A fresh code review and a design critique ran on every PR. Visual changes went to a mockup for my approval first.
 - **Ownership.** Every fork came back to me. I review and can explain every line.
 
-**Quality:** WCAG 2.2 AA, with axe checks in the e2e suite. Lighthouse on mobile `/contacts`: Performance 100, Accessibility 100, CLS 0 (measured locally). The first-load JS budget is 220 kB, enforced in CI.
+**Quality:** WCAG 2.2 AA, with axe checks in the e2e suite. Lighthouse on mobile `/contacts`: Performance 100, Accessibility 100, CLS 0 (measured locally). The first-load JS budget is 220 kB, enforced in CI. Loading skeletons are real tables and forms, and an e2e test checks every column and control against the loaded page to within 1px.
 
 **Setup, tests, CI/CD and security notes:** [`docs/RUNBOOK.md`](docs/RUNBOOK.md).

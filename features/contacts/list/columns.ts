@@ -62,3 +62,15 @@ export function sortLabel(sort: SortKey, dir: SortDir) {
     name: `Sort: ${o.label}, ${dir === 'asc' ? o.asc : o.desc}`,
   };
 }
+
+/** Table column widths in order, in px. The skeleton uses the same ones so its cells land on the real columns. */
+export const COLUMN_WIDTH = {
+  name: 220,
+  matter: 140,
+  status: 92,
+  followUp: 128,
+  phone: 132,
+  email: 196,
+  source: 140,
+  waiting: 76,
+} as const;
