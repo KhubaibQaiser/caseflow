@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import './zod-config'; // jitless in the browser: the note editor parses with this schema under the CSP
+
 import {
   NOTE_MAX_CHARS,
   isAllowedHref,
