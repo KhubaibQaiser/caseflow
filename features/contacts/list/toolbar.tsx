@@ -98,7 +98,7 @@ export function Toolbar({
             setText('');
             commit('');
           }}
-          className="h-10 pr-8 pl-8 md:h-[34px] [&::-webkit-search-cancel-button]:appearance-none"
+          className="h-10 pr-8 pl-8 md:h-8.5 [&::-webkit-search-cancel-button]:appearance-none"
         />
         {isPending && (
           <LoaderCircle
@@ -133,7 +133,7 @@ export function Toolbar({
           {applied > 0 && (
             <span
               aria-hidden
-              className="bg-accent text-on-accent rounded-pill tnum px-[7px] text-xs leading-[18px]"
+              className="bg-accent text-on-accent rounded-pill tnum px-1.75 text-xs leading-4.5"
             >
               {applied}
             </span>

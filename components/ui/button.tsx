@@ -32,9 +32,9 @@ const VARIANT = {
 };
 
 const SIZE = {
-  sm: 'h-[30px] px-2.5',
-  md: 'h-[34px] px-3.5',
-  icon: 'size-[34px] px-0',
+  sm: 'h-7.5 px-2.5',
+  md: 'h-8.5 px-3.5',
+  icon: 'size-8.5 px-0',
 };
 
 export function Button({

@@ -122,7 +122,7 @@ export function DatePicker({
             day: 'group p-0',
             day_button: cn(
               'tnum grid size-9 cursor-pointer place-items-center rounded-ctl transition-colors duration-150 hover:bg-track',
-              'group-data-today:font-bold group-data-today:underline group-data-today:decoration-2 group-data-today:underline-offset-[5px]',
+              'group-data-today:font-bold group-data-today:underline group-data-today:decoration-2 group-data-today:underline-offset-5',
               'group-data-selected:bg-accent group-data-selected:text-on-accent group-data-selected:hover:bg-accent-hover',
               'disabled:cursor-not-allowed disabled:opacity-45 disabled:hover:bg-transparent',
               'forced-colors:group-data-selected:bg-[Highlight] forced-colors:group-data-selected:text-[HighlightText] forced-colors:group-data-selected:forced-color-adjust-none',

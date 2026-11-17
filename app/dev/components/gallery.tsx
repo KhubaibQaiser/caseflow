@@ -129,7 +129,7 @@ function FiltersButton({ initialOpen }: { initialOpen: boolean }) {
     >
       <ListFilter aria-hidden className="size-4" />
       Filters
-      <span className="tnum bg-accent text-on-accent rounded-pill min-w-[18px] px-1.5 text-center text-xs leading-[18px] forced-colors:forced-color-adjust-auto">
+      <span className="tnum bg-accent text-on-accent rounded-pill min-w-4.5 px-1.5 text-center text-xs leading-4.5 forced-colors:forced-color-adjust-auto">
         2
       </span>
       <span className="sr-only"> active</span>
@@ -175,7 +175,7 @@ function FormDemo() {
     <form
       noValidate
       onSubmit={onSubmit}
-      className="flex max-w-[720px] flex-col gap-3"
+      className="flex max-w-3xl flex-col gap-3"
     >
       <ErrorSummary errors={errors} attempt={attempt} />
       <Field
@@ -270,7 +270,7 @@ function DateDemo() {
   const [empty, setEmpty] = useState<string | null>(null);
   const [set, setSet] = useState<string | null>('2026-11-20');
   return (
-    <div className="grid max-w-[720px] gap-3 sm:grid-cols-3">
+    <div className="grid max-w-3xl gap-3 sm:grid-cols-3">
       <Field id="demo-date-empty" label="Next follow-up" hint="Today or later.">
         <DatePicker
           value={empty}
@@ -411,9 +411,9 @@ export function Gallery() {
   const [status, setStatus] = useState('lead');
 
   return (
-    <main className="mx-auto flex w-full max-w-[1040px] flex-col gap-4 px-4 py-6 sm:px-6">
+    <main className="mx-auto flex w-full max-w-5xl flex-col gap-4 px-4 py-6 sm:px-6">
       <header>
-        <h1 className="m-0 text-2xl font-semibold tracking-[-0.01em]">
+        <h1 className="m-0 text-2xl font-semibold tracking-tight">
           Components
         </h1>
         <p className="text-13 text-ink-2 m-0 mt-1">
@@ -486,7 +486,7 @@ export function Gallery() {
         note="Submit empty to see inline errors and the summary take focus."
       >
         <FormDemo />
-        <div className="grid max-w-[720px] gap-3 sm:grid-cols-2">
+        <div className="grid max-w-3xl gap-3 sm:grid-cols-2">
           <Field id="demo-phone-hint" label="Phone" hint="Any format works.">
             <Input type="tel" defaultValue="(512) 555-0100" />
           </Field>
@@ -719,10 +719,10 @@ export function Gallery() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div aria-busy className="flex flex-col">
             {[
-              ['w-2/5', 'w-[70%]'],
-              ['w-[55%]', 'w-3/5'],
-              ['w-[35%]', 'w-3/4'],
-              ['w-1/2', 'w-[65%]'],
+              ['w-2/5', 'w-2/3'],
+              ['w-3/5', 'w-3/5'],
+              ['w-1/3', 'w-3/4'],
+              ['w-1/2', 'w-2/3'],
             ].map(([a, b]) => (
               <div
                 key={a}

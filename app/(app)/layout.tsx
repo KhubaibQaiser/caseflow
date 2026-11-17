@@ -47,7 +47,7 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
           <main
             id="main"
             tabIndex={-1}
-            className="flex flex-1 flex-col px-4 pt-3.5 pb-4 outline-none md:px-6 md:pt-[18px]"
+            className="flex flex-1 flex-col px-4 pt-3.5 pb-4 outline-none md:px-6 md:pt-4.5"
           >
             {children}
           </main>

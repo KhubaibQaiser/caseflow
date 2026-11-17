@@ -31,7 +31,7 @@ export function QuickViews({
   const path = usePathname() ?? '/contacts';
   return (
     <nav aria-label="Quick views" className="shrink-0">
-      <ul className="bg-track m-0 inline-flex list-none gap-0.5 rounded-lg p-[3px]">
+      <ul className="bg-track m-0 inline-flex list-none gap-0.5 rounded-lg p-0.75">
         {VIEWS.map((v) => {
           const patch = { fu: v.fu, fuFrom: null, fuTo: null };
           const n = counts?.[v.count];
@@ -56,7 +56,7 @@ export function QuickViews({
                   setQuery(patch);
                 }}
                 // The checked segment's ink-2 outline is deliberate: it gives the state 3:1 non-text contrast (WCAG 1.4.11).
-                className="text-13 text-ink-2 hover:text-ink aria-[current=true]:border-ink-2 aria-[current=true]:bg-surface aria-[current=true]:text-ink aria-[current=true]:shadow-raised flex min-h-7 items-center gap-1.5 rounded-[5px] border border-transparent px-2.5 font-medium whitespace-nowrap no-underline transition-colors duration-150 forced-colors:aria-[current=true]:border-[Highlight]"
+                className="text-13 text-ink-2 hover:text-ink aria-[current=true]:border-ink-2 aria-[current=true]:bg-surface aria-[current=true]:text-ink aria-[current=true]:shadow-raised rounded-ctl flex min-h-7 items-center gap-1.5 border border-transparent px-2.5 font-medium whitespace-nowrap no-underline transition-colors duration-150 forced-colors:aria-[current=true]:border-[Highlight]"
               >
                 {v.label}
                 {n !== undefined && ' '}

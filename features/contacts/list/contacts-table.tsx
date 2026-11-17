@@ -90,7 +90,7 @@ const columns = helper.columns([
     cell: ({ getValue }) => {
       const email = getValue();
       return email ? (
-        <span title={email} className="text-ink-2 block max-w-[180px] truncate">
+        <span title={email} className="text-ink-2 block max-w-45 truncate">
           {email}
         </span>
       ) : (
@@ -118,7 +118,7 @@ function shownDirection(key: SortKey, dir: SortDir) {
 }
 
 // The first column stays put while 1024–1279px scrolls sideways.
-const pinned = 'sticky left-0 z-[1] border-r border-r-line';
+const pinned = 'sticky left-0 z-1 border-r border-r-line';
 
 type ContactsTableProps = {
   rows: ListRow[];
@@ -198,7 +198,7 @@ export function ContactsTable({
     >
       <table
         aria-rowcount={matching + 1}
-        className="text-13 text-ink tnum w-full min-w-[1124px] table-fixed border-separate border-spacing-0"
+        className="text-13 text-ink tnum w-full min-w-281 table-fixed border-separate border-spacing-0"
       >
         <caption
           tabIndex={-1}
@@ -229,8 +229,8 @@ export function ContactsTable({
                     scope="col"
                     aria-sort={shown ?? undefined}
                     className={cn(
-                      'border-line bg-panel text-ink-2 sticky top-0 z-[2] h-[34px] border-b px-2.5 text-left text-xs font-semibold whitespace-nowrap',
-                      header.column.id === 'name' && `${pinned} z-[3]`,
+                      'border-line bg-panel text-ink-2 sticky top-0 z-2 h-8.5 border-b px-2.5 text-left text-xs font-semibold whitespace-nowrap',
+                      header.column.id === 'name' && `${pinned} z-3`,
                       shown && 'text-ink',
                     )}
                   >
@@ -238,7 +238,7 @@ export function ContactsTable({
                       <button
                         type="button"
                         onClick={() => onSort(key)}
-                        className="hover:text-ink -mx-1 inline-flex min-h-6 cursor-pointer items-center gap-1 rounded-[5px] px-1 font-semibold"
+                        className="hover:text-ink rounded-ctl -mx-1 inline-flex min-h-6 cursor-pointer items-center gap-1 px-1 font-semibold"
                       >
                         {text}
                         {shown && (

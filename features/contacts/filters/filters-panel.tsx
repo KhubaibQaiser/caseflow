@@ -370,7 +370,7 @@ function Group({
   );
   if (!collapsible)
     return (
-      <div className="not-last:mb-[18px]">
+      <div className="not-last:mb-4.5">
         <h3
           id={id}
           className={cn(headingClass, 'tnum mb-1 flex min-h-7 items-center')}
@@ -381,7 +381,7 @@ function Group({
       </div>
     );
   return (
-    <details open={defaultOpen} className="group not-last:mb-[18px]">
+    <details open={defaultOpen} className="group not-last:mb-4.5">
       <summary
         id={id}
         className={cn(
@@ -422,7 +422,7 @@ function FollowUp({
         name="filters-follow-up"
         checked={d.draft.fu === value}
         onChange={() => d.set({ fu: value })}
-        className={`${optionMark} size-4 rounded-full checked:border-[5px]`}
+        className={`${optionMark} size-4 rounded-full checked:border-5`}
       />
       {label}{' '}
       {count !== undefined && (

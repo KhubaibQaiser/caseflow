@@ -152,7 +152,7 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
   }
 
   return (
-    <div className="bg-surface border-line rounded-surface shadow-raised flex w-full max-w-[380px] flex-col gap-4 border p-[22px] sm:p-7">
+    <div className="bg-surface border-line rounded-surface shadow-raised flex w-full max-w-sm flex-col gap-4 border p-5.5 sm:p-7">
       <BrandMark />
       <div className="-mt-0.5">
         <PageHeading

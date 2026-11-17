@@ -56,7 +56,7 @@ export function RadioGroup({
             disabled={option.disabled}
             onChange={onChange}
             onBlur={onBlur}
-            className={`${optionMark} size-4 rounded-full checked:border-[5px]`}
+            className={`${optionMark} size-4 rounded-full checked:border-5`}
           />
           {option.label}
         </label>

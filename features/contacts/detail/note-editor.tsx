@@ -197,7 +197,7 @@ export default function NoteEditor({
         'aria-keyshortcuts': 'Control+Enter Meta+Enter',
         class: cn(
           // Borderless: the composer's frame carries the border and the focus ring.
-          'text-ink min-h-[72px] cursor-text px-3 py-2.5 text-base leading-relaxed wrap-anywhere outline-none sm:text-13 focus-visible:shadow-none focus-visible:outline-none',
+          'text-ink min-h-18 cursor-text px-3 py-2.5 text-base leading-relaxed wrap-anywhere outline-none sm:text-13 focus-visible:shadow-none focus-visible:outline-none',
           '[&_p]:m-0 [&_li>p]:m-0 [&_ul]:m-0 [&_ol]:m-0 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ps-5 [&_ol]:ps-5',
           '[&_a]:text-accent [&_a]:underline [&_a]:underline-offset-3',
         ),
@@ -276,7 +276,7 @@ export default function NoteEditor({
 
   if (!editor)
     // Between the code landing and the editor existing: hold the space so nothing shifts.
-    return <div aria-hidden className="h-[113px]" />;
+    return <div aria-hidden className="h-28.25" />;
 
   // Toolbar, link form and body; the frame (border, ring, footer) belongs to the composer around it.
   return (
