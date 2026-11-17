@@ -2,8 +2,11 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-// Runs on the fake data layer until T22. Writes need the database, so the move action is answered here:
-// the client code under test (optimistic move, rollback, toasts) is the real one.
+import { storage } from './helpers';
+
+// Runs signed in as the seeded Admin (global setup) on the fake data layer until T22b. Fake contact ids aren't
+// database rows, so a move can't succeed for real: the move action is answered here, and the client code under
+// test (optimistic move, rollback, toasts) is the real one. Show 50 more goes through the real action.
 const axe = (page: Page) =>
   new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
@@ -52,42 +55,6 @@ async function answerMoves(page: Page, ok: boolean) {
       status: 200,
       contentType: 'text/x-component',
       body: `0:{"a":"$@1","f":"","b":"x"}\n1:${row}\n`,
-    });
-  });
-}
-
-/**
- * Answers loadMoreColumnAction ([{status, filters, page}]): its permission check needs the database,
- * which the fake layer has no stand-in for. The rows are made up; the merge and counts are the real client's.
- */
-async function answerLoadMore(page: Page, matching: number) {
-  await page.route('**/pipeline**', async (route) => {
-    const req = route.request();
-    const body = req.method() === 'POST' ? req.postData() : null;
-    const args: unknown = body ? JSON.parse(body) : null;
-    const input = Array.isArray(args) ? args[0] : null;
-    if (!input || typeof input !== 'object' || !('page' in input))
-      return route.fallback();
-    const rows = Array.from({ length: 50 }, (_, i) => ({
-      id: `x-${i}`,
-      fullName: `Loaded Person ${i}`,
-      email: null,
-      phone: null,
-      matterType: 'family',
-      referralSource: null,
-      status: 'lead',
-      followUpOn: '2027-06-01',
-      createdAt: '2026-11-01T10:00:00.000Z',
-      updatedAt: '2026-11-02T10:00:00.000Z',
-      urgency: 'later',
-      daysOverdue: null,
-      open: { tone: 'later', text: 'Tue, Jun 1', rank: 2 },
-      closed: { tone: 'muted', text: 'Tue, Jun 1', rank: 3 },
-    }));
-    return route.fulfill({
-      status: 200,
-      contentType: 'text/x-component',
-      body: `0:{"a":"$@1","f":"","b":"x"}\n1:${JSON.stringify({ ok: true, data: { rows, matching } })}\n`,
     });
   });
 }
@@ -186,7 +153,6 @@ test('Show 50 more appends the next rows and counts what is left', async ({
 }) => {
   await board(page, '/pipeline');
   const lead = await count(page, 'Lead');
-  await answerLoadMore(page, lead);
   const more = column(page, 'Lead').getByRole('button', {
     name: /Show 50 more/,
   });
@@ -229,26 +195,23 @@ test('a status in the URL is dropped, not shown as a dead chip', async ({
   await expect(page).toHaveURL(/\/pipeline\?fu=overdue$/);
 });
 
-test('a viewer sees Move to… disabled with the reason', async ({
-  page,
-  context,
-  baseURL,
-}) => {
-  await context.addCookies([
-    { name: 'fake-role', value: 'viewer', url: baseURL! },
-  ]);
-  await board(page, '/pipeline');
-  const move = cards(page, 'Lead')
-    .first()
-    .getByRole('button', { name: /Move to/ });
-  await expect(move).toHaveAttribute('aria-disabled', 'true');
-  await move.focus();
-  await expect(page.getByRole('tooltip')).toHaveText(
-    "Viewers can't move contacts.",
-  );
-  await move.click({ force: true });
-  await expect(page.getByRole('menu')).toHaveCount(0);
-  expect((await axe(page)).violations).toEqual([]);
+test.describe('as a viewer', () => {
+  test.use({ storageState: storage.viewer });
+
+  test('Move to… is disabled with the reason', async ({ page }) => {
+    await board(page, '/pipeline');
+    const move = cards(page, 'Lead')
+      .first()
+      .getByRole('button', { name: /Move to/ });
+    await expect(move).toHaveAttribute('aria-disabled', 'true');
+    await move.focus();
+    await expect(page.getByRole('tooltip')).toHaveText(
+      "Viewers can't move contacts.",
+    );
+    await move.click({ force: true });
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    expect((await axe(page)).violations).toEqual([]);
+  });
 });
 
 test('@mobile one column at a time, chosen by tabs with counts', async ({
