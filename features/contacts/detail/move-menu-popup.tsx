@@ -19,12 +19,14 @@ export default function MoveMenuPopup({
   trigger,
   onSelect,
   keyboard,
+  align,
 }: {
   current: Status;
   trigger: ReactElement;
   onSelect(to: Status): void;
   /** Opened from the keyboard: Radix missed that keydown (it mounted after it), so focus the first item ourselves. */
   keyboard: boolean;
+  align: 'start' | 'end';
 }) {
   const pending = useRef(keyboard);
   // Radix puts focus on the menu itself as it opens; hand it to the first item, once.
@@ -39,7 +41,7 @@ export default function MoveMenuPopup({
   return (
     <DropdownMenu defaultOpen>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent align="end" onFocus={onFirstFocus}>
+      <DropdownMenuContent align={align} onFocus={onFirstFocus}>
         <DropdownMenuLabel>Move to</DropdownMenuLabel>
         {STATUSES.filter((s) => s !== current).map((s) => (
           <DropdownMenuItem key={s} onSelect={() => onSelect(s)}>

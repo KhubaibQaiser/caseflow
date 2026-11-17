@@ -1,0 +1,83 @@
+'use client';
+
+import { useOptimistic, useState, useTransition } from 'react';
+
+import { toast } from '@/components/ui/toaster';
+import type { ContactRow } from '@/lib/contracts/contact';
+import { STATUSES, STATUS_LABEL } from '@/lib/contracts/enums';
+import type { Status } from '@/lib/contracts/enums';
+import { fail } from '@/lib/contracts/result';
+import type { Result } from '@/lib/contracts/result';
+
+import { appendRows, applyMove } from './rows';
+import type { Columns, PipelineRow } from './rows';
+
+type Move = { id: string; to: Status; at: string };
+
+/**
+ * The board's columns with optimistic moves (spec 8.6). The card and the counts move at once;
+ * a failure puts them back and says why. `initial` is read once: the board is remounted
+ * (keyed by its filters) when the server sends a different set, so a refresh after a move
+ * can't undo rows the user has paged in.
+ */
+export function useBoardMoves(
+  initial: Columns,
+  onMove: (id: string, to: Status) => Promise<Result<ContactRow>>,
+  /** The session ended: the caller sends the user to sign in. */
+  onExpired?: () => void,
+) {
+  const [base, setBase] = useState(initial);
+  const [columns, optimistic] = useOptimistic(base, (state, m: Move) =>
+    applyMove(state, m.id, m.to, m.at),
+  );
+  const [, startTransition] = useTransition();
+
+  function move(id: string, to: Status): Promise<Result<ContactRow>> {
+    const name = STATUSES.flatMap((s) => base[s].rows).find(
+      (r) => r.id === id,
+    )?.fullName;
+    return new Promise((resolve) => {
+      startTransition(async () => {
+        const at = new Date().toISOString();
+        optimistic({ id, to, at });
+        let result: Result<ContactRow>;
+        try {
+          result = await onMove(id, to);
+        } catch {
+          result = fail('server', 'Move failed.');
+        }
+        if (result.ok) {
+          startTransition(() =>
+            setBase((b) =>
+              applyMove(b, id, to, result.ok ? result.data.updatedAt : at),
+            ),
+          );
+          toast.success(`${name ?? 'Contact'} moved to ${STATUS_LABEL[to]}.`);
+        } else
+          report(
+            result.error.code,
+            result.error.message,
+            () => void move(id, to),
+          );
+        resolve(result);
+      });
+    });
+  }
+
+  function report(code: string, message: string, retry: () => void) {
+    if (code === 'forbidden')
+      toast.error("You don't have permission to move contacts.");
+    else if (code === 'unauthorized') onExpired?.();
+    else if (code === 'not_found') toast.error(message);
+    else
+      toast.error('Move failed. Retry.', {
+        action: { label: 'Retry', onClick: retry },
+      });
+  }
+
+  function append(status: Status, rows: PipelineRow[], matching: number) {
+    setBase((b) => appendRows(b, status, rows, matching));
+  }
+
+  return { columns, move, append };
+}
