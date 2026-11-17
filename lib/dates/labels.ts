@@ -50,3 +50,29 @@ export function formatTimestamp(iso: string, tz: string): string {
     .format(new Date(iso))
     .replace(/ /g, ' ');
 }
+
+// For a <time title>: the whole moment, with its zone.
+export function formatTimestampFull(iso: string, tz: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+  })
+    .format(new Date(iso))
+    .replace(/\u202f/g, ' ');
+}
+
+export function formatEnquired(
+  createdAt: string,
+  today: string,
+  tz: string,
+): string {
+  const d = parseDateOnly(todayIn(tz, new Date(createdAt)));
+  const sameYear = d.getFullYear() === parseDateOnly(today).getFullYear();
+  return format(d, sameYear ? 'MMM d' : 'MMM d, yyyy');
+}
