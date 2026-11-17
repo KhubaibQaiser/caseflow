@@ -33,3 +33,11 @@ Range.prototype.getClientRects ??= () =>
     [Symbol.iterator]: [][Symbol.iterator],
   }) as unknown as DOMRectList;
 document.elementFromPoint ??= () => null;
+
+// jsdom has no matchMedia; the theme toggle reads prefers-color-scheme. Light unless a test stubs it.
+window.matchMedia ??= ((query: string) => ({
+  matches: false,
+  media: query,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+})) as unknown as typeof window.matchMedia;

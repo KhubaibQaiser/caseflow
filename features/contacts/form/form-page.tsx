@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { PageHeading } from '@/components/ui/page-heading';
 
 /** Breadcrumb and heading shared by the create and edit pages. */
@@ -16,27 +17,33 @@ export function FormPage({
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-col gap-1.5">
-        <nav aria-label="Breadcrumb">
-          <ol className="text-13 text-ink-2 m-0 flex list-none flex-wrap gap-x-1.5 p-0">
-            {crumbs.map((c, i) => (
-              <li key={c.label} className="flex gap-1.5">
-                {i > 0 && <span aria-hidden>/</span>}
-                {c.href ? (
-                  <Link
-                    href={c.href}
-                    className="text-accent underline-offset-3 hover:underline"
-                  >
-                    {c.label}
-                  </Link>
-                ) : (
-                  <span aria-current="page" className="max-w-[40ch] truncate">
-                    {c.label}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ol>
-        </nav>
+        <div
+          data-theme-slot
+          className="flex min-h-8.5 items-center justify-between gap-2.5 max-md:min-h-0"
+        >
+          <nav aria-label="Breadcrumb">
+            <ol className="text-13 text-ink-2 m-0 flex list-none flex-wrap gap-x-1.5 p-0">
+              {crumbs.map((c, i) => (
+                <li key={c.label} className="flex gap-1.5">
+                  {i > 0 && <span aria-hidden>/</span>}
+                  {c.href ? (
+                    <Link
+                      href={c.href}
+                      className="text-accent underline-offset-3 hover:underline"
+                    >
+                      {c.label}
+                    </Link>
+                  ) : (
+                    <span aria-current="page" className="max-w-[40ch] truncate">
+                      {c.label}
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </nav>
+          <ThemeToggle className="max-md:hidden" />
+        </div>
         <PageHeading className="text-ink m-0 text-xl font-semibold tracking-tight md:text-2xl">
           {title}
         </PageHeading>
