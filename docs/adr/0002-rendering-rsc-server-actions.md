@@ -6,7 +6,7 @@ Use the Next.js App Router: RSC for reads, Server Actions for writes, `useOptimi
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 

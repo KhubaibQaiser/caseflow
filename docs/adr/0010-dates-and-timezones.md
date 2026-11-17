@@ -6,7 +6,7 @@ Use date-fns and react-day-picker, store follow-ups as SQL `date`, and compute "
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 

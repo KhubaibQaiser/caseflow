@@ -117,6 +117,8 @@ jobs:
         if: steps.recheck.outputs.current == 'true'
         env:
           BASE_URL: ${{ steps.deploy.outputs.url }}
+          # global-setup signs in both seeded roles before any spec runs.
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
           SEED_VIEWER_PASSWORD: ${{ secrets.SEED_VIEWER_PASSWORD }}
         run: |
           if [ -f tests/e2e/smoke.spec.ts ]; then
