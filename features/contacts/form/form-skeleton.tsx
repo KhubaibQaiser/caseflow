@@ -6,14 +6,24 @@ const fieldset =
   'rounded-surface border-line bg-surface flex flex-col gap-3 border px-4 pt-[30.5px] pb-4';
 
 // Label row 19.5px, 6px gap, then the control: the same 61.5px the real Field takes.
-function FieldSkeleton({ tall = false }: { tall?: boolean }) {
+function FieldSkeleton({
+  tall = false,
+  hint = false,
+  control,
+}: {
+  tall?: boolean;
+  hint?: boolean;
+  /** Replaces the full-width input block, e.g. the segmented control's 34px. */
+  control?: string;
+}) {
   return (
     <div className="flex flex-col gap-1.5">
       <div className="flex h-[19.5px] items-center">
         <Skeleton className="h-3 w-24" />
       </div>
-      <Skeleton className={tall ? 'h-18 w-full' : 'h-9 w-full'} />
-      {tall && <Skeleton className="h-4 w-16" />}
+      <Skeleton className={control ?? (tall ? 'h-18 w-full' : 'h-9 w-full')} />
+      {tall && <Skeleton className="h-4.25 w-16" />}
+      {hint && <Skeleton className="h-4 w-24" />}
     </div>
   );
 }
@@ -52,12 +62,12 @@ export function FormSkeleton() {
         </div>
         <div className={fieldset}>
           <div className="grid items-start gap-3 sm:grid-cols-2">
-            <Skeleton className="h-[59.5px] w-full" />
-            <Skeleton className="h-[83.5px] w-full" />
+            <FieldSkeleton control="h-8.5 w-52" />
+            <FieldSkeleton hint />
           </div>
         </div>
         <div className="flex h-8.5 justify-end gap-2">
-          <Skeleton className="rounded-ctl h-8.5 w-18" />
+          <Skeleton className="rounded-ctl h-8.5 w-17.75" />
           <Skeleton className="rounded-ctl h-8.5 w-27" />
         </div>
       </div>

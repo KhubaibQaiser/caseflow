@@ -30,8 +30,8 @@ test('Admin signs in, lands on /contacts, and signs out', async ({ page }) => {
   await signInAs(page, 'admin');
   await expect(page).toHaveURL(/\/contacts$/);
   const side = page.getByRole('complementary');
-  await expect(side.getByText('Alex Morgan')).toBeVisible();
-  await side.getByRole('button', { name: 'Sign out' }).click();
+  await side.getByRole('button', { name: /^Account: Alex Morgan/ }).click();
+  await page.getByRole('menuitem', { name: 'Sign out' }).click();
   await expect(page).toHaveURL(/\/login$/);
   await page.goto('/contacts/new');
   await expect(page).toHaveURL(/\/login\?next=%2Fcontacts%2Fnew/);

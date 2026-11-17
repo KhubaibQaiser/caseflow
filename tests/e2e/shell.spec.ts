@@ -19,8 +19,9 @@ test('desktop shell: sidebar, current page, role badge, skip link', async ({
   const side = page.getByRole('complementary');
   await expect(side.getByRole('link', { name: 'Contacts' })).toBeVisible();
   await expect(side.getByRole('link', { name: 'Pipeline' })).toBeVisible();
-  await expect(side.getByText('Alex Morgan')).toBeVisible();
-  await expect(side.getByText('Admin', { exact: true })).toBeVisible();
+  await expect(
+    side.getByRole('button', { name: 'Account: Alex Morgan, Admin' }),
+  ).toContainText('Alex Morgan · Admin');
   await expect(
     page.getByRole('main').getByRole('heading', { name: 'Page not found.' }),
   ).toBeVisible();
@@ -50,9 +51,14 @@ test.describe('as a viewer', () => {
     await expect(
       page.getByText('Your role is Viewer, which is read-only.'),
     ).toBeVisible();
-    await expect(
-      page.getByRole('complementary').getByText('Viewer · read-only'),
-    ).toBeVisible();
+    const account = page
+      .getByRole('complementary')
+      .getByRole('button', { name: 'Account: Sam Patel, Viewer' });
+    await expect(account).toContainText('Sam Patel · Viewer');
+    await account.click();
+    await expect(page.getByRole('menu')).toContainText('Viewer · read-only');
+    expect((await axe(page)).violations).toEqual([]);
+    await page.keyboard.press('Escape');
     await expect(
       page.getByRole('link', { name: 'Back to contacts' }),
     ).toHaveAttribute('href', '/contacts');
@@ -124,4 +130,19 @@ test('@mobile a toast clears the tab bar and the safe area', async ({
   const toastBox = (await toast.boundingBox())!;
   const tabBox = (await page.locator('[data-tab-bar]').boundingBox())!;
   expect(toastBox.y + toastBox.height).toBeLessThanOrEqual(tabBox.y - 8);
+});
+
+test('the rail shows an initials avatar that opens the account menu', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 900, height: 700 });
+  await page.goto('/no-such-page');
+  const avatar = page
+    .getByRole('complementary')
+    .getByRole('button', { name: 'Account: Alex Morgan, Admin' });
+  await expect(avatar).toContainText('AM');
+  await avatar.click();
+  await expect(page.getByRole('menu')).toContainText('Alex Morgan');
+  await expect(page.getByRole('menuitem', { name: 'Sign out' })).toBeVisible();
+  expect((await axe(page)).violations).toEqual([]);
 });

@@ -1,110 +1,78 @@
 'use client';
 
+import { Suspense, lazy, useState } from 'react';
+
 import LogOut from 'lucide-react/icons/log-out';
 import Lock from 'lucide-react/icons/lock';
-import ShieldCheck from 'lucide-react/icons/shield-check';
 
 import { Button } from '@/components/ui/button';
-import { LazyTooltip } from '@/components/ui/lazy-tooltip';
 import { useViewer } from '@/lib/auth/permissions-context';
 import { ROLE_LABEL } from '@/lib/contracts/permissions';
-import { cn } from '@/utils/cn';
+
+import { AccountTrigger } from './account-trigger';
 
 export type SignOut = () => Promise<void>;
 
-/** `rail` collapses to an icon pill below lg (the tablet rail), with a tooltip; elsewhere it is always full. */
-function RoleBadge({ rail = false }: { rail?: boolean }) {
-  const { role } = useViewer();
-  const viewer = role === 'viewer';
-  const label = `${ROLE_LABEL[role]}${viewer ? ' · read-only' : ''}`;
-  const badge = (
-    <span
-      className={cn(
-        'text-ink-2 border-lead-border rounded-pill inline-flex items-center gap-1 self-start border px-1.75 text-xs leading-4.5 font-semibold',
-        // A 24px circle: one glyph, even padding all round.
-        rail &&
-          'max-lg:size-6 max-lg:justify-center max-lg:gap-0 max-lg:self-center max-lg:px-0',
-      )}
-    >
-      {viewer ? (
-        <Lock aria-hidden className="size-2.75 max-lg:size-3" />
-      ) : (
-        rail && <ShieldCheck aria-hidden className="size-3 lg:hidden" />
-      )}
-      <span className={cn(rail && 'max-lg:sr-only')}>{label}</span>
-    </span>
-  );
-  if (!rail) return badge;
-  return (
-    <LazyTooltip content={label} side="right" contentClassName="lg:hidden">
-      {badge}
-    </LazyTooltip>
-  );
+export function roleLine(role: keyof typeof ROLE_LABEL) {
+  return `${ROLE_LABEL[role]}${role === 'viewer' ? ' · read-only' : ''}`;
 }
 
-export function AccountIdentity({ rail = false }: { rail?: boolean }) {
-  const { displayName } = useViewer();
+/** The mobile Account sheet's name and role badge. */
+export function AccountIdentity() {
+  const { displayName, role } = useViewer();
   return (
-    <div className={cn('flex flex-col gap-1', rail && 'max-lg:items-center')}>
-      <span
-        className={cn(
-          'text-ink text-13 font-semibold',
-          rail && 'max-lg:sr-only',
-        )}
-      >
-        {displayName}
+    <div className="flex flex-col gap-1">
+      <span className="text-ink text-13 font-semibold">{displayName}</span>
+      <span className="text-ink-2 border-lead-border rounded-pill inline-flex items-center gap-1 self-start border px-1.75 text-xs leading-4.5 font-semibold">
+        {role === 'viewer' && <Lock aria-hidden className="size-2.75" />}
+        {roleLine(role)}
       </span>
-      <RoleBadge rail={rail} />
     </div>
   );
 }
 
-/**
- * `rail`: the sidebar's quiet text link (icon only on the tablet rail, tooltip there).
- * Otherwise the bordered button for the mobile Account sheet, whose label is already visible.
- */
+/** The bordered Sign out button for the mobile Account sheet. */
 export function SignOutForm({
   signOut,
-  rail = false,
   className,
 }: {
   signOut: SignOut;
-  rail?: boolean;
   className?: string;
 }) {
-  if (!rail)
-    return (
-      <form action={signOut} className={className}>
-        <Button variant="ghost" size="sm" type="submit" className="w-full">
-          <LogOut aria-hidden className="size-4" />
-          Sign out
-        </Button>
-      </form>
-    );
   return (
-    <form
-      action={signOut}
-      className={cn(className, 'max-lg:flex max-lg:justify-center')}
-    >
-      <LazyTooltip content="Sign out" side="right" contentClassName="lg:hidden">
-        <button
-          type="submit"
-          className="text-ink-2 hover:text-ink rounded-ctl text-13 inline-flex min-h-6 cursor-pointer items-center justify-center gap-0 border-0 bg-transparent font-medium max-lg:size-7.5 lg:-ml-1 lg:px-1"
-        >
-          <LogOut aria-hidden className="size-4 lg:hidden" />
-          <span className="max-lg:sr-only">Sign out</span>
-        </button>
-      </LazyTooltip>
+    <form action={signOut} className={className}>
+      <Button variant="ghost" size="sm" type="submit" className="w-full">
+        <LogOut aria-hidden className="size-4" />
+        Sign out
+      </Button>
     </form>
   );
 }
 
-/** Sidebar footer: who you are, what you may do, and the way out. */
+/** Radix menu + floating-ui load on first hover, focus or click; the stand-in trigger shows until then. */
+export const preloadAccountMenu = () => import('./account-menu');
+const AccountMenu = lazy(preloadAccountMenu);
+
+/**
+ * Sidebar footer: one menu trigger. From lg it is a "Name · Role" row; on the rail it is
+ * a 32px initials avatar whose corner badge (shield or lock) carries the role by shape.
+ */
 export function AccountBlock({ signOut }: { signOut: SignOut }) {
+  // A click on the stand-in, before the menu code arrives, opens the menu as soon as it mounts.
+  const [wantOpen, setWantOpen] = useState(false);
   return (
-    <div className="border-line mt-auto flex flex-col gap-1 border-t pt-3 lg:px-2.5">
-      <AccountIdentity rail />
-      <SignOutForm signOut={signOut} rail />
+    <div className="border-line mt-auto border-t pt-3 max-lg:flex max-lg:justify-center">
+      <Suspense
+        fallback={
+          <AccountTrigger
+            onPointerEnter={() => void preloadAccountMenu()}
+            onFocus={() => void preloadAccountMenu()}
+            onClick={() => setWantOpen(true)}
+          />
+        }
+      >
+        <AccountMenu signOut={signOut} defaultOpen={wantOpen} />
+      </Suspense>
     </div>
   );
 }
