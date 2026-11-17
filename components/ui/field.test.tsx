@@ -96,6 +96,25 @@ describe('Field', () => {
     );
   });
 
+  it('marks a required field with a lowercase note', () => {
+    render(
+      <Field id="full-name" label="Full name" required>
+        <Input />
+      </Field>,
+    );
+    expect(screen.getByText('required')).toBeInTheDocument();
+  });
+
+  it('shows a conditional note without marking the control required', () => {
+    render(
+      <Field id="email" label="Email" requiredNote="required if no phone">
+        <Input />
+      </Field>,
+    );
+    expect(screen.getByText('required if no phone')).toBeInTheDocument();
+    expect(screen.getByRole('textbox')).not.toHaveAttribute('aria-required');
+  });
+
   it('keeps the invalid border on hover', () => {
     render(
       <Field id="full-name" label="Full name" error="Enter a full name.">

@@ -336,7 +336,12 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
             }
             className="grid gap-3 outline-none sm:grid-cols-2"
           >
-            <Field id="email" label="Email" error={err('email')}>
+            <Field
+              id="email"
+              label="Email"
+              requiredNote="required if no phone"
+              error={err('email')}
+            >
               <Input
                 {...register('email')}
                 type="email"
@@ -350,7 +355,12 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
                 }
               />
             </Field>
-            <Field id="phone" label="Phone" error={err('phone')}>
+            <Field
+              id="phone"
+              label="Phone"
+              requiredNote="required if no email"
+              error={err('phone')}
+            >
               <Controller
                 control={control}
                 name="phone"
