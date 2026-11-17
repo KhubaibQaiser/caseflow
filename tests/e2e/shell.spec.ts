@@ -1,12 +1,14 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { storage } from './helpers';
+import { settleAnimations, storage } from './helpers';
 
-const axe = (page: import('@playwright/test').Page) =>
-  new AxeBuilder({ page })
+const axe = async (page: import('@playwright/test').Page) => {
+  await settleAnimations(page);
+  return new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
+};
 
 test('desktop shell: sidebar, current page, role badge, skip link', async ({
   page,

@@ -2,15 +2,17 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
-import { storage } from './helpers';
+import { settleAnimations, storage } from './helpers';
 
 // Runs signed in as the seeded Admin (global setup) on the fake data layer until T22b. Fake contact ids aren't
 // database rows, so a move can't succeed for real: the move action is answered here, and the client code under
 // test (optimistic move, rollback, toasts) is the real one. Show 50 more goes through the real action.
-const axe = (page: Page) =>
-  new AxeBuilder({ page })
+const axe = async (page: Page) => {
+  await settleAnimations(page);
+  return new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
+};
 
 // Taps before hydration do nothing (the menu and tabs are client code), so wait for the page to settle.
 async function board(page: Page, url: string) {

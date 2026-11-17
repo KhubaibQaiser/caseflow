@@ -36,3 +36,20 @@ export async function signInAs(page: Page, role: Role) {
   await signIn(page, ACCOUNT[role].email, seedPassword(role));
   await page.waitForURL((u) => u.pathname !== '/login');
 }
+
+// Waits for finite animations (menu, popover and sheet enters) to end, so axe never reads blended mid-fade colours.
+// Looping ones (spinners, the loading bar) are skipped; the wait is bounded.
+export async function settleAnimations(page: Page) {
+  await page.waitForFunction(
+    () =>
+      document
+        .getAnimations()
+        .every(
+          (a) =>
+            a.playState !== 'running' ||
+            a.effect?.getComputedTiming().iterations === Infinity,
+        ),
+    undefined,
+    { timeout: 5_000 },
+  );
+}
