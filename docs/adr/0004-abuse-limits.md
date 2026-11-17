@@ -6,7 +6,7 @@ Use Supabase's per-IP sign-in limits, with the client IP forwarded through `Sb-F
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 

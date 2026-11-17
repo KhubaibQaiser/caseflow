@@ -6,7 +6,7 @@ Use two Postgres RPCs, `search_contacts` and `contact_facets`, sharing one SQL p
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 

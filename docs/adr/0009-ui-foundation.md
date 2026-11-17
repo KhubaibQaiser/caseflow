@@ -6,7 +6,7 @@ Use Radix primitives with our own styling, React Hook Form with one shared Zod s
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 

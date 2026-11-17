@@ -6,7 +6,7 @@ Use server offset pagination with an exact count, plus TanStack Virtual, with a 
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 

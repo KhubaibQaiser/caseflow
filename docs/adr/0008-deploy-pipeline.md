@@ -6,7 +6,7 @@ Use GitHub Actions to run checks, then `supabase db push`, then `vercel deploy -
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 
