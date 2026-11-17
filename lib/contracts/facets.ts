@@ -1,3 +1,4 @@
+import './zod-config';
 import { z } from 'zod';
 import {
   FOLLOW_UP_FILTERS,

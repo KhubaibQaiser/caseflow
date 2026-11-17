@@ -1,3 +1,4 @@
+import '@/lib/contracts/zod-config';
 import { z } from 'zod';
 
 // Set by a form right before it pushes /login after an expiry, so /login knows Back
