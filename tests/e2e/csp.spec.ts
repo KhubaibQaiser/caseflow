@@ -112,7 +112,13 @@ test('/no-such-page (the static-by-default 404) is nonced and clean', async ({
     page.getByRole('heading', { name: 'Page not found.' }),
   ).toBeVisible();
   // The 404 status itself logs a resource error; only CSP problems count here.
-  expect(problems.filter((p) => !p.includes('404'))).toEqual([]);
+  expect(
+    problems.filter(
+      (p) =>
+        p !==
+        'console: Failed to load resource: the server responded with a status of 404 (Not Found)',
+    ),
+  ).toEqual([]);
 });
 
 test('@mobile the sort menu opens', async ({ page }) => {
