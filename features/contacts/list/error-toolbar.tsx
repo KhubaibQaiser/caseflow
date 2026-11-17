@@ -10,10 +10,7 @@ export function ErrorToolbar({ hideSort }: { hideSort?: boolean }) {
   const filtersButton = useRef<HTMLButtonElement>(null);
   return (
     <ListTransition>
-      <Toolbar
-        filtersButton={filtersButton}
-        hideSort={hideSort}
-      />
+      <Toolbar filtersButton={filtersButton} hideSort={hideSort} />
     </ListTransition>
   );
 }

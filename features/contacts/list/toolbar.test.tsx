@@ -25,11 +25,7 @@ function WithPanel() {
   const filtersButton = useRef<HTMLButtonElement>(null);
   const panel = useFiltersPanel(false, filtersButton);
   return (
-    <Toolbar
-      facets={FACETS}
-      panel={panel}
-      filtersButton={filtersButton}
-    />
+    <Toolbar facets={FACETS} panel={panel} filtersButton={filtersButton} />
   );
 }
 
@@ -326,12 +322,7 @@ describe('Toolbar sort', () => {
   const shown = (hideSort: boolean) => {
     function T() {
       const filtersButton = useRef<HTMLButtonElement>(null);
-      return (
-        <Toolbar
-          filtersButton={filtersButton}
-          hideSort={hideSort}
-        />
-      );
+      return <Toolbar filtersButton={filtersButton} hideSort={hideSort} />;
     }
     render(<T />, { wrapper: wrapper() });
     return screen.queryByRole('button', { name: /^Sort/ });

@@ -263,29 +263,30 @@ export function ContactsTable({
             <TableSkeletonRows rows={skeletonRows} />
           )}
           {skeletonRows === undefined && spacer(before)}
-          {skeletonRows === undefined && items.map((item) => {
-            const r = tableRows[item.index];
-            if (!r) return null;
-            return (
-              <tr
-                key={r.id}
-                aria-rowindex={offset + item.index + 2}
-                className="group"
-              >
-                {r.getAllCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className={cn(
-                      'border-line-soft bg-surface group-hover:bg-panel h-9 truncate border-b px-2.5',
-                      cell.column.id === 'name' && pinned,
-                    )}
-                  >
-                    <table.FlexRender cell={cell} />
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
+          {skeletonRows === undefined &&
+            items.map((item) => {
+              const r = tableRows[item.index];
+              if (!r) return null;
+              return (
+                <tr
+                  key={r.id}
+                  aria-rowindex={offset + item.index + 2}
+                  className="group"
+                >
+                  {r.getAllCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        'border-line-soft bg-surface group-hover:bg-panel h-9 truncate border-b px-2.5',
+                        cell.column.id === 'name' && pinned,
+                      )}
+                    >
+                      <table.FlexRender cell={cell} />
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           {skeletonRows === undefined && spacer(after)}
         </tbody>
       </table>

@@ -1,25 +1,11 @@
 import { headroomLayout } from '@/components/shell/headroom-layout';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CardSkeleton } from '@/features/pipeline/card-skeleton';
 import { listPageFrame } from '@/features/contacts/list/frame';
 import {
   HeaderSkeleton,
   ToolbarSkeleton,
 } from '@/features/contacts/list/toolbar-skeleton';
-
-const NAME = ['w-32', 'w-40', 'w-28', 'w-36', 'w-24'];
-
-function Card({ i }: { i: number }) {
-  return (
-    <div className="border-line bg-surface rounded-lg border px-3 py-2.5">
-      <div className="flex items-center justify-between gap-3">
-        <Skeleton className={`h-3.5 ${NAME[i % NAME.length]}`} />
-        <Skeleton className="h-3 w-16" />
-      </div>
-      <Skeleton className="mt-2 h-3 w-36" />
-      <Skeleton className="mt-2.5 h-7 w-24 rounded-md" />
-    </div>
-  );
-}
 
 /** Three columns of cards (one on a phone), in the board's own frame, so nothing shifts when it lands. */
 export default function PipelineLoading() {
@@ -54,7 +40,7 @@ export default function PipelineLoading() {
               <Skeleton className="h-3 w-8" />
             </div>
             {[0, 1, 2, 3, 4, 5].map((i) => (
-              <Card key={i} i={i + c} />
+              <CardSkeleton key={i} i={i + c} />
             ))}
           </div>
         ))}

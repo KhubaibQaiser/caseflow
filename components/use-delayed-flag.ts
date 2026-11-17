@@ -4,13 +4,13 @@ import { useEffect, useState } from 'react';
 export function useDelayedFlag(flag: boolean, ms = 300): boolean {
   const [late, setLate] = useState(false);
   useEffect(() => {
-    if (!flag) {
-      setLate(false);
-      return;
-    }
+    if (!flag) return;
     const t = setTimeout(() => setLate(true), ms);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      setLate(false);
+    };
   }, [flag, ms]);
-  // The effect clears `late` a render after `flag` drops; this hides that frame.
+  // `late` resets in the cleanup, a render after `flag` drops; `flag &&` hides that frame.
   return flag && late;
 }
