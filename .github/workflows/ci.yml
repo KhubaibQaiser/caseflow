@@ -40,7 +40,6 @@ jobs:
       # CI-only values for the throwaway local database; not real credentials.
       SEED_ADMIN_PASSWORD: ci-only-admin-password-not-a-secret
       SEED_VIEWER_PASSWORD: ci-only-viewer-password-not-a-secret
-      AUTH_ENFORCED: 'true'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

@@ -32,7 +32,7 @@ supabase start
 pnpm dev
 ```
 
-M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or the local env file.
+Sign-in is enforced by default, so `pnpm dev` needs `supabase start`, the local env file and `pnpm seed`.
 
 ## Scripts
 
@@ -161,15 +161,15 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
 - `lib/auth/viewer.ts` is the entry point the app imports. It re-exports the real `lib/auth/viewer-supabase.ts` (the `fake-role` cookie viewer is gone).
 - `getViewer()` verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and calls Next's `forbidden()` otherwise, which renders `app/(app)/forbidden.tsx` (`experimental.authInterrupts`). `assertPermission` returns a `Result` (`forbidden` or `unauthorized`) for Server Actions, so the form keeps what was typed.
-- Auth enforcement in `proxy.ts` is on when `AUTH_ENFORCED=true`: set in `.env.example`, the CI e2e job and Playwright's `webServer`. **Vercel needs `AUTH_ENFORCED=true` too** (the T23 deploy sets it). Without it the proxy passes every request through.
+- Auth enforcement in `proxy.ts` is on by default and off only when `AUTH_ENFORCED=false` exactly (a missing variable, even on Vercel, keeps sign-in on). Nothing in CI, Playwright or the env example sets it; tooling that needs it off must opt out explicitly.
 - `proxy.ts` only checks sign-in: refreshes the session, sends anonymous requests to `/login?next=…` (plus `reason=expired` if an `sb-` cookie exists), and sends signed-in users from `/login` to `/contacts`. `/dev/*` is a 404 when `VERCEL_ENV=production`.
 - There is no browser Supabase client. Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (all server-only).
 - Signed in without a `profiles` row: `getViewer` throws `NoProfileError` (and `requirePermission` rethrows it; `assertPermission` returns `forbidden`). It never redirects to `/login`, which would loop. The `(app)` layout catches it and renders the No access state: "No access." / "Your account isn't set up yet. Ask an admin." with Sign out. A failed `profiles` query throws a plain `Error` (error boundary).
 - `requirePermission(p, next?)` redirects to `/login?next=…&reason=expired`.
 - Revocation lag: `getClaims()` checks the JWT signature, not the user record, so a banned or deleted user keeps access until the access token expires (up to 1 hour). Roles are read live from `profiles`, and RLS applies on every query.
-- Sign-in throttle: Supabase limits by IP, and `signInAction` forwards `x-forwarded-for`'s first entry only when `net.isIP` accepts it; otherwise nothing is forwarded and the limit falls on the server's own IP. Trade-off: the throttle is per IP only, with no per-account lockout, so the seeded passwords must be strong (a spread-out guesser is not slowed).
-- A request carrying `next-action` (a Server Action) from a dead session passes the proxy: a redirect would fail the action's fetch, and every action checks its own permission and returns `unauthorized`, which the form turns into the sign-in push.
-- After an expiry, the sign-in form tells the action to skip the redirect (`back=1`) when the login page was reached by an in-app push (the first document loaded was not `/login`), then calls `history.back()`, so the form's saved draft comes back. A fresh load of `/login?reason=expired` redirects to `next` as usual.
+- Sign-in throttle: Supabase limits by IP, and `signInAction` forwards `x-vercel-forwarded-for`, then the rightmost `x-forwarded-for` entry (leading entries are client-supplied), each only when `net.isIP` accepts it; otherwise nothing is forwarded and the limit falls on the server's own IP. Trade-off: the throttle is per IP only, with no per-account lockout, so the seeded passwords must be strong (a spread-out guesser is not slowed).
+- A POST carrying `next-action` (a Server Action) from a dead session passes the proxy: a redirect would fail the action's fetch, and every action checks its own permission and returns `unauthorized`, which the form turns into the sign-in push.
+- After an expiry the form writes a same-tab marker (`lib/auth/return-marker.ts`, `sessionStorage`, path and time only, ten minutes) before pushing `/login`. With a marker for `next`, sign-in skips the redirect (`back=1`) and calls `history.back()` so the saved draft comes back; if the page is still `/login` after a second, it does `router.replace(next)`. Without a marker (new tab, Link or proxy redirect) sign-in redirects to `next`.
 - The proxy only URL-encodes `next`. T10's `safeNext` must reject values starting with `//` or `/\`.
 - Auth responses carry `Cache-Control: private, no-store` from `@supabase/ssr` (proxy and redirects).
 

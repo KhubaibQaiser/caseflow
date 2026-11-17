@@ -37,6 +37,7 @@ import {
   STATUSES,
   type Status,
 } from '@/lib/contracts/enums';
+import { markReturn } from '@/lib/auth/return-marker';
 import { fail, type Result } from '@/lib/contracts/result';
 
 import { ConflictBanner, SaveFailedBanner } from './conflict-banner';
@@ -225,6 +226,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
         },
         '',
       );
+      markReturn(pathname); // tells /login that Back leads to this draft
       router.push(`/login?reason=expired&next=${encodeURIComponent(pathname)}`);
     } else if (code === 'conflict') {
       setBanner({ kind: 'conflict' });

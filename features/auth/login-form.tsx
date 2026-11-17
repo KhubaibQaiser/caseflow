@@ -7,6 +7,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react';
+import { useRouter } from 'next/navigation';
 import CircleAlert from 'lucide-react/icons/circle-alert';
 import Eye from 'lucide-react/icons/eye';
 import EyeOff from 'lucide-react/icons/eye-off';
@@ -17,8 +18,11 @@ import { Button } from '@/components/ui/button';
 import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { PageHeading } from '@/components/ui/page-heading';
+import { clearReturn, hasReturn } from '@/lib/auth/return-marker';
 import { SignInSchema } from '@/lib/contracts/auth';
 import { zodFieldErrors, type Result } from '@/lib/contracts/result';
+
+import { safeNext } from './safe-next';
 
 type LoginFormProps = {
   action: (prev: Result<null> | null, data: FormData) => Promise<Result<null>>;
@@ -28,12 +32,7 @@ type LoginFormProps = {
 
 const subscribe = () => () => {};
 const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
-// ponytail: the document that first loaded was not /login, so this page came from an in-app
-// push and Back leads to the form. A hard load of /login has nothing to go back to.
-const cameFromApp = () => {
-  const nav = performance.getEntriesByType('navigation')[0];
-  return !!nav && new URL(nav.name).pathname !== '/login';
-};
+const BACK_TIMEOUT_MS = 1000;
 
 function Banner({
   tone,
@@ -98,14 +97,25 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
 
   useEffect(() => emailRef.current?.focus(), []);
 
+  // Back only when the form that expired marked its draft entry; anything else lands on next.
   const goBack = useSyncExternalStore(
     subscribe,
-    () => reason === 'expired' && cameFromApp(),
+    () => reason === 'expired' && hasReturn(next),
     () => false,
   );
+  const router = useRouter();
+  const signedIn = state?.ok === true;
   useEffect(() => {
-    if (state?.ok) window.history.back();
-  }, [state]);
+    if (!signedIn) return;
+    clearReturn();
+    const target = safeNext(next) ?? '/contacts';
+    window.history.back();
+    // Back found nothing to return to (new tab, duplicated tab): go to next instead.
+    const t = setTimeout(() => {
+      if (window.location.pathname === '/login') router.replace(target);
+    }, BACK_TIMEOUT_MS);
+    return () => clearTimeout(t);
+  }, [signedIn, next, router]);
 
   // Put focus where the next action is: the password after a wrong one, the email after a lock.
   useEffect(() => {

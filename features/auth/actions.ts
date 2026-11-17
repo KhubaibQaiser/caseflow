@@ -27,9 +27,14 @@ export async function signInAction(
       fieldErrors: zodFieldErrors(parsed.error),
     });
 
-  // An attacker-controlled header must not pick the throttle bucket: only a real IP counts.
-  const first = (await headers()).get('x-forwarded-for')?.split(',')[0]?.trim();
-  const ip = first && isIP(first) ? first : null;
+  // Only the proxy-set values count: Vercel's own header, then the rightmost
+  // x-forwarded-for entry (the one the platform appended; leading ones are client-supplied).
+  const h = await headers();
+  const ip =
+    [
+      h.get('x-vercel-forwarded-for')?.trim(),
+      h.get('x-forwarded-for')?.split(',').at(-1)?.trim(),
+    ].find((c) => c && isIP(c)) ?? null;
   const { data, error } = await createSignInClient(ip).auth.signInWithPassword(
     parsed.data,
   );

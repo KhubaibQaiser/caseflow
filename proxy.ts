@@ -53,7 +53,9 @@ export async function proxy(request: NextRequest) {
   if (signedIn) return response;
   // A dead session mid-save: a redirect would fail the action's fetch. Every action
   // checks its own permission, so let it through to return `unauthorized` (the form then goes to /login).
-  if (request.headers.has('next-action')) return response;
+  // POST only: a GET with the header must not skip sign-in.
+  if (request.method === 'POST' && request.headers.has('next-action'))
+    return response;
 
   const url = here('/login');
   url.searchParams.set('next', pathname + search);
