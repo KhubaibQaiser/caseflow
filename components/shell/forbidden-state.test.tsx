@@ -26,4 +26,18 @@ describe('ForbiddenState', () => {
       screen.getByRole('link', { name: 'Back to Marisol Ortega' }),
     ).toHaveAttribute('href', '/contacts/123');
   });
+
+  it('takes its own description when the default does not fit', () => {
+    render(
+      <ForbiddenState
+        action="add contacts"
+        description="Your role is Viewer, which is read-only. An admin can change your role or add the contact for you."
+        backHref="/contacts"
+        backLabel="Back to contacts"
+      />,
+    );
+    expect(
+      screen.getByText(/or add the contact for you\./),
+    ).toBeInTheDocument();
+  });
 });

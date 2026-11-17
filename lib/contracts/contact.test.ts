@@ -20,7 +20,9 @@ describe('makeContactInputSchema', () => {
     expect(r.success).toBe(false);
     expect(
       r.error!.issues.find((i) => i.path[0] === 'contactMethod')!.message,
-    ).toBe('Add an email or a phone number.');
+    ).toBe(
+      "Add an email or a phone number. Intake can't follow up without one.",
+    );
   });
 
   it('trims names and rejects whitespace-only', () => {
@@ -29,6 +31,16 @@ describe('makeContactInputSchema', () => {
     const bad = schema.safeParse({ ...valid, fullName: '   ' });
     expect(bad.success).toBe(false);
     expect(bad.error!.issues.some((i) => i.path[0] === 'fullName')).toBe(true);
+  });
+
+  it('says "Enter a full name." for an empty name and keeps the length rule for one character', () => {
+    const msg = (fullName: string) =>
+      schema
+        .safeParse({ ...valid, fullName })
+        .error?.issues.find((i) => i.path[0] === 'fullName')?.message;
+    expect(msg('')).toBe('Enter a full name.');
+    expect(msg('   ')).toBe('Enter a full name.');
+    expect(msg('A')).toBe('Name must be at least 2 characters.');
   });
 
   it('accepts unicode and apostrophes', () => {
