@@ -158,7 +158,7 @@ vitest.config.mts (projects: unit = jsdom, integration = node), playwright.confi
     - `status` (enum, default `'lead'`)
     - `followUpOn` (`YYYY-MM-DD` or null; **must be ≥ `today` only when it differs from `previousFollowUpOn`**)
     - `summary` (trim, ≤ 1000, empty becomes null)
-  - A `superRefine` adds the issue "Add an email or a phone number." on the path `['contactMethod']` when both email and phone are null.
+  - A `superRefine` adds the issue "Add an email or a phone number. Intake can't follow up without one." on the path `['contactMethod']` when both email and phone are null.
   - `type ContactInput`
   - `ContactRowSchema` and `type ContactRow = {id; fullName; email; phone; matterType; referralSource; status; followUpOn:string|null; createdAt:string; updatedAt:string; urgency:'overdue'|'today'|'later'|'none'; daysOverdue:number|null}`
   - `type Note = {id; body; createdAt; author:{name:string; role:Role}}`
@@ -183,7 +183,7 @@ const schema = makeContactInputSchema({ today: '2026-11-16' })
 it('requires email or phone', () => {
   const r = schema.safeParse({ fullName: 'Marisol Ortega', email: '', phone: '', matterType: 'family' })
   expect(r.success).toBe(false)
-  expect(r.error!.issues.find(i => i.path[0] === 'contactMethod')!.message).toBe('Add an email or a phone number.')
+  expect(r.error!.issues.find(i => i.path[0] === 'contactMethod')!.message).toBe("Add an email or a phone number. Intake can't follow up without one.")
 })
 it('trims names and rejects whitespace-only', () => { /* '  Ana  ' → 'Ana'… '   ' → issue on fullName */ })
 it('accepts unicode and apostrophes', () => { /* "Zoë O'Brien-Núñez" ok */ })
