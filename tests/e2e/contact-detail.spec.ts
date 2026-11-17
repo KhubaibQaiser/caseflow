@@ -275,11 +275,9 @@ test('a failed note save keeps the text, rings the frame, and Save note sends it
   await box.fill('Called back');
   await page.getByRole('button', { name: 'Save note' }).click();
 
-  const alert = page
-    .getByRole('alert')
-    .filter({
-      hasText: 'Note not saved. Check your connection and save again.',
-    });
+  const alert = page.getByRole('alert').filter({
+    hasText: 'Note not saved. Check your connection and save again.',
+  });
   await expect(alert).toBeVisible();
   await expect(box).toHaveText('Called back');
   await expect(box).toHaveAttribute('aria-invalid', 'true');
