@@ -1,4 +1,10 @@
-import { render, screen, waitFor, within } from '@testing-library/react';
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -30,6 +36,15 @@ const loaded = () =>
   );
 
 describe('ThemeToggle', () => {
+  // First in the file on purpose: React.lazy caches the chunk, so only the first render shows the stand-in.
+  it('a click before the menu code has loaded is not lost: the menu opens when it arrives', async () => {
+    render(<ThemeToggle />);
+    // Synchronously after render, the lazy chunk cannot have resolved yet.
+    fireEvent.click(screen.getByRole('button', { name: /^Theme/ }));
+    expect(await screen.findByRole('menu')).toBeInTheDocument();
+    expect(screen.getAllByRole('menuitemradio')).toHaveLength(3);
+  });
+
   it('labels the button with the theme and, for System, the effective one', () => {
     mockDark(true);
     render(<ThemeToggle />);

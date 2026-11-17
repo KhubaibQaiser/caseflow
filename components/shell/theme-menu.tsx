@@ -29,13 +29,16 @@ export default function ThemeMenu({
   theme,
   label,
   className,
+  defaultOpen = false,
 }: {
   theme: Theme;
   label: string;
   className?: string;
+  /** Set when the stand-in was clicked while this code was loading. */
+  defaultOpen?: boolean;
 }) {
   return (
-    <DropdownMenu>
+    <DropdownMenu defaultOpen={defaultOpen}>
       <LazyTooltip content={label}>
         <DropdownMenuTrigger asChild>
           <ThemeButton label={label} className={className} />
