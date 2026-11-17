@@ -2,7 +2,11 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { markReturn } from '@/lib/auth/return-marker';
 import { fail, type Result } from '@/lib/contracts/result';
+
+const replace = vi.hoisted(() => vi.fn());
+vi.mock('next/navigation', () => ({ useRouter: () => ({ replace }) }));
 
 import { LoginForm } from './login-form';
 
@@ -23,14 +27,12 @@ async function fill(user: ReturnType<typeof userEvent.setup>) {
 const submit = (user: ReturnType<typeof userEvent.setup>) =>
   user.click(screen.getByRole('button', { name: 'Sign in' }));
 
-const started = (name: string) =>
-  vi
-    .spyOn(performance, 'getEntriesByType')
-    .mockReturnValue([{ name }] as unknown as PerformanceEntryList);
-
 afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
+  sessionStorage.clear();
+  replace.mockClear();
+  window.history.replaceState(null, '', '/');
 });
 
 describe('LoginForm', () => {
@@ -186,8 +188,8 @@ describe('LoginForm', () => {
     expect(screen.getByLabelText('Email')).toHaveValue('Sam@Firm.com');
   });
 
-  it('asks to go back when the page was reached from inside the app, and goes back on success', async () => {
-    started('http://localhost/contacts/1/edit');
+  it('goes Back when the form marked its draft entry', async () => {
+    markReturn('/x');
     const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
     const action = vi.fn<Action>(async () => ({ ok: true, data: null }));
     const user = userEvent.setup();
@@ -196,6 +198,21 @@ describe('LoginForm', () => {
     await submit(user);
     await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
     expect(action.mock.calls[0]![1].get('back')).toBe('1');
+    expect(sessionStorage.getItem('caseflow:return')).toBeNull();
+  });
+
+  it('replaces to next when Back leaves the page on /login', async () => {
+    markReturn('/x');
+    window.history.replaceState(null, '', '/login');
+    vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    const action = vi.fn<Action>(async () => ({ ok: true, data: null }));
+    const user = userEvent.setup();
+    render(<LoginForm action={action} reason="expired" next="/x" />);
+    await fill(user);
+    await submit(user);
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/x'), {
+      timeout: 3000,
+    });
   });
 
   // Last: their never-resolving actions leave a pending transition that stalls later tests.
@@ -263,27 +280,41 @@ describe('LoginForm', () => {
   });
 
   // Last, like the other never-resolving tests above.
-  describe('after a session expiry', () => {
-    it('does not ask to go back on a fresh load of the login page', async () => {
-      started('http://localhost/login?reason=expired');
-      const action = vi.fn<Action>(never);
+  describe('without a marked draft entry', () => {
+    const sent = async (render_: () => void) => {
       const user = userEvent.setup();
-      render(<LoginForm action={action} reason="expired" />);
+      render_();
       await fill(user);
       await submit(user);
-      await waitFor(() => expect(action).toHaveBeenCalled());
-      expect(action.mock.calls[0]![1].has('back')).toBe(false);
+      await waitFor(() => expect(lastAction).toHaveBeenCalled());
+      return lastAction.mock.calls[0]![1];
+    };
+    let lastAction = vi.fn<Action>(never);
+
+    it('does not ask to go Back with no marker (fresh tab, Link or proxy redirect)', async () => {
+      lastAction = vi.fn<Action>(never);
+      const data = await sent(() =>
+        render(<LoginForm action={lastAction} reason="expired" next="/x" />),
+      );
+      expect(data.has('back')).toBe(false);
     });
 
-    it('never asks to go back without reason=expired', async () => {
-      started('http://localhost/contacts');
-      const action = vi.fn<Action>(never);
-      const user = userEvent.setup();
-      render(<LoginForm action={action} />);
-      await fill(user);
-      await submit(user);
-      await waitFor(() => expect(action).toHaveBeenCalled());
-      expect(action.mock.calls[0]![1].has('back')).toBe(false);
+    it('does not ask to go Back when the marker is for another page', async () => {
+      markReturn('/other');
+      lastAction = vi.fn<Action>(never);
+      const data = await sent(() =>
+        render(<LoginForm action={lastAction} reason="expired" next="/x" />),
+      );
+      expect(data.has('back')).toBe(false);
+    });
+
+    it('never asks to go Back without reason=expired', async () => {
+      markReturn('/x');
+      lastAction = vi.fn<Action>(never);
+      const data = await sent(() =>
+        render(<LoginForm action={lastAction} next="/x" />),
+      );
+      expect(data.has('back')).toBe(false);
     });
   });
 });

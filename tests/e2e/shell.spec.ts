@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-import { signInAs, storage } from './helpers';
+import { storage } from './helpers';
 
 const axe = (page: import('@playwright/test').Page) =>
   new AxeBuilder({ page })

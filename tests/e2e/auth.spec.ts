@@ -111,3 +111,39 @@ test('after expiry, signing in returns to the form with the draft', async ({
     'Ana Díaz',
   );
 });
+
+test('expiry on a client Link navigation signs in and lands on next', async ({
+  page,
+  context,
+}) => {
+  await signInAs(page, 'admin');
+  await page.goto('/dev/toast');
+  await corruptSession(context);
+  await page
+    .getByRole('complementary')
+    .getByRole('link', { name: 'Pipeline' })
+    .click();
+  await expect(page).toHaveURL(/\/login\?.*reason=expired/);
+  await expect(page).toHaveURL(/next=%2Fpipeline/);
+  await context.clearCookies();
+
+  await page.getByLabel('Email').fill('admin@caseflow.test');
+  await page
+    .getByLabel('Password', { exact: true })
+    .fill(seedPassword('admin'));
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(/\/pipeline$/);
+});
+
+test('a single-entry tab on the expired login lands on next, not out of the app', async ({
+  page,
+}) => {
+  await page.goto('/login?reason=expired&next=%2Fpipeline');
+  expect(await page.evaluate(() => history.length)).toBe(1);
+  await page.getByLabel('Email').fill('admin@caseflow.test');
+  await page
+    .getByLabel('Password', { exact: true })
+    .fill(seedPassword('admin'));
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page).toHaveURL(/\/pipeline$/);
+});
