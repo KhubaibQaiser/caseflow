@@ -215,6 +215,23 @@ describe('LoginForm', () => {
     });
   });
 
+  it('clears a stale marker on load, so a later sign-in redirects to next', async () => {
+    markReturn('/x'); // left behind by an abandoned expiry
+    const { unmount } = render(<LoginForm action={vi.fn<Action>()} />);
+    expect(sessionStorage.getItem('caseflow:return')).toBeNull();
+    unmount();
+
+    const action = vi.fn<Action>(async () => ({ ok: true, data: null }));
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    const user = userEvent.setup();
+    render(<LoginForm action={action} reason="expired" next="/x" />);
+    await fill(user);
+    await submit(user);
+    await waitFor(() => expect(action).toHaveBeenCalled());
+    expect(action.mock.calls[0]![1].has('back')).toBe(false);
+    expect(back).not.toHaveBeenCalled();
+  });
+
   // Last: their never-resolving actions leave a pending transition that stalls later tests.
   it('is busy while pending', async () => {
     const user = userEvent.setup();
