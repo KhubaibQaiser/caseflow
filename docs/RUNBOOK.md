@@ -2,20 +2,6 @@
 
 Caseflow is a legal-intake mini CRM. It tracks every prospective client, a contact, from first enquiry to retained or closed, so no follow-up is missed. Contacts carry a matter, a referral source and a next follow-up date, and move through Lead, Active and Closed on a pipeline board. The list is a power tool: fast search, filters and sorting by urgency, with overdue follow-ups first.
 
-## Status
-
-- Final fixes are in: hygiene (dead code, shared list pieces, `/dev` 404s on previews, Server Action body cap), a Tailwind standard-step sweep and the accessibility audit fixes. The full README rewrite follows separately.
-- M0 is done: scaffold, contracts, date helpers and design tokens.
-- The app runs on real data (T22b): every screen reads Supabase through `lib/data` and writes through the Server Actions. The fake data layer is gone.
-- App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
-- FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
-- FE: the contacts list at `/contacts` (T14), on Supabase. The filters panel is T15 (done).
-- FE: the pipeline board at `/pipeline` (T18): optimistic Move to…, per-column paging, mobile tabs.
-- Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` (since T22a, PR #23). `/dev/auth` shows every state with canned results (404 in production).
-- Contact detail is done (T16): `/contacts/[id]` (`app/(app)/contacts/[id]`, `features/contacts/detail`). Breadcrumb, header (status, matter, "Enquired Nov 12 · waiting 4d", **Move to…**, **Edit**, a 44px **Call** button below 768px), Follow-up card (**Reschedule** saves on pick; Clear removes the date), Details, Notes and the Activity timeline. `loading.tsx` mirrors the layout, `error.tsx` retries with `retry()`, and `not-found.tsx` reads "This contact doesn't exist." with Back to contacts (it also serves `/contacts/[id]/edit`).
-- Next: T22c (security headers), T22d (concurrency, ADR-0011), then T23-T26 (deploy, hardening, README, hygiene audit).
-- Live URL: not deployed yet.
-
 ## Stack
 
 Next.js 16 (App Router, Server Components and Server Actions), React 19, TypeScript, Tailwind CSS 4, Radix primitives, TanStack Table and Virtual, React Hook Form, Zod 4, nuqs, date-fns, Supabase (Postgres, Auth, RLS), Vitest, Playwright.
