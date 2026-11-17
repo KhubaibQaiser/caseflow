@@ -158,7 +158,6 @@ function Results({
       {!none && (
         <Toolbar
           facets={facets}
-          isPending={isPending}
           panel={panel}
           hideSort
           filtersButton={filtersButton}

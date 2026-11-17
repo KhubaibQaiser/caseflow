@@ -27,7 +27,6 @@ function WithPanel() {
   return (
     <Toolbar
       facets={FACETS}
-      isPending={false}
       panel={panel}
       filtersButton={filtersButton}
     />
@@ -290,7 +289,7 @@ describe('Toolbar without a panel (error screen)', () => {
     }));
     function Bare() {
       const ref = useRef<HTMLButtonElement>(null);
-      return <Toolbar isPending={false} filtersButton={ref} />;
+      return <Toolbar filtersButton={ref} />;
     }
     render(<Bare />, { wrapper: wrapper({ searchParams: '?status=lead' }) });
     const button = screen.getByRole('button', { name: 'Filters 1 applied' });
@@ -329,7 +328,6 @@ describe('Toolbar sort', () => {
       const filtersButton = useRef<HTMLButtonElement>(null);
       return (
         <Toolbar
-          isPending={false}
           filtersButton={filtersButton}
           hideSort={hideSort}
         />

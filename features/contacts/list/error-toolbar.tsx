@@ -11,7 +11,6 @@ export function ErrorToolbar({ hideSort }: { hideSort?: boolean }) {
   return (
     <ListTransition>
       <Toolbar
-        isPending={false}
         filtersButton={filtersButton}
         hideSort={hideSort}
       />
