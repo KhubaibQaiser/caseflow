@@ -2,7 +2,9 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { Note } from '@/lib/contracts/contact';
 import { fail, ok } from '@/lib/contracts/result';
+import { docFromText } from '@/lib/contracts/rich-text';
 
 import { Notes } from './notes';
 import { note, renderAs } from './test-utils';
@@ -13,152 +15,168 @@ vi.mock('next/navigation', () => ({
   usePathname: () => '/contacts/c-00001',
 }));
 
-const composer = () => screen.getByRole('textbox', { name: 'Add a note' });
+// A saved note whose body and document agree.
+const saved = (body: string, id = 'n-1'): Note =>
+  note({ id, body, bodyJson: docFromText(body) });
+
+// The editor loads on demand, so the composer arrives a moment after the first render.
+const composer = () => screen.findByRole('textbox', { name: 'Add a note' });
 const save = () => screen.getByRole('button', { name: 'Save note' });
+const user = () => userEvent.setup();
+
+async function typeNote(u: ReturnType<typeof user>, text: string) {
+  const box = await composer();
+  await u.click(box);
+  await u.keyboard(text);
+  return box;
+}
 
 beforeEach(() => push.mockReset());
 
 describe('Notes composer', () => {
-  it('disables Save while the body is empty or only whitespace', async () => {
-    const user = userEvent.setup();
+  it('disables Save while the note is empty or only whitespace', async () => {
+    const u = user();
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
     expect(save()).toBeDisabled();
 
-    await user.type(composer(), '   ');
+    await typeNote(u, '   ');
     expect(save()).toBeDisabled();
 
-    await user.type(composer(), 'Called back');
+    await u.keyboard('Called back');
     expect(save()).toBeEnabled();
   });
 
   it('keeps the text, shows the error and offers Retry when the save fails', async () => {
-    const user = userEvent.setup();
+    const u = user();
     const onAdd = vi
       .fn()
       .mockResolvedValueOnce(fail('server', 'Something went wrong. Try again.'))
-      .mockResolvedValueOnce(ok(note({ id: 'n-2', body: 'Called back' })));
+      .mockResolvedValueOnce(ok(saved('Called back', 'n-2')));
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
-    await user.type(composer(), 'Called back');
-    await user.click(save());
+    const box = await typeNote(u, 'Called back');
+    await u.click(save());
 
-    expect(composer()).toHaveValue('Called back');
+    expect(box).toHaveTextContent('Called back');
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Something went wrong. Try again.',
     );
+    expect(box).toHaveAttribute('aria-invalid', 'true');
 
-    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    await u.click(screen.getByRole('button', { name: 'Retry' }));
     expect(onAdd).toHaveBeenCalledTimes(2);
-    expect(await screen.findByText('Called back')).toBeInTheDocument();
-    expect(composer()).toHaveValue('');
+    expect(await screen.findByRole('article')).toHaveTextContent('Called back');
+    await waitFor(() => expect(box).not.toHaveTextContent('Called back'));
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
   it('keeps the text when the request itself throws (offline)', async () => {
-    const user = userEvent.setup();
+    const u = user();
     const onAdd = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
-    await user.type(composer(), 'Called back');
-    await user.click(save());
+    const box = await typeNote(u, 'Called back');
+    await u.click(save());
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "Couldn't save the note. Check your connection and retry.",
     );
-    expect(composer()).toHaveValue('Called back');
+    expect(box).toHaveTextContent('Called back');
   });
 
   it('submits once on a double Cmd+Enter', async () => {
-    const user = userEvent.setup();
-    let release: (
-      v: ReturnType<typeof ok<ReturnType<typeof note>>>,
-    ) => void = () => {};
+    const u = user();
+    type Saved = ReturnType<typeof ok<Note>>;
+    let release: (v: Saved) => void = () => {};
     const onAdd = vi.fn(
       () =>
-        new Promise<ReturnType<typeof ok<ReturnType<typeof note>>>>((r) => {
+        new Promise<Saved>((r) => {
           release = r;
         }),
     );
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
-    await user.type(composer(), 'Called back');
-    await user.keyboard('{Meta>}{Enter}{Enter}{/Meta}');
+    const box = await typeNote(u, 'Called back');
+    await u.keyboard('{Meta>}{Enter}{Enter}{/Meta}');
     expect(onAdd).toHaveBeenCalledTimes(1);
-    expect(onAdd).toHaveBeenCalledWith('Called back');
     expect(screen.getByRole('button', { name: 'Saving…' })).toHaveAttribute(
       'aria-busy',
       'true',
     );
+    // The composer is read-only while the save is in flight.
+    expect(box).toHaveAttribute('contenteditable', 'false');
 
-    release(ok(note({ body: 'Called back' })));
-    await waitFor(() => expect(composer()).toHaveValue(''));
+    release(ok(saved('Called back')));
+    await waitFor(() => expect(box).not.toHaveTextContent('Called back'));
   });
 
-  it('also submits on Ctrl+Enter, and ignores a plain Enter', async () => {
-    const user = userEvent.setup();
-    const onAdd = vi.fn().mockResolvedValue(ok(note()));
+  it('also submits on Ctrl+Enter, and a plain Enter starts a new paragraph', async () => {
+    const u = user();
+    const onAdd = vi.fn().mockResolvedValue(ok(saved('One two')));
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
-    await user.type(composer(), 'One{Enter}two');
+    await typeNote(u, 'One{Enter}two');
     expect(onAdd).not.toHaveBeenCalled();
-    await user.keyboard('{Control>}{Enter}{/Control}');
-    expect(onAdd).toHaveBeenCalledExactlyOnceWith('One\ntwo');
+    await u.keyboard('{Control>}{Enter}{/Control}');
+    expect(onAdd).toHaveBeenCalledTimes(1);
+    const doc = onAdd.mock.calls[0]![0];
+    expect(doc.content).toHaveLength(2);
   });
 
-  it('on success clears the field, lists the note first and announces it', async () => {
-    const user = userEvent.setup();
-    const onAdd = vi
-      .fn()
-      .mockResolvedValue(ok(note({ id: 'n-9', body: 'Fresh note' })));
+  it('on success clears the editor, lists the note first and announces it', async () => {
+    const u = user();
+    const onAdd = vi.fn().mockResolvedValue(ok(saved('Fresh note', 'n-9')));
     renderAs(
       'admin',
-      <Notes
-        tz="UTC"
-        notes={[note({ id: 'n-1', body: 'Older' })]}
-        onAdd={onAdd}
-      />,
+      <Notes tz="UTC" notes={[saved('Older')]} onAdd={onAdd} />,
     );
 
-    await user.type(composer(), 'Fresh note');
-    await user.click(save());
+    const box = await typeNote(u, 'Fresh note');
+    await u.click(save());
 
-    expect(await screen.findByRole('status')).toHaveTextContent('Note added.');
-    expect(composer()).toHaveValue('');
-    expect(composer()).toHaveFocus();
+    await waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('Note added.'),
+    );
+    await waitFor(() => expect(box).not.toHaveTextContent('Fresh note'));
+    await waitFor(() => expect(box).toHaveFocus());
     const items = screen.getAllByRole('article');
     expect(items[0]).toHaveTextContent('Fresh note');
     expect(items[1]).toHaveTextContent('Older');
   });
 
   it('does not list a note twice once the server list includes it', async () => {
-    const user = userEvent.setup();
-    const added = note({ id: 'n-9', body: 'Fresh note' });
+    const u = user();
+    const added = saved('Fresh note', 'n-9');
     const onAdd = vi.fn().mockResolvedValue(ok(added));
     const { rerender } = renderAs(
       'admin',
       <Notes tz="UTC" notes={[]} onAdd={onAdd} />,
     );
-    await user.type(composer(), 'Fresh note');
-    await user.click(save());
-    await screen.findByText('Fresh note');
+    await typeNote(u, 'Fresh note');
+    await u.click(save());
+    await screen.findByRole('article');
 
     rerender(<Notes tz="UTC" notes={[added]} onAdd={onAdd} />);
-    expect(screen.getAllByText('Fresh note')).toHaveLength(1);
+    expect(screen.getAllByRole('article')).toHaveLength(1);
   });
 
-  it('sends the user to sign in when the session ended', async () => {
-    const user = userEvent.setup();
+  it('sends the user to sign in when the session ended, keeping the note for Back', async () => {
+    const u = user();
     const onAdd = vi.fn().mockResolvedValue(fail('unauthorized', 'Sign in.'));
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
-    await user.type(composer(), 'Called back');
-    await user.click(save());
+    await typeNote(u, 'Called back');
+    await u.click(save());
 
     await waitFor(() =>
       expect(push).toHaveBeenCalledWith(
         '/login?reason=expired&next=%2Fcontacts%2Fc-00001',
       ),
     );
+    expect(window.history.state?.caseflowNoteDraft).toMatchObject({
+      type: 'doc',
+    });
+    window.history.replaceState(null, '');
   });
 
   it('says so when there are no notes', () => {
@@ -167,12 +185,14 @@ describe('Notes composer', () => {
   });
 
   it('moves focus to the composer only when the user picks Add note', async () => {
-    const user = userEvent.setup();
+    const u = user();
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
-    expect(composer()).not.toHaveFocus();
+    const box = await composer();
+    expect(box).not.toHaveFocus();
 
-    await user.click(screen.getByRole('button', { name: 'Add note' }));
-    expect(composer()).toHaveFocus();
+    await u.click(screen.getByRole('button', { name: 'Add note' }));
+    // Tiptap focuses on the next frame.
+    await waitFor(() => expect(box).toHaveFocus());
   });
 
   it('offers no Add note button once there are notes, or to a viewer', () => {
@@ -187,19 +207,21 @@ describe('Notes composer', () => {
     expect(screen.queryByRole('button', { name: 'Add note' })).toBeNull();
   });
 
-  it('caps the note at 2,000 characters', () => {
+  it('stops at 2,000 characters and shows the count near the limit', async () => {
+    const u = user();
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
-    expect(composer()).toHaveAttribute('maxlength', '2000');
+    const box = await composer();
+    await u.click(box);
+    await u.paste('a'.repeat(1700));
+    expect(await screen.findByText(/1,700 \/ 2,000/)).toBeVisible();
+    await u.paste('b'.repeat(500)); // would pass the limit: refused whole
+    expect(box.textContent).toHaveLength(1700);
   });
 
   it('replaces the composer for a viewer, who can still read notes', () => {
     renderAs(
       'viewer',
-      <Notes
-        tz="UTC"
-        notes={[note({ body: 'Left voicemail.' })]}
-        onAdd={vi.fn()}
-      />,
+      <Notes tz="UTC" notes={[saved('Left voicemail.')]} onAdd={vi.fn()} />,
     );
     expect(
       screen.getByText("Viewers can read notes but can't add them."),
@@ -222,5 +244,134 @@ describe('Notes composer', () => {
     expect(t.tagName).toBe('TIME');
     expect(t).toHaveAttribute('datetime', '2026-11-13T16:12:00.000Z');
     expect(t.getAttribute('title')).toContain('2026');
+  });
+
+  it('renders a saved note with its formatting', () => {
+    const doc = {
+      type: 'doc' as const,
+      content: [
+        {
+          type: 'paragraph' as const,
+          content: [
+            {
+              type: 'text' as const,
+              text: 'Call ',
+              marks: [{ type: 'bold' as const }],
+            },
+            {
+              type: 'text' as const,
+              text: 'the firm',
+              marks: [
+                {
+                  type: 'link' as const,
+                  attrs: { href: 'https://example.com' },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          type: 'orderedList' as const,
+          content: [
+            {
+              type: 'listItem' as const,
+              content: [
+                {
+                  type: 'paragraph' as const,
+                  content: [{ type: 'text' as const, text: 'first' }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    renderAs(
+      'viewer',
+      <Notes tz="UTC" notes={[note({ bodyJson: doc })]} onAdd={vi.fn()} />,
+    );
+    expect(screen.getByRole('link', { name: 'the firm' })).toHaveAttribute(
+      'rel',
+      'noopener noreferrer nofollow',
+    );
+    expect(screen.getByRole('listitem')).toHaveTextContent('first');
+  });
+});
+
+describe('Notes formatting', () => {
+  const tool = (name: string) => screen.getByRole('button', { name });
+
+  it('has real toolbar buttons that report their state', async () => {
+    const u = user();
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    await composer();
+
+    const bar = screen.getByRole('toolbar', { name: 'Formatting' });
+    for (const name of [
+      'Bold',
+      'Italic',
+      'Bulleted list',
+      'Numbered list',
+      'Link',
+    ])
+      expect(bar).toContainElement(tool(name));
+    expect(tool('Bold')).toHaveAttribute('aria-pressed', 'false');
+    expect(tool('Bold')).toHaveAttribute(
+      'aria-keyshortcuts',
+      'Control+B Meta+B',
+    );
+
+    await u.click(tool('Bold'));
+    expect(tool('Bold')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('sends bold text, a list and a link as a document', async () => {
+    const u = user();
+    const onAdd = vi.fn().mockResolvedValue(ok(saved('x')));
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
+    const box = await composer();
+    await u.click(box);
+
+    await u.keyboard('{Control>}b{/Control}Hi{Control>}b{/Control} there');
+    await u.click(tool('Bulleted list'));
+    await u.keyboard('{Enter}item');
+    await u.click(tool('Link'));
+    await u.type(
+      screen.getByRole('textbox', { name: 'Link address' }),
+      'example.com{Enter}',
+    );
+    await waitFor(() => expect(box).toHaveFocus());
+    await u.keyboard('{Control>}{Enter}{/Control}');
+
+    expect(onAdd).toHaveBeenCalledTimes(1);
+    const json = JSON.stringify(onAdd.mock.calls[0]![0]);
+    expect(json).toContain('"type":"bold"');
+    expect(json).toContain('"type":"bulletList"');
+    expect(json).toContain('"href":"https://example.com"');
+  });
+
+  it('refuses a javascript: link in the link form', async () => {
+    const u = user();
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    await typeNote(u, 'text');
+    await u.click(tool('Link'));
+    await u.type(
+      screen.getByRole('textbox', { name: 'Link address' }),
+      'javascript:alert(1){Enter}',
+    );
+    expect(
+      await screen.findByText('Use an http, https or mailto link.'),
+    ).toBeVisible();
+    expect(
+      screen.getByRole('textbox', { name: 'Add a note' }).querySelector('a'),
+    ).toBeNull();
+  });
+
+  it('has no heading, code, image or quote controls', async () => {
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    await composer();
+    expect(
+      screen.queryAllByRole('button', { name: /heading|code|image|quote/i }),
+    ).toHaveLength(0);
   });
 });

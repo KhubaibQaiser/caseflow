@@ -7,6 +7,7 @@ import { toast } from '@/components/ui/toaster';
 import type { ContactDetail, ContactRow, Note } from '@/lib/contracts/contact';
 import { STATUS_LABEL, type Status } from '@/lib/contracts/enums';
 import type { Result } from '@/lib/contracts/result';
+import type { RichDoc } from '@/lib/contracts/rich-text-core';
 import { formatDateShort } from '@/lib/dates/labels';
 
 import { attempt, useReportFailure } from './action-result';
@@ -22,7 +23,7 @@ type ContactDetailViewProps = {
   /** The Server Actions, already bound to this contact's id. */
   onMove(to: Status): Promise<Result<ContactRow>>;
   onReschedule(followUpOn: string | null): Promise<Result<ContactRow>>;
-  onAddNote(body: string): Promise<Result<Note>>;
+  onAddNote(doc: RichDoc): Promise<Result<Note>>;
   /** The activity timeline, rendered on the server so its parsing never ships to the browser. */
   timeline: ReactNode;
 };

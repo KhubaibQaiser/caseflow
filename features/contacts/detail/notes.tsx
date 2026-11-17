@@ -1,29 +1,51 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { KeyboardEvent } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
-import { Textarea } from '@/components/ui/textarea';
 import { Can, usePermission } from '@/lib/auth/permissions-context';
 import type { Note } from '@/lib/contracts/contact';
 import { ROLE_LABEL } from '@/lib/contracts/permissions';
 import type { Result } from '@/lib/contracts/result';
+import {
+  NOTE_MAX_CHARS,
+  richPlainText,
+  type RichDoc,
+} from '@/lib/contracts/rich-text-core';
 import { formatTimestamp, formatTimestampFull } from '@/lib/dates/labels';
 
 import { attempt, useSessionExpired } from './action-result';
+import type { NoteDraft, NoteEditorHandle } from './note-editor';
 import { Panel } from './panel';
+import { RichText } from './rich-text';
 
-const MAX = 2000;
+const COUNTER_FROM = Math.floor(NOTE_MAX_CHARS * 0.8) + 1;
 const DRAFT_KEY = 'caseflowNoteDraft';
 
 // Browser-only and pure, so the lazy initial state survives StrictMode's double call.
-function readDraft(): string {
-  if (typeof window === 'undefined') return '';
-  const draft: unknown = window.history.state?.[DRAFT_KEY];
-  return typeof draft === 'string' ? draft : '';
+// The value is only used as the editor's starting content, which drops anything its schema lacks.
+function readDraft(): NoteDraft | null {
+  if (typeof window === 'undefined') return null;
+  const raw: unknown = window.history.state?.[DRAFT_KEY];
+  if (typeof raw !== 'object' || raw === null) return null;
+  if (!('type' in raw) || raw.type !== 'doc') return null;
+  const doc = raw as RichDoc;
+  try {
+    const text = richPlainText(doc).trim();
+    return text ? { doc, text } : null;
+  } catch {
+    return null;
+  }
 }
+
+// Tiptap is large and the composer is not needed for first paint, so it loads after hydration.
+// The placeholder holds the editor's height, so nothing shifts when it lands.
+const NoteEditor = dynamic(() => import('./note-editor'), {
+  ssr: false,
+  loading: () => <div aria-hidden className="h-[122px]" />,
+});
 
 type Failure = { message: string; retry: boolean };
 
@@ -40,9 +62,9 @@ function NoteItem({ note, tz }: { note: Note; tz: string }) {
           {formatTimestamp(note.createdAt, tz)}
         </time>
       </p>
-      <p className="text-13 m-0 mt-1 leading-relaxed wrap-anywhere whitespace-pre-wrap">
-        {note.body}
-      </p>
+      <div className="text-13 mt-1 leading-relaxed wrap-anywhere">
+        <RichText doc={note.bodyJson} />
+      </div>
     </article>
   );
 }
@@ -54,19 +76,21 @@ export function Notes({
   tz,
 }: {
   notes: Note[];
-  onAdd(body: string): Promise<Result<Note>>;
+  onAdd(doc: RichDoc): Promise<Result<Note>>;
   tz: string;
 }) {
-  const [body, setBody] = useState(readDraft);
+  const [restored] = useState(readDraft);
+  const [draft, setDraft] = useState<NoteDraft | null>(restored);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [announce, setAnnounce] = useState('');
   // Notes saved here, shown until the server's list (after revalidation) includes them.
   const [added, setAdded] = useState<Note[]>([]);
-  const field = useRef<HTMLTextAreaElement>(null);
+  const editor = useRef<NoteEditorHandle>(null);
   // State lags a render behind a fast second keypress; the ref doesn't.
   const inflight = useRef(false);
   const errorId = useId();
+  const counterId = useId();
   const canWrite = usePermission('notes.write');
   const expired = useSessionExpired();
 
@@ -79,32 +103,35 @@ export function Notes({
     window.history.replaceState(rest, '');
   }, []);
 
-  const text = body.trim();
+  const text = draft?.text ?? '';
+  const length = text.length;
+  const showCounter = length >= COUNTER_FROM;
   const shown = [
     ...added.filter((a) => !notes.some((n) => n.id === a.id)),
     ...notes,
   ];
 
   async function submit() {
-    if (inflight.current || !text) return;
+    if (inflight.current || !draft || !text) return;
     inflight.current = true;
     setPending(true);
     setFailure(null);
     setAnnounce('');
-    const result = await attempt(() => onAdd(text), 'save the note');
+    const result = await attempt(() => onAdd(draft.doc), 'save the note');
     inflight.current = false;
     setPending(false);
     if (result.ok) {
       setAdded((list) => [result.data, ...list]);
-      setBody('');
+      setDraft(null);
+      editor.current?.clear();
       setAnnounce('Note added.');
-      field.current?.focus();
+      editor.current?.focus();
       return;
     }
     const { code, message, fieldErrors } = result.error;
     if (code === 'unauthorized') {
       window.history.replaceState(
-        { ...window.history.state, [DRAFT_KEY]: body },
+        { ...window.history.state, [DRAFT_KEY]: draft.doc },
         '',
       );
       expired();
@@ -120,13 +147,6 @@ export function Notes({
     }
   }
 
-  function onKeyDown(event: KeyboardEvent) {
-    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
-      event.preventDefault();
-      void submit();
-    }
-  }
-
   return (
     <Panel title="Notes" count={shown.length}>
       <Can
@@ -138,26 +158,41 @@ export function Notes({
         }
       >
         <div className="mb-3 flex flex-col gap-2">
-          <Textarea
-            ref={field}
-            aria-label="Add a note"
-            aria-keyshortcuts="Control+Enter Meta+Enter"
-            aria-invalid={failure ? true : undefined}
-            aria-describedby={failure ? errorId : undefined}
+          <NoteEditor
+            handle={editor}
+            label="Add a note"
             placeholder="Add a note…"
-            rows={3}
-            maxLength={MAX}
-            value={body}
+            describedBy={
+              [failure && errorId, showCounter && counterId]
+                .filter(Boolean)
+                .join(' ') || undefined
+            }
+            invalid={failure !== null}
             readOnly={pending}
-            onChange={(e) => {
-              setBody(e.target.value);
-              setAnnounce('');
+            initialDoc={restored?.doc}
+            onChange={(d) => {
+              setDraft(d);
+              // Typing retires the message; the editor's own clear after a save must not.
+              if (d.text) setAnnounce('');
             }}
-            onKeyDown={onKeyDown}
+            onSubmit={() => void submit()}
           />
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
             <span className="text-ink-2 text-xs">
               Visible to the whole team. Ctrl or Cmd+Enter saves.
+              {showCounter && (
+                <span
+                  id={counterId}
+                  className={
+                    length >= NOTE_MAX_CHARS
+                      ? 'tnum text-ink ms-2 font-semibold'
+                      : 'tnum ms-2'
+                  }
+                >
+                  {length.toLocaleString('en-US')} /{' '}
+                  {NOTE_MAX_CHARS.toLocaleString('en-US')}
+                </span>
+              )}
             </span>
             <Button
               variant="primary"
@@ -200,7 +235,7 @@ export function Notes({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => field.current?.focus()}
+              onClick={() => editor.current?.focus()}
             >
               Add note
             </Button>
