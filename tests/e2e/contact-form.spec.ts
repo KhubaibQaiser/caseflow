@@ -78,7 +78,7 @@ test('a dirty form asks before the sidebar leaves it', async ({
   await expect(dialog).toBeVisible();
   expect((await axe(page)).violations).toEqual([]);
 
-  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await dialog.getByRole('button', { name: 'Keep editing' }).click();
   await expect(page).toHaveURL(/\/contacts\/new$/);
   await expect(page.getByRole('textbox', { name: /Full name/ })).toHaveValue(
     'Ana Díaz',

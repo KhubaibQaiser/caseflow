@@ -1,4 +1,10 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Link from 'next/link';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,6 +56,7 @@ function renderForm(onSubmit: Submit, mode: 'create' | 'edit' = 'create') {
 }
 
 beforeEach(() => {
+  window.history.replaceState(null, '');
   push.mockClear();
   refresh.mockClear();
   success.mockClear();
@@ -92,14 +99,18 @@ describe('ContactForm', () => {
     renderForm(vi.fn<Submit>());
     await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
 
-    expect(screen.getAllByText('Add an email or a phone number.')).toHaveLength(
-      1,
-    ); // one inline line; the summary link carries its label too
+    expect(
+      screen.getAllByText(
+        "Add an email or a phone number. Intake can't follow up without one.",
+      ),
+    ).toHaveLength(1); // one inline line; the summary link carries its label too
     expect(screen.getByRole('textbox', { name: 'Email' })).toBeInvalid();
     expect(screen.getByRole('textbox', { name: 'Phone' })).toBeInvalid();
     expect(
       screen.getByRole('textbox', { name: 'Email' }),
-    ).toHaveAccessibleDescription('Add an email or a phone number.');
+    ).toHaveAccessibleDescription(
+      "Add an email or a phone number. Intake can't follow up without one.",
+    );
   });
 
   it('puts a server field error under its field', async () => {
@@ -119,15 +130,15 @@ describe('ContactForm', () => {
     );
   });
 
-  it('sends one request when Save is double-clicked', async () => {
+  it('sends one request when the form is submitted twice in the same tick', async () => {
     let finish: (r: Result<{ id: string }>) => void = () => {};
     const onSubmit = vi.fn<Submit>(
       () => new Promise((resolve) => (finish = resolve)),
     );
     renderForm(onSubmit, 'edit');
-    await userEvent.dblClick(
-      screen.getByRole('button', { name: 'Save contact' }),
-    );
+    const form = screen.getByRole('form', { name: 'Edit contact' });
+    fireEvent.submit(form);
+    fireEvent.submit(form);
 
     await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
     expect(screen.getByRole('button', { name: 'Saving…' })).toHaveAttribute(
@@ -136,6 +147,15 @@ describe('ContactForm', () => {
     );
     await act(async () => finish(ok({ id: 'c1' })));
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  it('sends one request when Save is double-clicked', async () => {
+    const onSubmit = vi.fn<Submit>(() => new Promise(() => {}));
+    renderForm(onSubmit, 'edit');
+    await userEvent.dblClick(
+      screen.getByRole('button', { name: 'Save contact' }),
+    );
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1));
   });
 
   it('passes the stamp back verbatim and goes to the contact with a toast', async () => {
@@ -311,7 +331,7 @@ describe('ContactForm', () => {
     expect(
       await screen.findByRole('dialog', { name: 'Discard changes?' }),
     ).toBeVisible();
-    await userEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Keep editing' }));
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(name).toHaveValue('Marisol Ortega Jr');
     expect(push).not.toHaveBeenCalled();
@@ -321,5 +341,159 @@ describe('ContactForm', () => {
       await screen.findByRole('button', { name: 'Discard' }),
     );
     expect(push).toHaveBeenCalledWith('/contacts');
+  });
+
+  it('keeps sending the stamp it opened with after a conflict refresh', async () => {
+    const onSubmit = vi
+      .fn<Submit>()
+      .mockResolvedValueOnce(fail('conflict', 'changed'))
+      .mockResolvedValue(fail('server', 'x'));
+    const view = renderForm(onSubmit, 'edit');
+    await userEvent.type(
+      screen.getByRole('textbox', { name: /Full name/ }),
+      ' Jr',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+    await screen.findByRole('button', { name: 'Reload latest' });
+    view.rerender(
+      <ContactForm
+        mode="edit"
+        today={TODAY}
+        onSubmit={onSubmit}
+        initial={{ ...initial, updatedAt: '2026-11-17T09:00:00.000001+00:00' }}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
+    expect(onSubmit.mock.calls[1]?.[1]).toBe(
+      '2026-11-10T10:00:00.123456+00:00',
+    );
+  });
+
+  it('sends the refreshed stamp after Reload latest', async () => {
+    const onSubmit = vi
+      .fn<Submit>()
+      .mockResolvedValueOnce(fail('conflict', 'changed'))
+      .mockResolvedValue(ok({ id: 'c1' }));
+    const view = renderForm(onSubmit, 'edit');
+    await userEvent.type(
+      screen.getByRole('textbox', { name: /Full name/ }),
+      ' Jr',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+    await screen.findByRole('button', { name: 'Reload latest' });
+    view.rerender(
+      <ContactForm
+        mode="edit"
+        today={TODAY}
+        onSubmit={onSubmit}
+        initial={{ ...initial, updatedAt: '2026-11-17T09:00:00.000001+00:00' }}
+      />,
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Reload latest' }),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
+    expect(onSubmit.mock.calls[1]?.[1]).toBe(
+      '2026-11-17T09:00:00.000001+00:00',
+    );
+  });
+
+  it('stores the typed values in history state when the session ends', async () => {
+    window.history.replaceState({ keep: 1 }, '');
+    const onSubmit = vi
+      .fn<Submit>()
+      .mockResolvedValue(fail('unauthorized', 'Sign in again to continue.'));
+    renderForm(onSubmit, 'edit');
+    const name = screen.getByRole('textbox', { name: /Full name/ });
+    await userEvent.clear(name);
+    await userEvent.type(name, 'Typed before expiry');
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+
+    await waitFor(() => expect(push).toHaveBeenCalled());
+    expect(window.history.state.keep).toBe(1);
+    expect(window.history.state.caseflowDraft.values.fullName).toBe(
+      'Typed before expiry',
+    );
+    expect(window.history.state.caseflowDraft.stamp).toBe(
+      '2026-11-10T10:00:00.123456+00:00',
+    );
+    expect(
+      JSON.stringify(sessionStorage) + JSON.stringify(localStorage),
+    ).not.toContain('Typed before expiry');
+  });
+
+  it('restores a draft from history state, marks it dirty and clears it', async () => {
+    window.history.replaceState(
+      {
+        keep: 1,
+        caseflowDraft: {
+          values: {
+            fullName: 'Restored Name',
+            email: 'marisol@example.com',
+            phone: '',
+            matterType: 'family',
+            referralSource: '',
+            status: 'active',
+            followUpOn: null,
+            summary: 'Back from login.',
+          },
+          stamp: '2026-11-01T00:00:00.000000+00:00',
+        },
+      },
+      '',
+    );
+    const onSubmit = vi.fn<Submit>().mockResolvedValue(ok({ id: 'c1' }));
+    renderForm(onSubmit, 'edit');
+
+    expect(await screen.findByDisplayValue('Restored Name')).toBeVisible();
+    expect(screen.getByRole('textbox', { name: 'Matter summary' })).toHaveValue(
+      'Back from login.',
+    );
+    expect(window.history.state.caseflowDraft).toBeUndefined();
+    expect(window.history.state.keep).toBe(1);
+    const e = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(e);
+    expect(e.defaultPrevented).toBe(true); // dirty
+
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalled());
+    expect(onSubmit.mock.calls[0]?.[1]).toBe(
+      '2026-11-01T00:00:00.000000+00:00',
+    );
+  });
+
+  it('ignores a malformed draft in history state', () => {
+    window.history.replaceState({ caseflowDraft: { values: 'nope' } }, '');
+    renderForm(vi.fn<Submit>(), 'edit');
+    expect(screen.getByRole('textbox', { name: /Full name/ })).toHaveValue(
+      'Marisol Ortega',
+    );
+  });
+
+  it('shows the server message too when an error names no field', async () => {
+    const onSubmit = vi.fn<Submit>().mockResolvedValue(
+      fail('validation', 'Fix the highlighted fields.', {
+        fieldErrors: { email: 'Enter a valid email address.', form: 'Odd.' },
+      }),
+    );
+    renderForm(onSubmit, 'edit');
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+
+    expect(
+      await screen.findByRole('textbox', { name: 'Email' }),
+    ).toHaveAccessibleDescription('Enter a valid email address.');
+    expect(screen.getByText('Fix the highlighted fields.')).toBeVisible();
+  });
+
+  it('says "Enter a full name." for an empty name', async () => {
+    renderForm(vi.fn<Submit>());
+    await userEvent.click(screen.getByRole('button', { name: 'Save contact' }));
+    expect(
+      screen.getByRole('textbox', { name: /Full name/ }),
+    ).toHaveAccessibleDescription('Enter a full name.');
   });
 });
