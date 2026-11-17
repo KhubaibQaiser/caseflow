@@ -86,6 +86,17 @@ describe('proxy', () => {
     );
   });
 
+  it('lets an anonymous Server Action through so it can answer unauthorized', async () => {
+    const r = await proxy(
+      new NextRequest('http://localhost:3000/contacts/new', {
+        method: 'POST',
+        headers: { 'next-action': 'abc', cookie: 'sb-x-auth-token=dead' },
+      }),
+    );
+    expect(r.status).toBe(200);
+    expect(loc(r)).toBeNull();
+  });
+
   it('lets anonymous users reach /login', async () => {
     const r = await proxy(req('/login'));
     expect(loc(r)).toBeNull();

@@ -51,6 +51,9 @@ export async function proxy(request: NextRequest) {
   if (pathname === '/login')
     return signedIn ? redirectTo(here('/contacts')) : response;
   if (signedIn) return response;
+  // A dead session mid-save: a redirect would fail the action's fetch. Every action
+  // checks its own permission, so let it through to return `unauthorized` (the form then goes to /login).
+  if (request.headers.has('next-action')) return response;
 
   const url = here('/login');
   url.searchParams.set('next', pathname + search);

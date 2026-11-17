@@ -156,6 +156,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - `requirePermission(p, next?)` redirects to `/login?next=…&reason=expired`.
 - Revocation lag: `getClaims()` checks the JWT signature, not the user record, so a banned or deleted user keeps access until the access token expires (up to 1 hour). Roles are read live from `profiles`, and RLS applies on every query.
 - Sign-in throttle: Supabase limits by IP, and `signInAction` forwards `x-forwarded-for`'s first entry only when `net.isIP` accepts it; otherwise nothing is forwarded and the limit falls on the server's own IP. Trade-off: the throttle is per IP only, with no per-account lockout, so the seeded passwords must be strong (a spread-out guesser is not slowed).
+- A request carrying `next-action` (a Server Action) from a dead session passes the proxy: a redirect would fail the action's fetch, and every action checks its own permission and returns `unauthorized`, which the form turns into the sign-in push.
 - After an expiry, the sign-in form tells the action to skip the redirect (`back=1`) when the login page was reached by an in-app push (the first document loaded was not `/login`), then calls `history.back()`, so the form's saved draft comes back. A fresh load of `/login?reason=expired` redirects to `next` as usual.
 - The proxy only URL-encodes `next`. T10's `safeNext` must reject values starting with `//` or `/\`.
 - Auth responses carry `Cache-Control: private, no-store` from `@supabase/ssr` (proxy and redirects).

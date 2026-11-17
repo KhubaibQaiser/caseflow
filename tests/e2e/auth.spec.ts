@@ -70,6 +70,7 @@ test('signed in without a profile shows No access with Sign out', async ({
 async function fillNewContact(page: import('@playwright/test').Page) {
   await page.getByRole('textbox', { name: /Full name/ }).fill('Ana Díaz');
   await page.getByRole('textbox', { name: /Email/ }).fill('ana@example.com');
+  await page.getByLabel(/Matter type/).selectOption({ index: 1 });
 }
 
 test('expired session on save redirects with next', async ({
