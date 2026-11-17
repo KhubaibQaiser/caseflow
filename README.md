@@ -91,17 +91,23 @@ PRs that add or change a UI component or page include desktop (1440) and mobile 
 
 ## Deploy
 
-Deploys and the keep-alive are off until the `DEPLOY_ENABLED` repository variable is set to `true` (T23).
+Going live:
 
-`.github/workflows/deploy.yml` runs only after CI passes on a push to `main`:
+1. Set the `DEPLOY_ENABLED` repository variable to `true` (`gh variable set DEPLOY_ENABLED --body true`). Until then deploys and the keep-alive are off. The Vercel env vars (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`, `AUTH_ENFORCED=true`) come from the deploy sync; nothing is set by hand.
+2. Push to `main`. `.github/workflows/deploy.yml` runs after CI passes on that push.
+3. Run the seed workflow once: `gh workflow run seed.yml` (manual, `main` only; restores the demo accounts and data).
+4. Go-live checklist (Supabase dashboard): sign-ups are disabled (a sign-up call with the publishable key must fail), auth rate limits are sane, and the site URL and redirect URLs match the Vercel domain.
 
-- A stale-run guard skips any run whose commit is no longer the tip of `main`.
-- `supabase db push` applies migrations to the production project.
-- The Vercel production env is synced from GitHub secrets; the secret key is stored as sensitive.
-- A prebuilt production deploy follows (`vercel build --prod`, then `vercel deploy --prebuilt --prod`). Vercel's Git auto-deploy is off.
-- The smoke test (`tests/e2e/smoke.spec.ts`) runs against the deployed URL once that file exists.
+What `deploy.yml` does, in order:
 
-`seed.yml` is a manual workflow (`workflow_dispatch`) that only runs on `main`; it restores the demo accounts and data. `keep-alive.yml` pings Supabase daily (`role_permissions` read and the `rpc/ping` call) so the project does not pause. There are no PR previews.
+- Guard: skips the run if its commit is no longer the tip of `main`.
+- `supabase db push` migrates the production project.
+- Syncs the Vercel production env: Supabase vars from GitHub secrets (the secret key is sensitive) and `AUTH_ENFORCED=true`.
+- `vercel build --prod`, then a second tip check. If `main` moved on, the deploy and smoke steps are skipped with a notice, so an old run never overwrites a newer deploy. Skipped runs are green, not failed.
+- `vercel deploy --prebuilt --prod`. Vercel's Git auto-deploy is off and there are no PR previews.
+- Smoke test (`tests/e2e/smoke.spec.ts`) against the deployed URL, once that file exists.
+
+`keep-alive.yml` pings Supabase daily so the project does not pause.
 
 ## Docs
 
@@ -161,7 +167,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
 - `lib/auth/viewer.ts` is the entry point the app imports and is still the fake (T13). The real one is `lib/auth/viewer-supabase.ts`; T22 flips `viewer.ts` to re-export it, like `lib/data/index.ts`.
 - `getViewer()` (viewer-supabase) verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and throws `ForbiddenError` otherwise (`forbidden()` is still experimental). `assertPermission` returns a `Result` for actions.
-- Auth enforcement in `proxy.ts` is off until T22 sets `AUTH_ENFORCED=true` (locally, in CI and in Vercel). While off, the proxy passes every request through; only the production `/dev/*` 404 stays on.
+- Auth enforcement in `proxy.ts` is off until T22 sets `AUTH_ENFORCED=true` locally and in CI; Vercel gets it from the deploy env sync. While off, the proxy passes every request through; only the production `/dev/*` 404 stays on.
 - `proxy.ts` only checks sign-in: refreshes the session, sends anonymous requests to `/login?next=…` (plus `reason=expired` if an `sb-` cookie exists), and sends signed-in users from `/login` to `/contacts`. `/dev/*` is a 404 when `VERCEL_ENV=production`.
 - There is no browser Supabase client. Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (all server-only).
 - Signed in without a `profiles` row: `getViewer` throws `NoProfileError` (and `requirePermission` rethrows it; `assertPermission` returns `forbidden`). It never redirects to `/login`, which would loop. The `(app)` layer (T13/T22) must catch it and render the No access state: "No access." / "Your account isn't set up yet. Ask an admin." with Sign out. A failed `profiles` query throws a plain `Error` (error boundary).
