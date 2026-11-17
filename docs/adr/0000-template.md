@@ -24,7 +24,7 @@ What forces the decision. The spec goals it answers (G1–G11 in `docs/SPEC.md` 
 
 ## Options considered
 
-Exactly three. Not two padded out, not five narrowed down.
+At least three. Not two padded out.
 
 ### Option 1 — Name
 
