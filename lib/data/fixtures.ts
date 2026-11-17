@@ -75,7 +75,14 @@ export function makeFixtureRows(n: number, today: string): ContactRow[] {
     const first = FIRST[i % FIRST.length];
     // Stride by a coprime step so names don't repeat in lock-step.
     const last = LAST[(i * 7 + Math.floor(i / FIRST.length)) % LAST.length];
-    const fullName = `${first} ${last}`;
+    // One 120-character name (the maximum), so truncation is visible in the fake data (spec 8.9).
+    const fullName =
+      i === 11
+        ? `${first} Alexandra Montgomery-Featherstonehaugh de la Cruz Vasquez-Worthington ${last} of Upper Castleford and Little Wexcombe`.slice(
+            0,
+            120,
+          )
+        : `${first} ${last}`;
     const slug = `${first}.${last}`.toLowerCase().replace(/[^a-z.]/g, '');
     const roll = r();
     const status: Status =
