@@ -208,8 +208,8 @@ Quick views are presets that write `followUp`. The pipeline uses the same filter
 ### 7.5 Server Actions (each returns `Result<T> = {ok:true,data:T} | {ok:false,error:{code,message,fieldErrors?}}`; codes include `forbidden`, `unauthorized`, `conflict`, `validation`, `not_found`, `server`)
 - `createContact(input)` and `updateContact(id, input, expectedUpdatedAt)`.
   - `updateContact` uses **optimistic concurrency**: it returns `conflict` if the row changed since the form opened. The firm workspace is shared, and reviewers are signed in as the same admin.
-- `moveContact(id, toStatus, expectedStatus)` returns the updated row. It returns `conflict` if the contact is no longer in `expectedStatus`, for example "Already moved to Closed by Sam". *(ADR-0011; until T22d lands, the check is absent and the last write wins.)*
-- `rescheduleContact(id, followUp, expectedFollowUp)` likewise returns `conflict` if the follow-up date is no longer the one the user saw. *(ADR-0011, same note.)*
+- `moveContactAction(id, status, expectedStatus)` returns the updated row. It returns `conflict` if the contact is no longer in `expectedStatus`, for example "Already moved to Closed by Sam". *(ADR-0011. The `expectedStatus` parameter lands in T22d; until then the last write wins.)*
+- `rescheduleAction(id, followUpOn, expectedFollowUpOn)` likewise returns `conflict` if the follow-up date is no longer the one the user saw. *(ADR-0011. `expectedFollowUpOn` lands in T22d.)*
 - ~~`deleteContact(id)` (soft) and `restoreContact(id)`, which backs Undo.~~ Out of scope for v1.
 - `addNote(contactId, body)`.
 
@@ -478,9 +478,10 @@ ETAs are focused agent hours. "Wall" is elapsed time with the tracks running in 
 | **M3d FE pipeline** | Board, Move to… menu, optimistic move, per-column paging, mobile tabs | 1.5h | M2 |
 | **M5a OPS CI** | `ci.yml` (checks, integration and e2e with Supabase in Docker, gitleaks), Dependabot, PR template, branch protection | 1h | M0 |
 | **M5b OPS deploy** | `deploy.yml` (migrate, deploy, smoke test), the `seed` workflow, keep-alive cron, Vercel and Supabase configuration | 1h | M5a + Khubaib's accounts |
-| **M4 Integration** | Swap fixtures for real data, e2e suite green, first production deploy | 1.5h | M1b, M1c, M3*, M5b |
+| **M4 Integration** | Swap fixtures for real data, e2e suite green, first production deploy. In PLAN.md this is T22a (auth go-live, done), T22b (real data and e2e), T22c (security headers), T22d (concurrency, ADR-0011), then T23 | 1.5h | M1b, M1c, M3*, M5b |
 | **M6 Hardening** | The edge-case pass, Impeccable `polish` on each screen then `audit`, a manual VoiceOver pass, mobile at 320px, the performance budget | 1.5h | M4 |
 | **M7 Docs and submit** | README (one page), final review, a submission checklist (live link, repo access, history) | 0.75h | M6 |
+| **T26 Hygiene audit** | The last task, after M7 and all features. Recommend only: arbitrary Tailwind values, dead and duplicate code, security and performance findings go to Khubaib, and nothing changes without his answer | n/a | M7 |
 | *Stretch S1* | Dark mode, Lighthouse CI | 1h | M6 |
 | *Stretch S2* | A third role (Attorney: close/reopen only), PR previews against a staging project | 1.5h | M7 |
 
