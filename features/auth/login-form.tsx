@@ -97,18 +97,19 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
 
   useEffect(() => emailRef.current?.focus(), []);
 
-  // Back only when the form that expired marked its draft entry; anything else lands on next.
-  const goBack = useSyncExternalStore(
-    subscribe,
-    () => reason === 'expired' && hasReturn(next),
-    () => false,
-  );
+  // Back only when the form that expired marked its draft entry. The marker is read once
+  // and cleared on every load, so an abandoned one can't send a later sign-in Back.
+  const goBack = useRef(false);
+  useEffect(() => {
+    goBack.current ||= reason === 'expired' && hasReturn(next);
+    clearReturn();
+  }, [reason, next]);
   const router = useRouter();
   const signedIn = state?.ok === true;
   useEffect(() => {
     if (!signedIn) return;
-    clearReturn();
     const target = safeNext(next) ?? '/contacts';
+    if (!goBack.current) return router.replace(target);
     window.history.back();
     // Back found nothing to return to (new tab, duplicated tab): go to next instead.
     const t = setTimeout(() => {
@@ -146,6 +147,7 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
       return;
     }
     setClientErrors({});
+    if (goBack.current) formData.set('back', '1');
     formAction(formData);
   }
 
@@ -172,7 +174,6 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
       <form action={submit} noValidate className="flex flex-col gap-4">
         <input type="hidden" name="tz" value={tz} />
         {next && <input type="hidden" name="next" value={next} />}
-        {goBack && <input type="hidden" name="back" value="1" />}
         <Field id="email" label="Email" error={fieldErrors.email}>
           <Input
             ref={emailRef}

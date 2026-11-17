@@ -230,6 +230,7 @@ describe('LoginForm', () => {
     await waitFor(() => expect(action).toHaveBeenCalled());
     expect(action.mock.calls[0]![1].has('back')).toBe(false);
     expect(back).not.toHaveBeenCalled();
+    await waitFor(() => expect(replace).toHaveBeenCalledWith('/x'));
   });
 
   // Last: their never-resolving actions leave a pending transition that stalls later tests.
