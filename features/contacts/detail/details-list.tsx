@@ -25,7 +25,10 @@ const missing = <span className="text-ink-2">Not provided</span>;
 
 export function DetailsList({
   contact,
+  phoneText,
 }: {
+  /** The phone as shown; formatted on the server so the phone library stays out of the browser bundle. */
+  phoneText?: string;
   contact: Pick<
     ContactDetail,
     'phone' | 'email' | 'matterType' | 'referralSource' | 'summary'
@@ -38,7 +41,7 @@ export function DetailsList({
         <Row label="Phone">
           {phone ? (
             <a href={telHref(phone)} className={`${link} tnum`}>
-              {phone}
+              {phoneText ?? phone}
             </a>
           ) : (
             missing

@@ -14,6 +14,7 @@ import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
+import { formatPhoneLite } from '@/utils/format-phone';
 import { cn } from '@/utils/cn';
 
 import { SORT_OPTIONS, matterLabel, sourceLabel } from './columns';
@@ -81,7 +82,10 @@ const columns = helper.columns([
     id: 'phone',
     header: 'Phone',
     enableSorting: false,
-    cell: ({ getValue }) => getValue() ?? muted('No phone'),
+    cell: ({ getValue }) => {
+      const phone = getValue();
+      return phone ? formatPhoneLite(phone) : muted('No phone');
+    },
   }),
   helper.accessor('email', {
     id: 'email',

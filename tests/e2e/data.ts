@@ -45,7 +45,7 @@ export async function newContact(over: NewContact = {}) {
   const fullName =
     over.name ?? `E2E Client ${Math.random().toString(36).slice(2, 8)}`;
   const email = `${Math.random().toString(36).slice(2, 10)}@example.test`;
-  const phone = '(212) 555-0199';
+  const phone = '+12125550199';
   const { data, error } = await db
     .from('contacts')
     .insert({

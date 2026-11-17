@@ -4,7 +4,7 @@ A legal-intake mini CRM. Track every prospective client, a **contact**, from fir
 
 **Live:** [caseflow-drab.vercel.app](https://caseflow-drab.vercel.app) · **Demo access:** an **Admin** (full access) and a read-only **Viewer**. Credentials are in the submission message.
 
-**What's in it:** a contact list with search, filters with live counts, urgency sort and paging. Contact detail with a timeline, reschedule and rich-text notes. Create and edit forms with validation and conflict handling. A pipeline with **Move to…** and a sort per column (urgency, name, recently updated, newest). Two roles, with disabled controls that say why. Loading, empty, error, 404 and 403 states on every screen. Light and dark themes, System by default, remembered per device.
+**What's in it:** a contact list with search, filters with live counts, urgency sort and paging. Contact detail with a timeline, reschedule and rich-text notes. Create and edit forms with validation, conflict handling and phone numbers formatted by country. A pipeline with **Move to…** and a sort per column (urgency, name, recently updated, newest). Two roles, with disabled controls that say why. Loading, empty, error, 404 and 403 states on every screen. Light and dark themes, System by default, remembered per device.
 
 ## Component structure and state
 
@@ -29,6 +29,8 @@ A legal-intake mini CRM. Track every prospective client, a **contact**, from fir
 ## Trade-off
 
 **A Move menu instead of drag and drop.** Dragging alone fails WCAG 2.2 (2.5.7). It's awkward on phones and with a keyboard. Cards are ordered by urgency, so there's no manual order to drag into. The cost is one extra click for mouse users. Other decisions are in [`docs/adr/`](docs/adr/README.md).
+
+**Phone migration assumptions:** existing bare 10-digit numbers became US (+1), and text around a number such as "(cell)" was dropped. Safe for the all-US data it ran on.
 
 ## With more time
 

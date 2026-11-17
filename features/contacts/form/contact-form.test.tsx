@@ -198,7 +198,7 @@ describe('ContactForm', () => {
       'Ana Díaz',
     );
     expect(screen.getByRole('textbox', { name: 'Phone' })).toHaveValue(
-      '512 555 0100',
+      '(512) 555-0100',
     );
 
     await userEvent.click(screen.getByRole('button', { name: 'Retry' }));

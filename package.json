@@ -31,6 +31,7 @@
     "@tiptap/react": "3.34.0",
     "@tiptap/starter-kit": "3.34.0",
     "date-fns": "4.4.0",
+    "libphonenumber-js": "1.13.16",
     "lucide-react": "1.73.0",
     "next": "16.4.6",
     "nuqs": "2.10.3",
