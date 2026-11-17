@@ -66,9 +66,12 @@ for (const size of [
         const diffs = r.loaded.flatMap((b, i) => {
           const l = r.loading[i];
           if (!l) return [`block ${i}: no skeleton block, loaded ${fmt(b)}`];
-          const keys = (['x', 'y', 'w', 'h'] as const).filter(
-            (k) => Math.abs(b[k] - l[k]) > 1,
-          );
+          // On a phone the meta line wraps by contact (1 or 2 rows), so below the breadcrumb only x and w are fixed.
+          const fixed =
+            name === 'detail' && size.width < 768 && i > 0
+              ? (['x', 'w'] as const)
+              : (['x', 'y', 'w', 'h'] as const);
+          const keys = fixed.filter((k) => Math.abs(b[k] - l[k]) > 1);
           // Content that runs past the fold (a long form or timeline) only has to fill the screen.
           // A contact's notes and activity set the last block's height, so it only has to start in place and fill the screen.
           const tail =
