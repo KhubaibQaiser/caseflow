@@ -50,14 +50,16 @@ A client-intake CRM for a law firm. Each prospective client is a **contact** wit
 - **One account menu.** The sidebar ends in "Name · Role" (an initials avatar on the tablet rail) that opens a menu with Sign out.
 - **Every state is designed:** skeletons that match the loaded layout (also while a filter, sort or page reloads), filtered and first-run empty states, errors with Retry, 404 and 403. Viewers see disabled controls that say why.
 
-## Trade-off: a Move menu instead of drag and drop
+## Trade-offs
 
-Dragging alone fails WCAG 2.2 (2.5.7), is clumsy on phones and impossible by keyboard. Cards are ordered by urgency, so there is no manual order to drag into. Every card has a keyboard-accessible **Move to…** menu instead. The cost is one extra click for mouse users; drag and drop on desktop, as a shortcut on top of the menu, is the first thing I would add.
+**A Move menu instead of drag and drop.** Dragging alone fails WCAG 2.2 (2.5.7), is clumsy on phones and impossible by keyboard. Cards are ordered by urgency, so there is no manual order to drag into. Every card has a keyboard-accessible **Move to…** menu instead. The cost is one extra click for mouse users; drag and drop on desktop, as a shortcut on top of the menu, is the first thing I would add.
+
+**No live updates on the pipeline yet.** A shared board should show other people's changes as they happen. Given the deadline, data refreshes on load and after each action. The production design ([ADR-0011](docs/adr/0011-concurrent-edits-and-change-feed.md)) streams changes since a cursor over SSE, and one client function merges each one: it removes the card, re-inserts it at its sorted position and takes counts from the server. Cards stay correct even in columns paged past the first 50, and the same function can sit behind a plain poll first.
 
 ## With more time
 
 - Drag and drop on desktop, keyboard shortcuts (j/k rows, quick status change) and a command palette.
-- **Scale and concurrency.** Today edits are version-checked (a stale save is refused, input kept), roles are enforced in Postgres, and paging and counts run in the database. Moves are last-write-wins and screens don't update live. Next: version-checked moves plus a Postgres `LISTEN` change feed over SSE, and one account per person. Details in the [reviewer guide](docs/REVIEWER-GUIDE.md#6-one-reviewer-versus-many-users).
+- **Scale and concurrency.** Today edits are version-checked (a stale save is refused, input kept), roles are enforced in Postgres, and paging and counts run in the database. Moves are last-write-wins. Next: version-checked moves, the SSE change feed above, and one account per person. Details in the [reviewer guide](docs/REVIEWER-GUIDE.md#6-one-reviewer-versus-many-users).
 - Undo for moves, global search, invites and password reset, more roles.
 - Error tracking and analytics (Sentry or PostHog), and PR preview environments.
 
