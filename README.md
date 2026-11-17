@@ -157,3 +157,16 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - Revocation lag: `getClaims()` checks the JWT signature, not the user record, so a banned or deleted user keeps access until the access token expires (up to 1 hour). Roles are read live from `profiles`, and RLS applies on every query.
 - The proxy only URL-encodes `next`. T10's `safeNext` must reject values starting with `//` or `/\`.
 - Auth responses carry `Cache-Control: private, no-store` from `@supabase/ssr` (proxy and redirects).
+
+## Contact form (T17)
+
+- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`); T22 only swaps the data source.
+- The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 220 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
+- Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
+- Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
+- Conflict: the banner triggers `router.refresh()`; Reload latest resets the form to the refreshed record (the user re-applies their edits). There is no Overwrite. Save keeps sending the `updatedAt` the form opened with, even after the refresh hands it a newer record; only Reload latest moves the stamp.
+- `unauthorized`: before pushing `/login?reason=expired&next=<page>`, the form writes its typed values and the `updatedAt` they were made against into the current history entry (`history.state.caseflowDraft`; nothing goes to sessionStorage or localStorage). Back from sign-in restores them (dirty) and clears the draft. A draft is ignored if its mode or contact id differs. A tab that is closed, or a fresh visit, starts empty.
+- Limit: the draft comes back only when the user presses Back to the form after signing in. The normal sign-in redirect (`next=`) opens a fresh form. Returning through history after an expiry, with an end-to-end test against real auth, is planned for T22.
+- The unsaved guard: `beforeunload` for reload and close, plus a capture-phase click handler that turns same-origin link clicks (sidebar, breadcrumb, any `Link`) into the "Discard changes?" dialog while dirty. Cancel keeps the input. Programmatic pushes and the Back button can't be intercepted.
+- Matter type has no default ("Choose a matter type"); an empty submit reports it with the name and the email-or-phone rule.
+- `/dev/contact-form?outcome=conflict|slow|fail` is a dev fixture with a scripted save (404 in production).

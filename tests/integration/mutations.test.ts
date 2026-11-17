@@ -172,7 +172,8 @@ describe('server actions', () => {
         fieldErrors: {
           fullName: 'Name must be at least 2 characters.',
           matterType: 'Choose a matter type.',
-          contactMethod: 'Add an email or a phone number.',
+          contactMethod:
+            "Add an email or a phone number. Intake can't follow up without one.",
         },
       },
     });
