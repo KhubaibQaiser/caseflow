@@ -1,12 +1,21 @@
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
+import {
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 
 import { toast } from '@/components/ui/toaster';
 import type { ContactRow } from '@/lib/contracts/contact';
 import { STATUSES, STATUS_LABEL } from '@/lib/contracts/enums';
 import type { Status } from '@/lib/contracts/enums';
-import type { PipelineSorts } from '@/lib/contracts/pipeline-sort';
+import type {
+  PipelineSort,
+  PipelineSorts,
+} from '@/lib/contracts/pipeline-sort';
 import { fail } from '@/lib/contracts/result';
 import type { Result } from '@/lib/contracts/result';
 
@@ -100,8 +109,20 @@ export function useBoardMoves(
       });
   }
 
-  function append(status: Status, rows: PipelineRow[], matching: number) {
-    setBase((b) => appendRows(b, status, rows, matching, sorts[status]));
+  // The sorts as of the latest render: a page that comes back after its column changed sort belongs to the old order.
+  const latest = useRef(sorts);
+  useEffect(() => {
+    latest.current = sorts;
+  });
+  function append(
+    status: Status,
+    rows: PipelineRow[],
+    matching: number,
+    /** The sort the page was asked for under. */
+    sort: PipelineSort,
+  ) {
+    if (latest.current[status] !== sort) return;
+    setBase((b) => appendRows(b, status, rows, matching, sort));
   }
 
   return { columns, move, append };

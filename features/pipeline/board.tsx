@@ -185,13 +185,14 @@ function Results({
                     disabledReason={canMove ? undefined : VIEWER_REASON}
                     className={s === tab ? undefined : 'max-md:hidden'}
                     onLoadMore={async () => {
+                      const sort = sorts[s];
                       const r = await onLoadMore({
                         status: s,
                         filters,
-                        sort: sorts[s],
+                        sort,
                         page: columns[s].pages,
                       });
-                      if (r.ok) append(s, r.data.rows, r.data.matching);
+                      if (r.ok) append(s, r.data.rows, r.data.matching, sort);
                       else if (r.error.code === 'unauthorized') expire();
                       return r.ok;
                     }}
