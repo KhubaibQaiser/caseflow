@@ -128,4 +128,14 @@ describe('sorted columns', () => {
       applyMove(cols, 'm', 'active', NOW, 'updated').active.rows[0]!.id,
     ).toBe('m');
   });
+
+  it('breaks a full tie by id, as the RPC does', () => {
+    const same = { updatedAt: '2026-11-02T10:00:00.000Z', fullName: 'Same' };
+    const cols: Columns = {
+      ...board(),
+      lead: { rows: [r('m', same), r('z', same)], matching: 3, pages: 1 },
+    };
+    const next = appendRows(cols, 'lead', [r('b2', same)], 3, 'updated');
+    expect(ids(next.lead.rows)).toEqual(['b2', 'm', 'z']);
+  });
 });

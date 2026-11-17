@@ -46,7 +46,9 @@ function before(a: PipelineRow, b: PipelineRow, sort: PipelineSort): boolean {
     if (a.followUpOn && b.followUpOn && a.followUpOn !== b.followUpOn)
       return a.followUpOn < b.followUpOn;
   }
-  return newer(a.updatedAt, b.updatedAt);
+  if (a.updatedAt !== b.updatedAt) return newer(a.updatedAt, b.updatedAt);
+  // The RPC's last tiebreak (updated_at desc, id).
+  return a.id < b.id;
 }
 
 /** Where a column has this id, if anywhere. */
