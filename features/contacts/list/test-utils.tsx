@@ -14,7 +14,7 @@ import type { ListRow } from './list-rows';
 export const TODAY = '2026-11-17';
 export const TZ = 'UTC';
 
-export const ADMIN: ShellViewer = {
+const ADMIN: ShellViewer = {
   displayName: 'Alex Morgan',
   role: 'admin',
   permissions: [...ROLE_PERMISSIONS.admin],

@@ -30,27 +30,27 @@ export default function ContactLoading() {
       <span className="sr-only" role="status">
         Loading contact
       </span>
-      <div className="flex h-[18px] items-center">
+      <div className="flex h-4.5 items-center">
         <Skeleton className="h-3 w-40" />
       </div>
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div className="flex flex-col gap-1.5">
           <Skeleton className="h-8 w-56" />
-          <Skeleton className="h-[22px] w-72 max-w-full" />
+          <Skeleton className="h-5.5 w-72 max-w-full" />
         </div>
         <div className="flex gap-2">
-          <Skeleton className="rounded-ctl h-[34px] w-28 max-md:h-11 max-md:flex-1" />
-          <Skeleton className="rounded-ctl h-[34px] w-20 max-md:h-11" />
+          <Skeleton className="rounded-ctl h-8.5 w-28 max-md:h-11 max-md:flex-1" />
+          <Skeleton className="rounded-ctl h-8.5 w-20 max-md:h-11" />
         </div>
       </div>
       <div className="grid items-start gap-3.5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="flex min-w-0 flex-col gap-3.5">
           <section className={panel}>
             <Heading w="w-20" />
-            <div className="flex h-[30px] items-center gap-3">
+            <div className="flex h-7.5 items-center gap-3">
               <Skeleton className="h-5 w-24 rounded-full" />
               <Skeleton className="w-28" />
-              <Skeleton className="rounded-ctl ml-auto h-[30px] w-24" />
+              <Skeleton className="rounded-ctl ml-auto h-7.5 w-24" />
             </div>
           </section>
           <section className={panel}>
@@ -59,8 +59,8 @@ export default function ContactLoading() {
           </section>
           <section className={panel}>
             <Heading w="w-14" />
-            <Skeleton className="rounded-ctl h-[82px] w-full" />
-            <Skeleton className="rounded-ctl mt-2 mb-3 ml-auto h-[30px] w-24" />
+            <Skeleton className="rounded-ctl h-20.5 w-full" />
+            <Skeleton className="rounded-ctl mt-2 mb-3 ml-auto h-7.5 w-24" />
             <Rows widths={['w-4/5', 'w-3/5', 'w-2/3']} />
           </section>
         </div>

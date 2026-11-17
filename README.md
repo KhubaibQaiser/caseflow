@@ -4,6 +4,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 
 ## Status
 
+- Final fixes are in: hygiene (dead code, shared list pieces, `/dev` 404s on previews, Server Action body cap), a Tailwind standard-step sweep and the accessibility audit fixes. The full README rewrite follows separately.
 - M0 is done: scaffold, contracts, date helpers and design tokens.
 - The app runs on real data (T22b): every screen reads Supabase through `lib/data` and writes through the Server Actions. The fake data layer is gone.
 - App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.

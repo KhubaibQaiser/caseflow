@@ -8,7 +8,7 @@ import type { ListQuery } from '@/lib/contracts/list-query';
 
 import type { ListQueryPatch } from '../url-state';
 
-export type ActiveFilter = {
+type ActiveFilter = {
   key: string;
   label: string;
   value: string;

@@ -1,41 +1,26 @@
-import { differenceInCalendarDays } from 'date-fns';
-
 import type { ContactRow } from '@/lib/contracts/contact';
 import { formatDateShort, followUpView } from '@/lib/dates/labels';
-import { parseDateOnly } from '@/lib/dates/date-only';
+import { urgencyOf } from '@/lib/dates/urgency';
 
 import type { FollowUpView, PipelineRow } from './rows';
 
 const RANK = { overdue: 0, today: 1, dated: 2, closedDated: 3, none: 4 };
 
-/** Server only: date-fns stays out of the browser. Each row is labelled as an open and as a Closed contact. */
+/** Server only. Each row is labelled as an open and as a Closed contact. */
 export function toPipelineRows(
   rows: ContactRow[],
   today: string,
 ): PipelineRow[] {
   return rows.map((r) => {
-    const days = r.followUpOn
-      ? differenceInCalendarDays(
-          parseDateOnly(today),
-          parseDateOnly(r.followUpOn),
-        )
-      : null;
-    // Only Lead and Active can be overdue or due today (a Closed row arrives as 'later').
-    const urgency =
-      days === null
-        ? 'none'
-        : days > 0
-          ? 'overdue'
-          : days === 0
-            ? 'today'
-            : 'later';
+    // A Closed row never shows as overdue or due today, so every row is labelled as an open one here.
+    const { urgency, daysOverdue } = urgencyOf('lead', r.followUpOn, today);
     const open: FollowUpView = {
       ...followUpView(
         {
           status: 'lead',
           followUpOn: r.followUpOn,
           urgency,
-          daysOverdue: days && days > 0 ? days : null,
+          daysOverdue,
         },
         today,
       ),

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { devRoutesEnabled } from '@/lib/env';
+
 import { FormPage } from '@/features/contacts/form/form-page';
 import { todayIn } from '@/lib/dates/date-only';
 import { getRequestTimeZone } from '@/lib/dates/server';
@@ -13,7 +15,7 @@ export const metadata: Metadata = { title: 'Contact form · Caseflow' };
 export default async function DevContactForm({
   searchParams,
 }: PageProps<'/dev/contact-form'>) {
-  if (process.env.VERCEL_ENV === 'production') notFound();
+  if (!devRoutesEnabled()) notFound();
   const { outcome } = await searchParams;
   const today = todayIn(await getRequestTimeZone());
   return (

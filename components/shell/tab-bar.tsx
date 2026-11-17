@@ -12,7 +12,7 @@ import { NAV, isCurrent } from './nav';
 const AccountSheet = dynamic(() => import('./account-sheet'), { ssr: false });
 
 const TAB =
-  'text-ink-2 aria-[current=page]:text-accent flex flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 border-0 bg-transparent text-[11px] font-semibold no-underline';
+  'text-ink-2 aria-[current=page]:text-accent forced-colors:aria-[current=page]:bg-[Highlight] forced-colors:aria-[current=page]:text-[HighlightText] forced-colors:aria-[current=page]:forced-color-adjust-none flex flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 border-0 bg-transparent text-xs font-semibold no-underline';
 
 /** Below 768px. Sticky, clear of the home indicator. Account opens a sheet: the role must be visible here too. */
 export function TabBar({ signOut }: { signOut: SignOut }) {

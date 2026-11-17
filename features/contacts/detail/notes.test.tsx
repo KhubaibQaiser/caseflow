@@ -1,4 +1,4 @@
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -330,6 +330,28 @@ describe('Notes formatting', () => {
 
     await u.click(tool('Bold'));
     expect(tool('Bold')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('is one Tab stop; Left and Right move between the tools', async () => {
+    const u = user();
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    await composer();
+
+    const bar = screen.getByRole('toolbar', { name: 'Formatting' });
+    const tabbable = () =>
+      within(bar)
+        .getAllByRole('button')
+        .filter((b) => b.tabIndex === 0);
+    expect(tabbable()).toEqual([tool('Bold')]);
+
+    tool('Bold').focus();
+    await u.keyboard('{ArrowRight}');
+    expect(tool('Italic')).toHaveFocus();
+    expect(tabbable()).toEqual([tool('Italic')]);
+    await u.keyboard('{ArrowLeft}{ArrowLeft}');
+    expect(tool('Link')).toHaveFocus(); // wraps
+    await u.keyboard('{ArrowRight}');
+    expect(tool('Bold')).toHaveFocus();
   });
 
   it('sends bold text, a list and a link as a document', async () => {

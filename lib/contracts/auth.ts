@@ -9,4 +9,3 @@ export const SignInSchema = z.object({
     .pipe(z.email('Enter a valid email address.')),
   password: z.string().min(1, 'Enter your password.'),
 });
-export type SignIn = z.infer<typeof SignInSchema>;

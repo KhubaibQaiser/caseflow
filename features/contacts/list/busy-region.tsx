@@ -21,7 +21,7 @@ export function BusyRegion({
         <span
           data-loading-bar
           aria-hidden="true"
-          className="bg-accent rounded-pill pointer-events-none absolute inset-x-2.5 top-0 z-[4] h-0.5 animate-pulse motion-reduce:animate-none forced-colors:bg-[Highlight]"
+          className="bg-accent rounded-pill pointer-events-none absolute inset-x-2.5 top-0 z-4 h-0.5 animate-pulse motion-reduce:animate-none forced-colors:bg-[Highlight]"
         />
       )}
       {children}

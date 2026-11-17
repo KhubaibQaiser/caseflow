@@ -26,7 +26,7 @@ export const FOLLOW_UP_FILTERS = [
   'next7Days',
   'none',
 ] as const;
-export type FollowUpFilter = (typeof FOLLOW_UP_FILTERS)[number];
+type FollowUpFilter = (typeof FOLLOW_UP_FILTERS)[number];
 
 export const ACTIVITY_TYPES = [
   'created',
@@ -37,7 +37,6 @@ export const ACTIVITY_TYPES = [
   'deleted',
   'restored',
 ] as const;
-export type ActivityType = (typeof ACTIVITY_TYPES)[number];
 
 export const STATUS_LABEL: Record<Status, string> = {
   lead: 'Lead',

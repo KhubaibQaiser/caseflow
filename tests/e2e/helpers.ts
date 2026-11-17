@@ -39,7 +39,11 @@ export async function signInAs(page: Page, role: Role) {
 
 // Waits for finite animations (menu, popover and sheet enters) to end, so axe never reads blended mid-fade colours.
 // Looping ones (spinners, the loading bar) are skipped; the wait is bounded.
+// Also waits for a non-empty document.title: streamed metadata lands after the body, and axe's document-title rule reads it.
 export async function settleAnimations(page: Page) {
+  await page.waitForFunction(() => document.title.trim() !== '', undefined, {
+    timeout: 5_000,
+  });
   await page.waitForFunction(
     () =>
       document

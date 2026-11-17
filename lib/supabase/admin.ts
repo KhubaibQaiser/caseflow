@@ -12,6 +12,3 @@ const make = (headers?: Record<string, string>): SupabaseClient<Database> =>
 // Sign-in only: forwards the browser's IP so Supabase rate-limits each reviewer, not Vercel.
 export const createSignInClient = (clientIp: string | null) =>
   make(clientIp ? { 'Sb-Forwarded-For': clientIp } : undefined);
-
-// Scripts and tests only; never import from app code.
-export const createServiceClient = () => make();

@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/shell/page-header';
 import { moveContactAction } from '@/features/contacts/actions';
+import { listPageFrame } from '@/features/contacts/list/frame';
 import { NewContactLink } from '@/features/contacts/list/new-contact-link';
 import { loadMoreColumnAction } from '@/features/pipeline/actions';
 import { Board } from '@/features/pipeline/board';
@@ -46,7 +47,7 @@ export default async function PipelinePage({
 
   return (
     // md+: the page fills the viewport and each column scrolls inside it, like the list's table.
-    <div className="flex flex-col gap-3 md:h-[calc(100dvh-34px)] md:min-h-[480px]">
+    <div className={listPageFrame}>
       <PageHeader
         title="Pipeline"
         meta={`${fmt(facets.matching)} of ${fmt(facets.total)}`}

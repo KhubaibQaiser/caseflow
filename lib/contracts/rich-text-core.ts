@@ -18,13 +18,13 @@ export function isAllowedHref(href: string): boolean {
   }
 }
 
-export type RichMark =
+type RichMark =
   | { type: 'bold' }
   | { type: 'italic' }
   | { type: 'link'; attrs: { href: string } };
 export type RichText = { type: 'text'; text: string; marks?: RichMark[] };
 export type RichInline = RichText | { type: 'hardBreak' };
-export type RichParagraph = { type: 'paragraph'; content?: RichInline[] };
+type RichParagraph = { type: 'paragraph'; content?: RichInline[] };
 export type RichListItem = {
   type: 'listItem';
   content: (RichParagraph | RichList)[];

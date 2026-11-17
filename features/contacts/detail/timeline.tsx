@@ -78,7 +78,7 @@ export function Timeline({
               <span
                 aria-hidden
                 className={cn(
-                  'border-accent mt-1 size-[9px] flex-none rounded-full border-2',
+                  'border-accent mt-1 size-2.25 flex-none rounded-full border-2',
                   a.type === 'created' ? 'bg-accent' : 'bg-surface',
                 )}
               />

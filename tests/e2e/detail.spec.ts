@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { parseDateOnly } from '@/lib/dates/date-only';
 
 import { inDays, newContact, today } from './data';
-import { storage } from './helpers';
+import { settleAnimations, storage } from './helpers';
 
 // Real data: each test makes its own contact (tests/e2e/data.ts) and every save is a real round trip.
 const NOTES = ['Left a voicemail.', 'Sent the intake questionnaire.'];
@@ -23,19 +23,8 @@ async function setup(context: BrowserContext, baseURL: string | undefined) {
   await context.addCookies([{ name: 'tz', value: 'UTC', url: baseURL! }]);
 }
 
-// Axe samples colours as they are drawn, so let pop-in and fade animations finish first.
-const settled = (page: Page) =>
-  page.evaluate(() =>
-    Promise.all(
-      document
-        .getAnimations()
-        .filter((a) => a.effect?.getComputedTiming().iterations !== Infinity)
-        .map((a) => a.finished),
-    ),
-  );
-
 const axe = async (page: Page, within?: string) => {
-  await settled(page);
+  await settleAnimations(page);
   const builder = new AxeBuilder({ page });
   if (within) builder.include(within);
   return builder

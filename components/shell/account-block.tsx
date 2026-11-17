@@ -12,19 +12,19 @@ import { cn } from '@/utils/cn';
 export type SignOut = () => Promise<void>;
 
 /** `rail` collapses to icons below lg (the tablet rail); elsewhere it is always full. */
-export function RoleBadge({ rail = false }: { rail?: boolean }) {
+function RoleBadge({ rail = false }: { rail?: boolean }) {
   const { role } = useViewer();
   const viewer = role === 'viewer';
   return (
     <span
       className={cn(
-        'text-ink-2 border-lead-border inline-flex items-center gap-1 self-start border px-[7px] text-[11px] leading-[18px] font-semibold',
+        'text-ink-2 border-lead-border inline-flex items-center gap-1 self-start border px-1.75 text-xs leading-4.5 font-semibold',
         'rounded-pill',
         rail &&
           'max-lg:rounded-ctl max-lg:flex-col max-lg:gap-0 max-lg:self-center max-lg:px-1.5',
       )}
     >
-      {viewer && <Lock aria-hidden className="size-[11px]" />}
+      {viewer && <Lock aria-hidden className="size-2.75" />}
       <span>
         {ROLE_LABEL[role]}
         {viewer && (
@@ -82,7 +82,7 @@ export function SignOutForm({
       <LazyTooltip content="Sign out" side="right" contentClassName="lg:hidden">
         <button
           type="submit"
-          className="text-ink-2 hover:text-ink rounded-ctl text-13 inline-flex min-h-6 cursor-pointer items-center justify-center gap-0 border-0 bg-transparent font-medium max-lg:size-[30px] lg:-ml-1 lg:px-1"
+          className="text-ink-2 hover:text-ink rounded-ctl text-13 inline-flex min-h-6 cursor-pointer items-center justify-center gap-0 border-0 bg-transparent font-medium max-lg:size-7.5 lg:-ml-1 lg:px-1"
         >
           <LogOut aria-hidden className="size-4 lg:hidden" />
           <span className="max-lg:sr-only">Sign out</span>

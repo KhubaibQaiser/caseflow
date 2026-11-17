@@ -176,7 +176,7 @@ export function safeParseRichDoc(
   }
 }
 
-export type RichNoteResult =
+type RichNoteResult =
   { ok: true; doc: RichDoc; text: string } | { ok: false; message: string };
 
 const NOT_ALLOWED: RichNoteResult = {

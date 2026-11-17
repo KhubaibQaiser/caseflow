@@ -29,6 +29,7 @@
   --accent-on-ink: #9fd3bc;
   --scrim: rgb(30 42 38 / 0.38);
   --raised: 0 1px 2px rgb(30 42 38 / 0.12);
+  --overlay: -10px 8px 28px rgb(30 42 38 / 0.14);
   --r-ctl: 6px;
   --r-surface: 10px;
   --r-pill: 999px;
@@ -65,6 +66,7 @@
   --color-accent-on-ink: var(--accent-on-ink);
   --color-scrim: var(--scrim);
   --shadow-raised: var(--raised);
+  --shadow-overlay: var(--overlay);
   --radius-ctl: var(--r-ctl);
   --radius-surface: var(--r-surface);
   --radius-pill: var(--r-pill);
@@ -128,6 +130,17 @@
     --animate-fade-out: none;
     --animate-sheet-in: none;
     --animate-sheet-out: none;
+  }
+
+  /* Toasts fade, never slide: sonner animates --y from 100% on enter and to -100% on exit. */
+  [data-sonner-toast] {
+    transition:
+      opacity 150ms,
+      height 150ms !important;
+  }
+  [data-sonner-toast][data-mounted='false'][data-y-position],
+  [data-sonner-toast][data-removed='true'][data-front][data-swipe-out][data-y-position] {
+    --y: translateY(0);
   }
 }
 

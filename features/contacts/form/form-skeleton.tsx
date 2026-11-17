@@ -7,7 +7,7 @@ function FieldSkeleton({ tall = false }: { tall?: boolean }) {
   return (
     <div className="flex flex-col gap-1.5">
       <Skeleton className="h-3 w-24" />
-      <Skeleton className={tall ? 'h-[72px] w-full' : 'h-9 w-full'} />
+      <Skeleton className={tall ? 'h-18 w-full' : 'h-9 w-full'} />
     </div>
   );
 }
@@ -25,7 +25,7 @@ export function FormSkeleton() {
         <Skeleton className="h-3.5 w-56" />
         <Skeleton className="h-7 w-44" />
       </div>
-      <div className="flex max-w-[720px] flex-col gap-3.5">
+      <div className="flex max-w-3xl flex-col gap-3.5">
         <div className={fieldset}>
           <FieldSkeleton />
           <div className="grid gap-3 sm:grid-cols-2">

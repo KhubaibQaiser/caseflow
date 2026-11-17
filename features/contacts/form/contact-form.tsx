@@ -294,7 +294,7 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
           event.preventDefault();
           void run();
         }}
-        className="flex max-w-[720px] flex-col gap-3.5"
+        className="flex max-w-3xl flex-col gap-3.5"
       >
         <ErrorSummary errors={summaryErrors} attempt={attempt} />
         {banner?.kind === 'conflict' && (

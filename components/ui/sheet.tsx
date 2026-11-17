@@ -35,7 +35,7 @@ export function Sheet({
         aria-describedby={undefined}
         onCloseAutoFocus={onCloseAutoFocus}
         data-side={side}
-        className="bg-panel shadow-raised data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out fixed inset-y-0 right-0 z-50 flex w-[88%] max-w-sm flex-col border-l border-transparent"
+        className="bg-panel shadow-raised data-[state=open]:animate-sheet-in data-[state=closed]:animate-sheet-out fixed inset-y-0 right-0 z-50 flex w-11/12 max-w-sm flex-col border-l border-transparent"
       >
         <header className="border-line flex items-center justify-between gap-3 border-b py-2.5 pr-2.5 pl-4">
           <DialogTitle className="text-ink m-0 text-sm font-semibold">

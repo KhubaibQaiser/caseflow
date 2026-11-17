@@ -48,7 +48,7 @@ export function Textarea({
         }}
         className={cn(
           controlClass,
-          'min-h-[72px] resize-y py-2 leading-relaxed',
+          'min-h-18 resize-y py-2 leading-relaxed',
           className,
         )}
       />

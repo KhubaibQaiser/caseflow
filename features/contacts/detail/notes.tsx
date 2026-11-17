@@ -31,7 +31,7 @@ function readDraft(): unknown {
 // The placeholder holds the editor's height, so nothing shifts when it lands.
 const NoteEditor = dynamic(() => import('./note-editor'), {
   ssr: false,
-  loading: () => <div aria-hidden className="h-[113px]" />,
+  loading: () => <div aria-hidden className="h-28.25" />,
 });
 
 const FAILED = 'Note not saved. Check your connection and save again.';

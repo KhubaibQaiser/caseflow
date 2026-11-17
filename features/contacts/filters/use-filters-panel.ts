@@ -18,7 +18,7 @@ export function useIsDesktop() {
   );
 }
 
-export const FILTERS_OPEN_COOKIE = 'filters_open';
+const FILTERS_OPEN_COOKIE = 'filters_open';
 const remember = (open: boolean) => {
   document.cookie = `${FILTERS_OPEN_COOKIE}=${open ? 1 : 0}; path=/; max-age=31536000; samesite=lax`;
 };

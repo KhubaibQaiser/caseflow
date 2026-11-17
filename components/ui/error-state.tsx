@@ -37,7 +37,7 @@ export function ErrorState({
     >
       <CircleAlert
         aria-hidden
-        className={cn('text-ink-2', page ? 'size-[26px]' : 'size-[22px]')}
+        className={cn('text-ink-2', page ? 'size-6.5' : 'size-5.5')}
       />
       {page ? (
         <PageHeading className="text-ink m-0 text-xl font-semibold text-balance">

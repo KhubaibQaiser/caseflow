@@ -14,7 +14,7 @@ import type { Result } from '@/lib/contracts/result';
 import { formatEnquired, waitingLabel } from '@/lib/dates/labels';
 
 import { VIEWER_EDIT_REASON } from '../reasons';
-import { telHref } from './details-list';
+import { telHref } from '@/utils/tel-href';
 import { MoveMenu } from './move-menu';
 
 type ContactHeaderProps = {
@@ -52,8 +52,8 @@ export function ContactHeader({
         <div className="text-13 text-ink-2 flex flex-wrap items-center gap-x-2 gap-y-1">
           <StatusPill status={status} />
           <span>{MATTER_TYPE_LABEL[matterType]}</span>
-          <span aria-hidden>·</span>
-          <span className="tnum">
+          {/* The dot belongs to this span, so a wrap never leaves it dangling at a line end. */}
+          <span className="tnum before:mr-2 before:content-['·']">
             Enquired {formatEnquired(createdAt, today, tz)}
             {status !== 'closed' &&
               ` · waiting ${waiting === 'Today' ? 'today' : waiting}`}

@@ -31,7 +31,7 @@ export function DropdownMenuContent({
         collisionPadding={8}
         className={cn(
           floatingClass,
-          'min-w-[180px] origin-(--radix-dropdown-menu-content-transform-origin) p-1.5',
+          'min-w-45 origin-(--radix-dropdown-menu-content-transform-origin) p-1.5',
           className,
         )}
         {...props}
@@ -47,7 +47,7 @@ export function DropdownMenuItem({
   return (
     <RadixMenu.Item
       className={cn(
-        'text-13 text-ink data-highlighted:bg-canvas focus-visible:outline-accent flex min-h-8 cursor-pointer items-center gap-2 rounded-[5px] px-2 outline-none select-none focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid data-disabled:cursor-not-allowed data-disabled:opacity-45',
+        'text-13 text-ink data-highlighted:bg-canvas focus-visible:outline-accent rounded-ctl flex min-h-8 cursor-pointer items-center gap-2 px-2 outline-none select-none focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid data-disabled:cursor-not-allowed data-disabled:opacity-45',
         'forced-colors:data-highlighted:bg-[Highlight] forced-colors:data-highlighted:text-[HighlightText] forced-colors:data-highlighted:forced-color-adjust-none',
         className,
       )}
@@ -79,7 +79,7 @@ export function DropdownMenuRadioItem({
   return (
     <RadixMenu.RadioItem
       className={cn(
-        'text-13 text-ink data-highlighted:bg-canvas focus-visible:outline-accent flex min-h-8 cursor-pointer items-center gap-2 rounded-[5px] pr-2 pl-7 outline-none select-none focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid data-[state=checked]:font-semibold',
+        'text-13 text-ink data-highlighted:bg-canvas focus-visible:outline-accent rounded-ctl flex min-h-8 cursor-pointer items-center gap-2 pr-2 pl-7 outline-none select-none focus-visible:shadow-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-solid data-[state=checked]:font-semibold',
         'forced-colors:data-highlighted:bg-[Highlight] forced-colors:data-highlighted:text-[HighlightText] forced-colors:data-highlighted:forced-color-adjust-none',
         'relative',
         className,

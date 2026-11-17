@@ -184,6 +184,8 @@ export default function NoteEditor({
   const [linkOpen, setLinkOpen] = useState(false);
   const linkRef = useRef<() => void>(() => {});
   const toolbarId = useId();
+  // Roving tabindex: the toolbar is one Tab stop, and Left/Right move between its tools.
+  const [stop, setStop] = useState(0);
 
   const editor = useEditor({
     extensions,
@@ -197,7 +199,7 @@ export default function NoteEditor({
         'aria-keyshortcuts': 'Control+Enter Meta+Enter',
         class: cn(
           // Borderless: the composer's frame carries the border and the focus ring.
-          'text-ink min-h-[72px] cursor-text px-3 py-2.5 text-base leading-relaxed wrap-anywhere outline-none sm:text-13 focus-visible:shadow-none focus-visible:outline-none',
+          'text-ink min-h-18 cursor-text px-3 py-2.5 text-base leading-relaxed wrap-anywhere outline-none sm:text-13 focus-visible:shadow-none focus-visible:outline-none',
           '[&_p]:m-0 [&_li>p]:m-0 [&_ul]:m-0 [&_ol]:m-0 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ps-5 [&_ol]:ps-5',
           '[&_a]:text-accent [&_a]:underline [&_a]:underline-offset-3',
         ),
@@ -276,7 +278,7 @@ export default function NoteEditor({
 
   if (!editor)
     // Between the code landing and the editor existing: hold the space so nothing shifts.
-    return <div aria-hidden className="h-[113px]" />;
+    return <div aria-hidden className="h-28.25" />;
 
   // Toolbar, link form and body; the frame (border, ring, footer) belongs to the composer around it.
   return (
@@ -285,6 +287,15 @@ export default function NoteEditor({
         role="toolbar"
         id={toolbarId}
         aria-label="Formatting"
+        onKeyDown={(e) => {
+          const step = { ArrowRight: 1, ArrowLeft: -1 }[e.key];
+          if (!step) return;
+          const tools = [...e.currentTarget.querySelectorAll('button')];
+          const at = tools.indexOf(document.activeElement as HTMLButtonElement);
+          if (at < 0) return;
+          e.preventDefault();
+          tools[(at + step + tools.length) % tools.length]?.focus();
+        }}
         className="border-line-soft flex flex-wrap items-center gap-0.5 border-b px-1.5 py-1 max-md:gap-1"
       >
         {TOOLS.map((t, i) => (
@@ -295,6 +306,8 @@ export default function NoteEditor({
               aria-pressed={state?.pressed[i] ?? false}
               aria-keyshortcuts={t.keys}
               disabled={readOnly}
+              tabIndex={stop === i ? 0 : -1}
+              onFocus={() => setStop(i)}
               // Keep the selection in the editor while a button is pressed.
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => t.run(editor)}
@@ -312,6 +325,8 @@ export default function NoteEditor({
             aria-expanded={linkOpen}
             aria-keyshortcuts="Control+K Meta+K"
             disabled={readOnly}
+            tabIndex={stop === TOOLS.length ? 0 : -1}
+            onFocus={() => setStop(TOOLS.length)}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => setLinkOpen((o) => !o)}
             className={toolClass}
