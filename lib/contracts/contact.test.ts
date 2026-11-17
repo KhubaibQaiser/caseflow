@@ -82,7 +82,7 @@ describe('makeContactInputSchema', () => {
 
   it('phone needs at least 7 digits', () => {
     expect(
-      schema.safeParse({ ...valid, email: '', phone: '(512) 555-0148' })
+      schema.safeParse({ ...valid, email: '', phone: '+1 512 555 0148' })
         .success,
     ).toBe(true);
     expect(
@@ -146,5 +146,44 @@ describe('ActivitySchema', () => {
     expect(ActivitySchema.safeParse({ ...a, type: 'emailed' }).success).toBe(
       false,
     );
+  });
+});
+
+describe('phone', () => {
+  const run = (phone: string, opts = {}) =>
+    makeContactInputSchema({ today: '2026-11-16', ...opts }).safeParse({
+      ...valid,
+      phone,
+    });
+
+  it('stores a valid number as E.164', () => {
+    for (const [input, e164] of [
+      ['+1 (512) 555-0148', '+15125550148'],
+      ['+44 7911 123456', '+447911123456'],
+      ['+15125550148', '+15125550148'],
+    ] as const) {
+      const r = run(input);
+      expect(r.success && r.data.phone).toBe(e164);
+    }
+  });
+
+  it('rejects numbers that are not valid, or lack a country code', () => {
+    for (const bad of ['+1 555', '(512) 555-0148', '+44 123', 'call me']) {
+      const r = run(bad);
+      expect(r.success).toBe(false);
+      expect(r.error!.issues.find((i) => i.path[0] === 'phone')?.message).toBe(
+        'Enter a valid phone number.',
+      );
+    }
+  });
+
+  it('keeps phone optional', () => {
+    const r = run('');
+    expect(r.success && r.data.phone).toBe(null);
+  });
+
+  it('lets an unchanged legacy value through', () => {
+    expect(run('ext 5', { previousPhone: 'ext 5' }).success).toBe(true);
+    expect(run('ext 6', { previousPhone: 'ext 5' }).success).toBe(false);
   });
 });

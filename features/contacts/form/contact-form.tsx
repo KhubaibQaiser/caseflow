@@ -11,7 +11,7 @@ import {
 import type { ReactNode } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { usePathname, useRouter } from 'next/navigation';
-import { useForm, useWatch } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import '@/lib/contracts/zod-config';
 import { z } from 'zod';
 import type { Resolver, SubmitHandler } from 'react-hook-form';
@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { DatePicker } from '@/components/ui/date-picker';
 import { ErrorSummary, Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
 import { Segmented } from '@/components/ui/segmented';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toaster';
@@ -146,7 +147,11 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
   const stamp = useRef(initial?.updatedAt ?? '');
 
   const resolver = zodResolver(
-    makeContactInputSchema({ today, previousFollowUpOn: initial?.followUpOn }),
+    makeContactInputSchema({
+      today,
+      previousFollowUpOn: initial?.followUpOn,
+      previousPhone: initial?.phone,
+    }),
   ) as unknown as Resolver<Values, unknown, ContactInput>;
   const form = useForm<Values, unknown, ContactInput>({
     resolver,
@@ -346,17 +351,20 @@ export function ContactForm({ mode, initial, today, onSubmit }: Props) {
               />
             </Field>
             <Field id="phone" label="Phone" error={err('phone')}>
-              <Input
-                {...register('phone')}
-                type="tel"
-                autoComplete="off"
-                placeholder="(512) 555-0100"
-                aria-invalid={
-                  !!(err('phone') || contactMethodError) || undefined
-                }
-                aria-describedby={
-                  contactMethodError ? 'contactMethod-error' : undefined
-                }
+              <Controller
+                control={control}
+                name="phone"
+                render={({ field }) => (
+                  <PhoneInput
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    aria-invalid={!!contactMethodError || undefined}
+                    aria-describedby={
+                      contactMethodError ? 'contactMethod-error' : undefined
+                    }
+                  />
+                )}
               />
             </Field>
             {contactMethodError && (

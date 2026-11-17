@@ -15,6 +15,7 @@ import { fail, ok, zodFieldErrors, type Result } from '@/lib/contracts/result';
 import { assertPermission } from '@/lib/auth/viewer-supabase';
 import {
   getFollowUpOn,
+  getPhone,
   insertContact,
   insertNote,
   setFollowUp,
@@ -74,11 +75,16 @@ export async function updateContactAction(
   if (!Id.safeParse(id).success) return gone();
   if (!Stamp.safeParse(expectedUpdatedAt).success)
     return fail('validation', 'Reload the contact and try again.');
-  const prev = await getFollowUpOn(c.data.db, id);
+  const [prev, prevPhone] = await Promise.all([
+    getFollowUpOn(c.data.db, id),
+    getPhone(c.data.db, id),
+  ]);
   if (!prev.ok) return prev;
+  if (!prevPhone.ok) return prevPhone;
   const p = makeContactInputSchema({
     today: c.data.today,
     previousFollowUpOn: prev.data,
+    previousPhone: prevPhone.data,
   }).safeParse(raw);
   if (!p.success) return invalid(zodFieldErrors(p.error));
   const input: ContactInput = p.data;

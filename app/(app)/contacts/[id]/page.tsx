@@ -13,6 +13,7 @@ import { ContactDetailView } from '@/features/contacts/detail/contact-detail';
 import { getContact } from '@/lib/data';
 import { todayIn } from '@/lib/dates/date-only';
 import { getRequestTimeZone } from '@/lib/dates/server';
+import { formatPhone } from '@/lib/phone';
 
 // One read serves the title and the page.
 const loadContact = cache(getContact);
@@ -46,6 +47,7 @@ export default async function ContactPage({
         contact={contact}
         today={today}
         tz={tz}
+        phoneText={contact.phone ? formatPhone(contact.phone) : undefined}
         onMove={moveContactAction.bind(null, id)}
         onReschedule={rescheduleAction.bind(null, id)}
         onAddNote={addNoteAction.bind(null, id)}

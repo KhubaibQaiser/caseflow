@@ -1,6 +1,10 @@
 import './zod-config';
 import { z } from 'zod';
 import {
+  isValidPhoneNumber,
+  parsePhoneNumberFromString,
+} from 'libphonenumber-js/min';
+import {
   ACTIVITY_TYPES,
   MATTER_TYPES,
   REFERRAL_SOURCES,
@@ -22,6 +26,8 @@ const blankToNull = (v: unknown) => {
 export function makeContactInputSchema(opts: {
   today: string;
   previousFollowUpOn?: string | null;
+  /** The stored phone: kept as is when unchanged, so an old unparseable number does not block saving other edits. */
+  previousPhone?: string | null;
 }) {
   return (
     z
@@ -36,15 +42,16 @@ export function makeContactInputSchema(opts: {
           blankToNull,
           z.email('Enter a valid email address.').nullable(),
         ),
+        // The form sends '+<country code><number>'; storage is E.164.
         phone: z.preprocess(
           blankToNull,
           z
             .string()
-            .max(20, 'Phone must be 20 characters or fewer.')
             .refine(
-              (p) => p.replace(/\D/g, '').length >= 7,
-              'Enter at least 7 digits.',
+              (p) => p === opts.previousPhone || isValidPhoneNumber(p),
+              'Enter a valid phone number.',
             )
+            .transform((p) => parsePhoneNumberFromString(p)?.number ?? p)
             .nullable(),
         ),
         matterType: z.enum(MATTER_TYPES, 'Choose a matter type.'),
