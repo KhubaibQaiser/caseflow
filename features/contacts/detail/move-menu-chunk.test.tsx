@@ -4,11 +4,11 @@ import { expect, it, vi } from 'vitest';
 
 import { MoveMenu } from './move-menu';
 
-// Counts evaluations of the popup chunk; the first one fails (offline, stale deploy).
-const chunk = vi.hoisted(() => ({ loads: 0 }));
+// Counts evaluations of the popup chunk; it fails while `down` (offline, stale deploy).
+const chunk = vi.hoisted(() => ({ loads: 0, down: false }));
 vi.mock('./move-menu-popup', async (importOriginal) => {
   chunk.loads += 1;
-  if (chunk.loads === 1) throw new Error('Failed to fetch chunk');
+  if (chunk.down) throw new Error('Failed to fetch chunk');
   return importOriginal();
 });
 
@@ -34,7 +34,7 @@ it('does not preload the menu code while blocked', async () => {
 
 it('keeps the trigger when the menu chunk fails, and a later click retries', async () => {
   const user = userEvent.setup();
-  vi.spyOn(console, 'error').mockImplementation(() => {});
+  chunk.down = true;
   render(<MoveMenu current="lead" onMove={vi.fn()} />);
   await user.click(trigger());
   await act(async () => {
@@ -43,6 +43,7 @@ it('keeps the trigger when the menu chunk fails, and a later click retries', asy
   expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   expect(trigger()).not.toHaveAttribute('aria-busy');
 
+  chunk.down = false;
   await user.click(trigger());
   expect(await screen.findByRole('menuitem', { name: 'Active' })).toBeVisible();
 });
