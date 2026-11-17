@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-let path = '/pipeline';
+const path = '/pipeline';
 vi.mock('next/navigation', () => ({ usePathname: () => path }));
 
 import { QuickViews } from './quick-views';
