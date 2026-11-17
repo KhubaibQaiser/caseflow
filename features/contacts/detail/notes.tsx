@@ -7,7 +7,6 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
 import { Can, usePermission } from '@/lib/auth/permissions-context';
-import { markReturn } from '@/lib/auth/return-marker';
 import type { Note } from '@/lib/contracts/contact';
 import { ROLE_LABEL } from '@/lib/contracts/permissions';
 import type { Result } from '@/lib/contracts/result';
@@ -124,7 +123,10 @@ export function Notes({
         { ...window.history.state, [DRAFT_KEY]: draft.doc },
         '',
       );
-      markReturn(pathname); // tells /login that Back leads to this draft
+      // Tells /login that Back leads to this draft. Loaded here, on the rare path: the marker pulls in
+      // Zod, which would put 30 kB on every first load of this page.
+      const { markReturn } = await import('@/lib/auth/return-marker');
+      markReturn(pathname);
       expired();
     } else if (code === 'forbidden') {
       setFailure({
