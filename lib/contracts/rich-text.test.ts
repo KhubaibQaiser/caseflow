@@ -235,3 +235,43 @@ describe('richPlainText and parseRichNote', () => {
     ).toBe('One\nTwo\nthree');
   });
 });
+
+describe('parseRichNote survives hostile input', () => {
+  const nest = (levels: number) => {
+    // Built in a loop: a recursive builder would overflow the stack here too.
+    let inner: unknown = p(text('deep'));
+    for (let i = 0; i < levels; i++)
+      inner = {
+        type: 'bulletList',
+        content: [{ type: 'listItem', content: [p(text('x')), inner] }],
+      };
+    return doc(inner);
+  };
+
+  it('returns a validation result, not a throw, for 20,000 levels of nesting', () => {
+    const r = parseRichNote(nest(20_000));
+    expect(r).toEqual({ ok: false, message: "That formatting isn't allowed." });
+  });
+
+  it('refuses a document with an enormous number of nodes without walking it all', () => {
+    const wide = doc(...Array.from({ length: 200_000 }, () => p(text('x'))));
+    expect(parseRichNote(wide).ok).toBe(false);
+  });
+
+  it('maps anything thrown while reading the input to a validation result', () => {
+    const trap = {
+      type: 'doc',
+      get content(): unknown {
+        throw new Error('boom');
+      },
+    };
+    expect(parseRichNote(trap)).toEqual({
+      ok: false,
+      message: "That formatting isn't allowed.",
+    });
+  });
+
+  it('still accepts a legitimately nested note', () => {
+    expect(parseRichNote(nest(3)).ok).toBe(true);
+  });
+});

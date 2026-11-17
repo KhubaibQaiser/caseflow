@@ -111,6 +111,30 @@ describe('data layer against the local stack', () => {
     expect((await getPipelineColumn('lead', {}, 50, 25)).rows).toHaveLength(0);
   });
 
+  it('getContact still opens a contact whose stored note document is malformed, showing it as plain text', async () => {
+    const id = await seed({ full_name: 'Tolerant Read' });
+    const admin = current as SupabaseClient;
+    // The database only checks that body_json is an object, so a user with notes.write can store this.
+    const bad = await admin.from('notes').insert({
+      contact_id: id,
+      author_id: adminId,
+      body: 'Plain fallback',
+      body_json: { type: 'doc', content: [{ type: 'script' }] },
+    });
+    expect(bad.error).toBeNull();
+    await admin.from('notes').insert({
+      contact_id: id,
+      author_id: adminId,
+      body: 'Good note',
+      body_json: docFromText('Good note'),
+    });
+    const d = await getContact(id);
+    expect(d?.fullName).toBe('Tolerant Read');
+    expect(d?.notes).toHaveLength(2);
+    const fallback = d?.notes.find((n) => n.body === 'Plain fallback');
+    expect(fallback?.bodyJson).toEqual(docFromText('Plain fallback'));
+  });
+
   it('getContact joins authors and actors, newest first, and hides deleted rows', async () => {
     const id = await seed({ full_name: 'Detail Case', summary: 'Hello' });
     const admin = current as SupabaseClient;

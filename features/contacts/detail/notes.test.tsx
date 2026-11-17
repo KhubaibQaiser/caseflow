@@ -1,6 +1,6 @@
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Note } from '@/lib/contracts/contact';
 import { fail, ok } from '@/lib/contracts/result';
@@ -404,5 +404,50 @@ describe('Notes document handed to the action', () => {
     };
     walk(doc);
     expect(JSON.stringify(doc)).toContain('"href":"https://example.com"');
+  });
+});
+
+describe('Notes restored draft and failure state', () => {
+  const draftState = (value: unknown) =>
+    window.history.replaceState({ caseflowNoteDraft: value }, '');
+  afterEach(() => window.history.replaceState(null, ''));
+
+  it('ignores a restored draft that is not a valid note document', async () => {
+    draftState({
+      type: 'doc',
+      content: [{ type: 'script', content: [{ type: 'text', text: 'pwned' }] }],
+    });
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    const box = await composer();
+    expect(box).not.toHaveTextContent('pwned');
+    expect(save()).toBeDisabled();
+    expect(window.history.state?.caseflowNoteDraft).toBeUndefined();
+  });
+
+  it('puts a valid restored draft back and enables Save', async () => {
+    draftState(docFromText('Left a message'));
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    const box = await composer();
+    await waitFor(() => expect(box).toHaveTextContent('Left a message'));
+    await waitFor(() => expect(save()).toBeEnabled());
+  });
+
+  it('clears the failure message and aria-invalid when the user edits again', async () => {
+    const u = user();
+    const onAdd = vi
+      .fn()
+      .mockResolvedValue(fail('server', 'Something went wrong. Try again.'));
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
+    const box = await typeNote(u, 'Called back');
+    await u.click(save());
+    expect(await screen.findByRole('alert')).toBeVisible();
+    expect(box).toHaveAttribute('aria-invalid', 'true');
+
+    await u.click(box);
+    await u.keyboard(' again');
+    await waitFor(() =>
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument(),
+    );
+    expect(box).not.toHaveAttribute('aria-invalid');
   });
 });
