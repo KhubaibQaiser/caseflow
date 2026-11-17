@@ -16,7 +16,7 @@ export default async function EditContactPage({
   params,
 }: PageProps<'/contacts/[id]/edit'>) {
   const { id } = await params;
-  const { permissions } = await getViewer();
+  const permissions = (await getViewer())?.permissions ?? [];
   if (!permissions.includes('contacts.write'))
     return (
       <ForbiddenState

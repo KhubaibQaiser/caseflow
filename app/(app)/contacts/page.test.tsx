@@ -9,6 +9,15 @@ const redirect = vi.fn((url: string) => {
 vi.mock('next/navigation', () => ({
   redirect: (url: string) => redirect(url),
 }));
+let filtersCookie: string | undefined;
+vi.mock('next/headers', () => ({
+  cookies: async () => ({
+    get: (name: string) =>
+      name === 'filters_open' && filtersCookie !== undefined
+        ? { value: filtersCookie }
+        : undefined,
+  }),
+}));
 vi.mock('@/lib/dates/server', () => ({
   getRequestTimeZone: async () => 'UTC',
 }));
@@ -31,6 +40,21 @@ const visit = (params: Record<string, string>) =>
 describe('/contacts page', () => {
   beforeEach(() => {
     redirect.mockClear();
+    filtersCookie = undefined;
+  });
+
+  it('renders the filters panel as the user left it (cookie), closed by default', async () => {
+    const open = (page: Awaited<ReturnType<typeof visit>>) =>
+      (
+        page.props.children as {
+          props: { filtersOpen?: boolean };
+        }[]
+      ).find((c) => c.props.filtersOpen !== undefined)?.props.filtersOpen;
+    expect(open(await visit({}))).toBe(false);
+    filtersCookie = '1';
+    expect(open(await visit({}))).toBe(true);
+    filtersCookie = '0';
+    expect(open(await visit({}))).toBe(false);
   });
 
   it('clamps a page past the end to the last page, keeping the filters', async () => {

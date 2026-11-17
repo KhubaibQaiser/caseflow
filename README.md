@@ -7,7 +7,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
 - App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
-- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22. The filters panel is T15.
+- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22. The filters panel is T15 (done).
 - Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` in T22. `/dev/auth` shows every state with canned results (404 in production).
 - Contact detail is done (T16): `/contacts/[id]` (`app/(app)/contacts/[id]`, `features/contacts/detail`). Breadcrumb, header (status, matter, "Enquired Nov 12 · waiting 4d", **Move to…**, **Edit**, a 44px **Call** button below 768px), Follow-up card (**Reschedule** saves on pick; Clear removes the date), Details, Notes and the Activity timeline. `loading.tsx` mirrors the layout, `error.tsx` retries with `retry()`, and `not-found.tsx` reads "This contact doesn't exist." with Back to contacts (it also serves `/contacts/[id]/edit`).
 - Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
@@ -33,7 +33,7 @@ supabase start
 pnpm dev
 ```
 
-M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or the local env file.
+Sign-in is enforced by default, so `pnpm dev` needs `supabase start`, the local env file and `pnpm seed`.
 
 ## Scripts
 
@@ -42,7 +42,7 @@ M0 runs on the fake data layer, so `pnpm dev` works without `supabase start` or 
 - `pnpm lint`: ESLint plus the colour-literal check
 - `pnpm test`: unit tests
 - `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
-- `pnpm e2e`: Playwright end-to-end tests
+- `pnpm e2e`: Playwright end-to-end tests. Needs the local stack seeded (`pnpm seed`) and `SUPABASE_*` and `SEED_*_PASSWORD` in the environment. Global setup signs in Admin and Viewer once (sessions saved under `tests/e2e/.auth/`); specs run as Admin, and opt in to `storage.viewer` or `storage.signedOut` from `tests/e2e/helpers.ts`. `E2E_PORT` moves the local server off 3000
 - `pnpm format`, `pnpm format:check`: Prettier
 - `pnpm seed`: create the role accounts and reset the firm data (see Seeding below)
 - `pnpm db:types`: regenerate Supabase types from the local stack
@@ -127,6 +127,7 @@ What `deploy.yml` does, in order:
 - **Toolbar:** search (Esc clears), the Filters button with an applied-group count, quick views (All, Overdue, Due today) as links with live counts, removable chips (focus moves to the next chip, then the Filters button), and a Sort menu below 768px.
 - **Table** (768px and up): TanStack Table in manual mode with TanStack Virtual (36px rows, overscan 12) inside real `<table>` markup with `aria-rowcount` and `aria-rowindex`. Sortable headers are buttons inside `th[aria-sort]`. Columns are fixed width, so long names and emails truncate with a `title` tooltip and never widen the table; Name stays pinned when the table scrolls sideways. Changing page scrolls to the top and focuses the table caption.
 - **Cards** (below 768px): name and follow-up, then matter, status and a `tel:` link. `content-visibility: auto` keeps 500 cards cheap without virtualizing.
+- **Filters panel (T15):** status, follow-up (presets or a custom range), matter type, referral source and created range, each option with its facet count (every group counts with its own filter left out). Edits go to a draft; **Apply** writes the URL once (page back to 1) and closes, **Cancel**, ✕ and Esc discard and return focus to the Filters button. Apply is blocked, with the reason, for a Custom range with no date or an end before its start (an equal range is fine). From 1024px it is a non-modal panel under the toolbar whose open state is kept in the `filters_open` cookie; below that it is a modal sheet that always starts closed. Its code (calendar included) loads on first hover, focus or open, so it stays out of `/contacts` first-load JS. Unapplied edits reset when the applied URL changes while the panel is open (a chip removed, Back), so the panel never shows filters that are no longer applied. Each group's title carries its selected count ("Matter type · 2").
 - **States:** a table-shaped `loading.tsx`; while the next rows load the old ones stay at full contrast, the list is `aria-busy` and a thin accent bar runs along its top edge; first-run and filtered empty states (the filtered one lists what's applied and offers Clear filters); `error.tsx` names the reason class, keeps the filters and retries the segment with Next's `retry()`.
 - **Budget:** about 215 kB gzipped first-load JS. Date labels are computed on the server, zod stays off the client, and the sort menu loads lazily.
 
@@ -167,14 +168,17 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - RPC replies are snake_case. They are mapped to camelCase and parsed with the contract schemas. A bad row throws `DataError` (message only, no row data).
 - `getContact` returns `null` when the contact is missing or deleted. Notes and activities are newest first (ties by `id`); the timeline hides `deleted` and `restored`.
 - `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
-- `lib/auth/viewer.ts` is the entry point the app imports and is still the fake (T13). The real one is `lib/auth/viewer-supabase.ts`; T22 flips `viewer.ts` to re-export it, like `lib/data/index.ts`.
-- `getViewer()` (viewer-supabase) verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and throws `ForbiddenError` otherwise (`forbidden()` is still experimental). `assertPermission` returns a `Result` for actions.
-- Auth enforcement in `proxy.ts` is off until T22 sets `AUTH_ENFORCED=true` locally and in CI; Vercel gets it from the deploy env sync. While off, the proxy passes every request through; only the production `/dev/*` 404 stays on.
+- `lib/auth/viewer.ts` is the entry point the app imports. It re-exports the real `lib/auth/viewer-supabase.ts` (the `fake-role` cookie viewer is gone).
+- `getViewer()` verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and calls Next's `forbidden()` otherwise, which renders `app/(app)/forbidden.tsx` (`experimental.authInterrupts`). `assertPermission` returns a `Result` (`forbidden` or `unauthorized`) for Server Actions, so the form keeps what was typed.
+- Auth enforcement in `proxy.ts` is on by default and off only when `AUTH_ENFORCED=false` exactly (a missing variable, even on Vercel, keeps sign-in on). Nothing in CI, Playwright or the env example sets it; tooling that needs it off must opt out explicitly.
 - `proxy.ts` only checks sign-in: refreshes the session, sends anonymous requests to `/login?next=…` (plus `reason=expired` if an `sb-` cookie exists), and sends signed-in users from `/login` to `/contacts`. `/dev/*` is a 404 when `VERCEL_ENV=production`.
 - There is no browser Supabase client. Env: `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` (all server-only).
-- Signed in without a `profiles` row: `getViewer` throws `NoProfileError` (and `requirePermission` rethrows it; `assertPermission` returns `forbidden`). It never redirects to `/login`, which would loop. The `(app)` layer (T13/T22) must catch it and render the No access state: "No access." / "Your account isn't set up yet. Ask an admin." with Sign out. A failed `profiles` query throws a plain `Error` (error boundary).
+- Signed in without a `profiles` row: `getViewer` throws `NoProfileError` (and `requirePermission` rethrows it; `assertPermission` returns `forbidden`). It never redirects to `/login`, which would loop. The `(app)` layout catches it and renders the No access state: "No access." / "Your account isn't set up yet. Ask an admin." with Sign out. A failed `profiles` query throws a plain `Error` (error boundary).
 - `requirePermission(p, next?)` redirects to `/login?next=…&reason=expired`.
 - Revocation lag: `getClaims()` checks the JWT signature, not the user record, so a banned or deleted user keeps access until the access token expires (up to 1 hour). Roles are read live from `profiles`, and RLS applies on every query.
+- Sign-in throttle: Supabase limits by IP, and `signInAction` forwards `x-vercel-forwarded-for`, then the rightmost `x-forwarded-for` entry (leading entries are client-supplied), each only when `net.isIP` accepts it; otherwise nothing is forwarded and the limit falls on the server's own IP. Trade-off: the throttle is per IP only, with no per-account lockout, so the seeded passwords must be strong (a spread-out guesser is not slowed).
+- A POST carrying `next-action` (a Server Action) from a dead session passes the proxy: a redirect would fail the action's fetch, and every action checks its own permission and returns `unauthorized`, which the form turns into the sign-in push.
+- After an expiry the form writes a same-tab marker (`lib/auth/return-marker.ts`, `sessionStorage`, path and time only, ten minutes) before pushing `/login`. With a marker for `next`, sign-in skips the redirect (`back=1`) and calls `history.back()` so the saved draft comes back; if the page is still `/login` after a second, it does `router.replace(next)`. Without a marker (new tab, Link or proxy redirect) sign-in redirects to `next`.
 - The proxy only URL-encodes `next`. T10's `safeNext` must reject values starting with `//` or `/\`.
 - Auth responses carry `Cache-Control: private, no-store` from `@supabase/ssr` (proxy and redirects).
 
@@ -186,7 +190,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
 - Conflict: the banner triggers `router.refresh()`; Reload latest resets the form to the refreshed record (the user re-applies their edits). There is no Overwrite. Save keeps sending the `updatedAt` the form opened with, even after the refresh hands it a newer record; only Reload latest moves the stamp.
 - `unauthorized`: before pushing `/login?reason=expired&next=<page>`, the form writes its typed values and the `updatedAt` they were made against into the current history entry (`history.state.caseflowDraft`; nothing goes to sessionStorage or localStorage). Back from sign-in restores them (dirty) and clears the draft. A draft is ignored if its mode or contact id differs. A tab that is closed, or a fresh visit, starts empty.
-- Limit: the draft comes back only when the user presses Back to the form after signing in. The normal sign-in redirect (`next=`) opens a fresh form. Returning through history after an expiry, with an end-to-end test against real auth, is planned for T22.
+- Limit: the draft comes back only when the user presses Back to the form after signing in. The normal sign-in redirect (`next=`) opens a fresh form. Sign-in after an expiry now goes Back (T22a), with an end-to-end test in `tests/e2e/auth.spec.ts`.
 - The unsaved guard: `beforeunload` for reload and close, plus a capture-phase click handler that turns same-origin link clicks (sidebar, breadcrumb, any `Link`) into the "Discard changes?" dialog while dirty. Cancel keeps the input. Programmatic pushes and the Back button can't be intercepted.
 - Matter type has no default ("Choose a matter type"); an empty submit reports it with the name and the email-or-phone rule.
 - `/dev/contact-form?outcome=conflict|slow|fail` is a dev fixture with a scripted save (404 in production).

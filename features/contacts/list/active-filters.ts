@@ -1,4 +1,5 @@
 import {
+  FOLLOW_UP_LABEL,
   MATTER_TYPE_LABEL,
   REFERRAL_SOURCE_LABEL,
   STATUS_LABEL,
@@ -13,13 +14,6 @@ export type ActiveFilter = {
   value: string;
   clear: ListQueryPatch;
 };
-
-export const FOLLOW_UP_LABEL = {
-  overdue: 'Overdue',
-  dueToday: 'Due today',
-  next7Days: 'Next 7 days',
-  none: 'No follow-up',
-} as const;
 
 // Always with the year: a chip has no "today" to drop it against.
 // Intl, not date-fns: this runs in the browser and the bundle is budgeted.

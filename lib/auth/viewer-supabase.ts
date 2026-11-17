@@ -1,6 +1,6 @@
 import 'server-only';
 import { cache } from 'react';
-import { redirect } from 'next/navigation';
+import { forbidden, redirect } from 'next/navigation';
 import { z } from 'zod';
 import { fail, ok, type Result } from '@/lib/contracts/result';
 import {
@@ -11,12 +11,7 @@ import {
 } from '@/lib/contracts/permissions';
 import { createServerSupabase } from '@/lib/supabase/server';
 
-// Rendered as ForbiddenState by app/(app)/layout; forbidden() is still experimental (authInterrupts).
-export class ForbiddenError extends Error {
-  override name = 'ForbiddenError';
-}
-
-// Signed in, but no profiles row. The (app) layer renders the No access state
+// Signed in, but no profiles row. The (app) layout renders the No access state
 // ("No access." / "Your account isn't set up yet. Ask an admin." plus Sign out).
 // Never redirect to /login for this: the proxy would bounce the user back.
 export class NoProfileError extends Error {
@@ -62,7 +57,8 @@ export async function requirePermission(
     qs.set('reason', 'expired');
     redirect(`/login?${qs}`);
   }
-  if (!v.permissions.includes(p)) throw new ForbiddenError(p);
+  // forbidden() renders app/(app)/forbidden.tsx (experimental.authInterrupts).
+  if (!v.permissions.includes(p)) forbidden();
   return v;
 }
 

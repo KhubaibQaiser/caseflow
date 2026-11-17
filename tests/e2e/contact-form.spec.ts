@@ -1,15 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import type { BrowserContext } from '@playwright/test';
 
-// Fake viewer until T22; saving needs the database, so T22 extends this with the save paths.
-async function asRole(
-  context: BrowserContext,
-  baseURL: string | undefined,
-  role: 'admin' | 'viewer',
-) {
-  await context.addCookies([{ name: 'fake-role', value: role, url: baseURL! }]);
-}
+import { storage } from './helpers';
 
 const axe = (page: import('@playwright/test').Page) =>
   new AxeBuilder({ page })
@@ -18,10 +10,7 @@ const axe = (page: import('@playwright/test').Page) =>
 
 test('an empty submit lists every error and focuses the summary', async ({
   page,
-  context,
-  baseURL,
 }) => {
-  await asRole(context, baseURL, 'admin');
   await page.goto('/contacts/new');
   expect((await axe(page)).violations).toEqual([]);
 
@@ -35,12 +24,7 @@ test('an empty submit lists every error and focuses the summary', async ({
   expect((await axe(page)).violations).toEqual([]);
 });
 
-test('an unknown contact id shows the not-found screen', async ({
-  page,
-  context,
-  baseURL,
-}) => {
-  await asRole(context, baseURL, 'admin');
+test('an unknown contact id shows the not-found screen', async ({ page }) => {
   await page.goto('/contacts/no-such-id/edit');
   // loading.tsx has already sent a 200, so assert the screen, not the status.
   await expect(
@@ -48,29 +32,23 @@ test('an unknown contact id shows the not-found screen', async ({
   ).toBeVisible();
 });
 
-test('a viewer gets the forbidden screen on both form routes', async ({
-  page,
-  context,
-  baseURL,
-}) => {
-  await asRole(context, baseURL, 'viewer');
-  await page.goto('/contacts/new');
-  await expect(
-    page.getByRole('heading', { name: "You can't add contacts." }),
-  ).toBeVisible();
-  await page.goto('/contacts/anything/edit');
-  await expect(
-    page.getByRole('heading', { name: "You can't edit contacts." }),
-  ).toBeVisible();
-  expect((await axe(page)).violations).toEqual([]);
+test.describe('as a viewer', () => {
+  test.use({ storageState: storage.viewer });
+
+  test('gets the forbidden screen on both form routes', async ({ page }) => {
+    await page.goto('/contacts/new');
+    await expect(
+      page.getByRole('heading', { name: "You can't add contacts." }),
+    ).toBeVisible();
+    await page.goto('/contacts/anything/edit');
+    await expect(
+      page.getByRole('heading', { name: "You can't edit contacts." }),
+    ).toBeVisible();
+    expect((await axe(page)).violations).toEqual([]);
+  });
 });
 
-test('a dirty form asks before the sidebar leaves it', async ({
-  page,
-  context,
-  baseURL,
-}) => {
-  await asRole(context, baseURL, 'admin');
+test('a dirty form asks before the sidebar leaves it', async ({ page }) => {
   await page.goto('/contacts/new');
   await page.getByRole('textbox', { name: /Full name/ }).fill('Ana Díaz');
   await page.getByRole('link', { name: 'Pipeline' }).click();
