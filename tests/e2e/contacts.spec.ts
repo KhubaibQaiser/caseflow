@@ -103,7 +103,7 @@ test('a quick view filters, shows a chip, and the chip removes it', async ({
   await expect(page).toHaveURL(/fu=overdue/);
   await settled(page);
   await expect(
-    page.getByRole('button', { name: 'Filters, 1 applied' }),
+    page.getByRole('button', { name: 'Filters 1 applied' }),
   ).toBeVisible();
   const pills = await table(page)
     .locator('tbody td:nth-child(4)')
@@ -224,7 +224,7 @@ test('applied filters keep every accessible name matching its visible text (axe)
 }) => {
   await page.goto('/contacts?status=lead,active&fu=overdue');
   await expect(
-    page.getByRole('button', { name: 'Filters, 2 applied' }),
+    page.getByRole('button', { name: 'Filters 2 applied' }),
   ).toBeVisible();
   expect((await axe(page)).violations).toEqual([]);
 });
@@ -246,7 +246,7 @@ test('the filters sheet opens on a phone, traps focus and applies @mobile', asyn
   await expect(page).toHaveURL(/status=closed/);
   await expect(sheet).toBeHidden();
   await expect(
-    page.getByRole('button', { name: 'Filters, 1 applied' }),
+    page.getByRole('button', { name: 'Filters 1 applied' }),
   ).toBeFocused();
 });
 

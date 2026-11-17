@@ -117,18 +117,23 @@ export function Toolbar({
           className="max-md:h-9 max-md:flex-1"
         >
           <ListFilter aria-hidden className="size-4" />
-          Filters
+          {/* One flex item, so the name reads "Filters 2 applied" and starts with the visible word (WCAG 2.5.3). */}
+          <span>
+            Filters
+            {applied > 0 && (
+              <>
+                {' '}
+                <span className="sr-only">{applied} applied</span>
+              </>
+            )}
+          </span>
           {applied > 0 && (
-            <>
-              <span
-                aria-hidden
-                className="bg-accent text-on-accent rounded-pill tnum px-[7px] text-xs leading-[18px]"
-              >
-                {applied}
-              </span>
-              {/* The name starts with the visible word (WCAG 2.5.3); the badge's number is read here. */}
-              <span className="sr-only">, {applied} applied</span>
-            </>
+            <span
+              aria-hidden
+              className="bg-accent text-on-accent rounded-pill tnum px-[7px] text-xs leading-[18px]"
+            >
+              {applied}
+            </span>
           )}
         </Button>
         <Suspense

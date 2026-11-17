@@ -224,7 +224,7 @@ describe('Toolbar search', () => {
 describe('Toolbar filters', () => {
   it('counts applied filter groups on the Filters button', () => {
     renderToolbar({ searchParams: '?status=lead,active&fu=overdue&q=ana' });
-    const button = screen.getByRole('button', { name: 'Filters, 2 applied' });
+    const button = screen.getByRole('button', { name: 'Filters 2 applied' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -292,7 +292,7 @@ describe('Toolbar without a panel (error screen)', () => {
       return <Toolbar isPending={false} filtersButton={ref} />;
     }
     render(<Bare />, { wrapper: wrapper({ searchParams: '?status=lead' }) });
-    const button = screen.getByRole('button', { name: 'Filters, 1 applied' });
+    const button = screen.getByRole('button', { name: 'Filters 1 applied' });
     expect(button).toHaveAttribute('aria-disabled', 'true');
     expect(button).toHaveAttribute('aria-expanded', 'false');
     await user.click(button);
