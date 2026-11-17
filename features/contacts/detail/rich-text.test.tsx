@@ -57,6 +57,15 @@ describe('RichText', () => {
     expect(a).toHaveAttribute('target', '_blank');
     expect(a).toHaveAttribute('rel', 'noopener noreferrer nofollow');
     expect(a).toHaveTextContent('site');
+    // Colour alone is not enough (WCAG 1.4.1): underlined, like the composer's links.
+    for (const c of [
+      'text-accent',
+      'underline',
+      'underline-offset-3',
+      'decoration-1',
+      'hover:decoration-2',
+    ])
+      expect(a.className.split(' ')).toContain(c);
   });
 
   it('renders bullet and numbered lists, with a start number', () => {

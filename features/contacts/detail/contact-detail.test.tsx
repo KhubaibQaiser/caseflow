@@ -128,6 +128,19 @@ describe('ContactDetailView', () => {
     expect(screen.queryByText(/waiting/)).not.toBeInTheDocument();
   });
 
+  it('clamps a long name to two lines and keeps the action row in place', () => {
+    const name = 'Maria Alejandra Fernández-Villanueva de la Cruz y Hernández';
+    renderAs(
+      'admin',
+      <ContactDetailView
+        {...props({ contact: contact({ fullName: name }) })}
+      />,
+    );
+    const h1 = screen.getByRole('heading', { level: 1, name });
+    expect(h1.className).toContain('line-clamp-2');
+    expect(h1).toHaveAttribute('title', name);
+  });
+
   it('lets a viewer read everything and write nothing', () => {
     renderAs('viewer', <ContactDetailView {...props()} />);
     for (const name of ['Move to…', 'Edit', 'Reschedule'])

@@ -47,7 +47,7 @@ describe('Notes composer', () => {
     expect(save()).toBeEnabled();
   });
 
-  it('keeps the text, shows the error and offers Retry when the save fails', async () => {
+  it('keeps the text and shows one Save button, which retries, when the save fails', async () => {
     const u = user();
     const onAdd = vi
       .fn()
@@ -60,11 +60,13 @@ describe('Notes composer', () => {
 
     expect(box).toHaveTextContent('Called back');
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Something went wrong. Try again.',
+      'Note not saved. Check your connection and save again.',
     );
     expect(box).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
 
-    await u.click(screen.getByRole('button', { name: 'Retry' }));
+    // Save note is the retry: it sends the kept draft again.
+    await u.click(save());
     expect(onAdd).toHaveBeenCalledTimes(2);
     expect(await screen.findByRole('article')).toHaveTextContent('Called back');
     await waitFor(() => expect(box).not.toHaveTextContent('Called back'));
@@ -80,7 +82,7 @@ describe('Notes composer', () => {
     await u.click(save());
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      "Couldn't save the note. Check your connection and retry.",
+      'Note not saved. Check your connection and save again.',
     );
     expect(box).toHaveTextContent('Called back');
   });
@@ -243,7 +245,8 @@ describe('Notes composer', () => {
         onAdd={vi.fn()}
       />,
     );
-    expect(screen.getByText(/Alex Morgan/)).toHaveTextContent('Admin');
+    const byline = screen.getByText(/Alex Morgan/);
+    expect(byline).not.toHaveTextContent('Admin');
     const t = screen.getByText('Nov 13, 4:12 PM');
     expect(t.tagName).toBe('TIME');
     expect(t).toHaveAttribute('datetime', '2026-11-13T16:12:00.000Z');
@@ -453,5 +456,40 @@ describe('Notes restored draft and failure state', () => {
       expect(screen.queryByRole('alert')).not.toBeInTheDocument(),
     );
     expect(box).not.toHaveAttribute('aria-invalid');
+  });
+});
+
+describe('Notes composer frame', () => {
+  it('holds the toolbar, the editor and the footer in one frame', async () => {
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    const box = await composer();
+    const frame = box.closest('[data-note-composer]');
+    expect(frame).not.toBeNull();
+    expect(frame).toContainElement(
+      screen.getByRole('toolbar', { name: 'Formatting' }),
+    );
+    expect(frame).toContainElement(save());
+    expect(frame).toContainElement(
+      screen.getByText(/Notes are visible to the whole intake team\./),
+    );
+  });
+
+  it('keeps the shortcut sentence off coarse pointers and the rest of the hint on', async () => {
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    await composer();
+    const shortcut = screen.getByText('Ctrl or Cmd+Enter saves.');
+    expect(shortcut.className).toContain('pointer-coarse:hidden');
+    expect(
+      screen.getByText(/Notes are visible to the whole intake team\./)
+        .className,
+    ).not.toContain('pointer-coarse:hidden');
+  });
+
+  it('gives the toolbar 40px targets on touch screens and 32px otherwise', async () => {
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    await composer();
+    const bold = screen.getByRole('button', { name: 'Bold' });
+    expect(bold.className).toContain('size-8');
+    expect(bold.className).toContain('max-md:size-10');
   });
 });

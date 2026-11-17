@@ -13,6 +13,9 @@ const at = (over: Partial<Activity>): Activity => ({
   actor: { name: 'Alex Morgan' },
   ...over,
 });
+// The actor is its own element (semibold), so match the whole line's text.
+const line = (text: string) =>
+  screen.getByText((_, el) => el?.tagName === 'P' && el.textContent === text);
 const view = (activities: Activity[]) =>
   render(<Timeline activities={activities} today="2026-11-17" tz="UTC" />);
 
@@ -21,9 +24,7 @@ describe('Timeline', () => {
     view([
       at({ type: 'status_changed', payload: { from: 'lead', to: 'active' } }),
     ]);
-    expect(
-      screen.getByText('Alex Morgan moved this to Active'),
-    ).toBeInTheDocument();
+    expect(line('Alex Morgan moved this to Active')).toBeInTheDocument();
   });
 
   it('writes each activity type in the same voice', () => {
@@ -42,15 +43,11 @@ describe('Timeline', () => {
         payload: { fields: ['full_name', 'matter_type'] },
       }),
     ]);
-    expect(screen.getByText('Alex Morgan created this contact')).toBeVisible();
-    expect(screen.getByText('Alex Morgan added a note')).toBeVisible();
-    expect(
-      screen.getByText('Alex Morgan set follow-up to Fri, Nov 20'),
-    ).toBeVisible();
-    expect(screen.getByText('Alex Morgan cleared the follow-up')).toBeVisible();
-    expect(
-      screen.getByText('Alex Morgan edited full name, matter type'),
-    ).toBeVisible();
+    expect(line('Alex Morgan created this contact')).toBeVisible();
+    expect(line('Alex Morgan added a note')).toBeVisible();
+    expect(line('Alex Morgan set follow-up to Fri, Nov 20')).toBeVisible();
+    expect(line('Alex Morgan cleared the follow-up')).toBeVisible();
+    expect(line('Alex Morgan edited full name, matter type')).toBeVisible();
   });
 
   it('survives a payload it does not recognise', () => {
@@ -58,8 +55,8 @@ describe('Timeline', () => {
       at({ type: 'status_changed', payload: { to: 'bogus' } }),
       at({ id: '2', type: 'updated', payload: {} }),
     ]);
-    expect(screen.getByText('Alex Morgan changed the status')).toBeVisible();
-    expect(screen.getByText('Alex Morgan edited this contact')).toBeVisible();
+    expect(line('Alex Morgan changed the status')).toBeVisible();
+    expect(line('Alex Morgan edited this contact')).toBeVisible();
   });
 
   it('renders nothing for deleted or restored', () => {
@@ -79,5 +76,17 @@ describe('Timeline', () => {
   it('says when it is showing only the latest 100', () => {
     view(Array.from({ length: 100 }, (_, i) => at({ id: String(i) })));
     expect(screen.getByText('Showing the latest 100.')).toBeVisible();
+  });
+});
+
+describe('Timeline weights', () => {
+  it('sets the actor in semibold and the action in regular weight', () => {
+    view([at({ type: 'note_added' })]);
+    const p = line('Alex Morgan added a note');
+    expect(screen.getByText('Alex Morgan').className).toContain(
+      'font-semibold',
+    );
+    expect(p.className).not.toContain('font-medium');
+    expect(p.className).toContain('font-normal');
   });
 });
