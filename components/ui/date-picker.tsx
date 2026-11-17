@@ -51,6 +51,7 @@ export function DatePicker({
   const [open, setOpen] = useState(defaultOpen);
   const panel = useRef<HTMLDivElement>(null);
   const field = useFieldControl();
+  const today = new Date();
   const selected = value ? parseDateOnly(value) : undefined;
   const minDate = min ? parseDateOnly(min) : undefined;
   // ponytail: "today" is the render clock, so a server/browser year boundary could differ for a moment on Dec 31.
@@ -102,7 +103,9 @@ export function DatePicker({
           required
           selected={selected}
           defaultMonth={selected ?? minDate}
-          startMonth={minDate}
+          captionLayout="dropdown"
+          startMonth={minDate ?? new Date(today.getFullYear() - 10, 0)}
+          endMonth={new Date(today.getFullYear() + 10, 11)}
           disabled={minDate && { before: minDate }}
           onSelect={(date: Date) => commit(toDateOnly(date))}
           components={{ Chevron }}
@@ -113,7 +116,14 @@ export function DatePicker({
           }}
           classNames={{
             root: 'text-13 text-ink relative',
-            month_caption: 'flex h-8 items-center pl-2 text-sm font-semibold',
+            month_caption: 'flex h-8 items-center text-sm font-semibold',
+            // A native select, invisible but on top, shows through the styled label: keyboard, screen readers and the OS list stay native.
+            dropdowns: 'flex items-center gap-0.5',
+            dropdown_root:
+              'rounded-ctl hover:bg-track has-focus-visible:outline-2 has-focus-visible:outline-offset-1 outline-ring relative inline-flex h-8 items-center',
+            dropdown:
+              'bg-surface text-ink absolute inset-0 size-full cursor-pointer appearance-none opacity-0',
+            caption_label: 'flex items-center gap-1 px-2 text-sm font-semibold',
             nav: 'absolute top-0 right-0 flex gap-0.5',
             button_previous: navButton,
             button_next: navButton,

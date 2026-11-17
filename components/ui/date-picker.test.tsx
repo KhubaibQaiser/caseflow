@@ -197,4 +197,46 @@ describe('DatePicker', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(await screen.findByRole('tooltip')).toBeInTheDocument();
   });
+
+  it('jumps to another month and year from labelled dropdowns', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(
+      <DatePicker value={null} onChange={onChange} label="Next follow-up" />,
+    );
+    await user.click(screen.getByRole('button', { name: /Next follow-up/ }));
+
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /Month/ }),
+      'March',
+    );
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: /Year/ }),
+      '2028',
+    );
+    await user.click(day(/March 9, 2028/));
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith('2028-03-09');
+  });
+
+  it('keeps min: no years or months before it can be picked', async () => {
+    const user = userEvent.setup();
+    render(
+      <DatePicker
+        value={null}
+        onChange={vi.fn()}
+        min="2026-11-18"
+        label="Next follow-up"
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /Next follow-up/ }));
+
+    const years = screen
+      .getByRole('combobox', { name: /Year/ })
+      .querySelectorAll('option');
+    expect(years[0]).toHaveValue('2026');
+    expect(
+      screen.getByRole('option', { name: 'October', hidden: true }),
+    ).toBeDisabled();
+  });
 });
