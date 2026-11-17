@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
+import { format } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import type { ChevronProps } from 'react-day-picker';
 import CalendarDays from 'lucide-react/icons/calendar-days';
@@ -105,6 +106,11 @@ export function DatePicker({
           disabled={minDate && { before: minDate }}
           onSelect={(date: Date) => commit(toDateOnly(date))}
           components={{ Chevron }}
+          labels={{
+            // No ordinals ("November 1, 2026"): the visible "1" must appear in the name (WCAG 2.5.3).
+            labelDayButton: (date, modifiers) =>
+              `${modifiers.today ? 'Today, ' : ''}${format(date, 'EEEE, MMMM d, yyyy')}${modifiers.selected ? ', selected' : ''}`,
+          }}
           classNames={{
             root: 'text-13 text-ink relative',
             month_caption: 'flex h-8 items-center pl-2 text-sm font-semibold',

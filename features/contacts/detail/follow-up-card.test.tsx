@@ -71,7 +71,7 @@ describe('FollowUpCard', () => {
       name: 'Follow-up date',
     });
     await user.click(
-      within(dialog).getByRole('button', { name: /November 20th, 2026/ }),
+      within(dialog).getByRole('button', { name: /November 20, 2026/ }),
     );
 
     expect(p.onReschedule).toHaveBeenCalledExactlyOnceWith('2026-11-20');
@@ -85,7 +85,7 @@ describe('FollowUpCard', () => {
       name: 'Follow-up date',
     });
     expect(
-      within(dialog).getByRole('button', { name: /November 16th, 2026/ }),
+      within(dialog).getByRole('button', { name: /November 16, 2026/ }),
     ).toBeDisabled();
   });
 

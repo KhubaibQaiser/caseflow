@@ -34,7 +34,7 @@ describe('DatePicker', () => {
     await user.click(
       screen.getByRole('button', { name: 'Next follow-up: Pick a date' }),
     );
-    await user.click(day(/November 20th, 2026/));
+    await user.click(day(/November 20, 2026/));
 
     expect(onChange).toHaveBeenCalledExactlyOnceWith('2026-11-20');
   });
@@ -53,9 +53,9 @@ describe('DatePicker', () => {
 
     await user.click(screen.getByRole('button', { name: /Next follow-up/ }));
 
-    expect(day(/November 17th, 2026/)).toBeDisabled();
-    expect(day(/November 18th, 2026/)).toBeEnabled();
-    await user.click(day(/November 17th, 2026/));
+    expect(day(/November 17, 2026/)).toBeDisabled();
+    expect(day(/November 18, 2026/)).toBeEnabled();
+    await user.click(day(/November 17, 2026/));
     expect(onChange).not.toHaveBeenCalled();
   });
 
@@ -87,10 +87,10 @@ describe('DatePicker', () => {
 
     await user.tab();
     await user.keyboard('{Enter}');
-    expect(day(/November 20th, 2026/)).toHaveFocus();
+    expect(day(/November 20, 2026/)).toHaveFocus();
 
     await user.keyboard('{ArrowRight}');
-    expect(day(/November 21st, 2026/)).toHaveFocus();
+    expect(day(/November 21, 2026/)).toHaveFocus();
 
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -118,7 +118,7 @@ describe('DatePicker', () => {
     expect(
       screen.getByRole('dialog', { name: 'Reschedule follow-up' }),
     ).toBeInTheDocument();
-    await user.click(day(/November 24th, 2026/));
+    await user.click(day(/November 24, 2026/));
 
     expect(onChange).toHaveBeenCalledExactlyOnceWith('2026-11-24');
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();

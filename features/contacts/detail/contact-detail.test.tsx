@@ -107,7 +107,7 @@ describe('ContactDetailView', () => {
 
     await user.click(screen.getByRole('button', { name: 'Reschedule' }));
     await user.click(
-      await screen.findByRole('button', { name: /November 20th, 2026/ }),
+      await screen.findByRole('button', { name: /November 20, 2026/ }),
     );
 
     expect(await screen.findByText('Due Fri, Nov 20')).toBeVisible();
