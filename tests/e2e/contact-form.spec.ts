@@ -44,7 +44,7 @@ test('an unknown contact id shows the not-found screen', async ({
   await page.goto('/contacts/no-such-id/edit');
   // loading.tsx has already sent a 200, so assert the screen, not the status.
   await expect(
-    page.getByRole('heading', { name: 'Page not found.' }),
+    page.getByRole('heading', { name: "This contact doesn't exist." }),
   ).toBeVisible();
 });
 
