@@ -17,12 +17,12 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
     steps:
-      - name: Query a table
+      # anon can't read tables (RLS and revoked grants); ping() is granted to anon for this.
+      - name: Ping the database
         run: |
           check() {
             code=$(curl -s --max-time 30 -o /dev/null -w '%{http_code}' "$@" -H "apikey: $SUPABASE_PUBLISHABLE_KEY")
             echo "$code"
             [ "$code" = 200 ]
           }
-          check "$SUPABASE_URL/rest/v1/role_permissions?select=role&limit=1"
           check -X POST "$SUPABASE_URL/rest/v1/rpc/ping"

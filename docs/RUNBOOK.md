@@ -98,7 +98,7 @@ What `deploy.yml` does, in order:
 - `vercel deploy --prebuilt --prod`. Vercel's Git auto-deploy is off and there are no PR previews.
 - Smoke test (`tests/e2e/smoke.spec.ts`) against the deployed URL, once that file exists.
 
-`keep-alive.yml` pings Supabase daily so the project does not pause.
+`keep-alive.yml` calls the `ping()` RPC with the publishable key daily so the project does not pause (anon cannot read tables, so it never queries one).
 
 ## Security
 
