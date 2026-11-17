@@ -28,9 +28,9 @@ async function boardKey() {
     searchParams: Promise.resolve({}),
     params: Promise.resolve({}),
   });
-  const kids = (page as { props: { children: { key: string | null }[] } }).props
-    .children;
-  return kids[1]!.key;
+  // The board is the frame's only child (it carries the title row as `header`).
+  return (page as { props: { children: { key: string | null } } }).props
+    .children.key;
 }
 
 afterEach(() => {

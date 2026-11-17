@@ -50,12 +50,14 @@ export default async function PipelinePage({
   return (
     // md+: the page fills the viewport and each column scrolls inside it, like the list's table.
     <div className={listPageFrame}>
-      <PageHeader
-        title="Pipeline"
-        meta={`${fmt(facets.matching)} of ${fmt(facets.total)}`}
-        actions={<NewContactLink />}
-      />
       <Board
+        header={
+          <PageHeader
+            title="Pipeline"
+            meta={`${fmt(facets.matching)} of ${fmt(facets.total)}`}
+            actions={<NewContactLink />}
+          />
+        }
         // A new filter set, a new day or a new time zone is a new board: paged-in rows and moves belong to the old one,
         // and the follow-up labels (Today, Overdue · 2d) are only right for the day they were worked out (spec 8.7).
         key={JSON.stringify({ filters, today, tz })}

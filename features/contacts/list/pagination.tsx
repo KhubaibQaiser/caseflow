@@ -34,14 +34,33 @@ function revealResults() {
     // A hidden (display: none) candidate can't take focus; try the next one.
     el.focus({ preventScroll: true });
     if (document.activeElement !== el) continue;
-    if (!el.closest('[data-results-scroll]'))
-      el.scrollIntoView?.({ block: 'start' });
+    if (!el.closest('[data-results-scroll]')) {
+      // Phone: the cards scroll with the page, so back to the very top, under the subheader.
+      if (window.matchMedia('(min-width: 768px)').matches)
+        el.scrollIntoView?.({ block: 'start' });
+      else window.scrollTo({ top: 0 });
+    }
     return;
   }
 }
 
 const item =
   'grid h-7 min-w-7 place-items-center rounded-ctl px-1 text-ink no-underline transition-colors duration-150';
+
+/** Real links, so a new tab or no JS still works; a plain click stays in the transition. */
+export function usePageLink() {
+  const [query, setQuery] = useListQuery();
+  return (target: number) => ({
+    href: serializeListQuery('/contacts', { ...query, page: target }),
+    onClick(event: MouseEvent<HTMLAnchorElement>) {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      event.preventDefault();
+      setQuery({ page: target });
+      revealResults();
+    },
+  });
+}
 
 export function Pagination({
   page,
@@ -52,22 +71,11 @@ export function Pagination({
   pageSize: number;
   matching: number;
 }) {
-  const [query, setQuery] = useListQuery();
+  const [, setQuery] = useListQuery();
+  const link = usePageLink();
   const last = Math.max(1, Math.ceil(matching / pageSize));
   const from = Math.min((page - 1) * pageSize + 1, matching);
   const to = Math.min(page * pageSize, matching);
-
-  // Real links, so a new tab or no JS still works; a plain click stays in the transition.
-  const link = (target: number) => ({
-    href: serializeListQuery('/contacts', { ...query, page: target }),
-    onClick(event: MouseEvent<HTMLAnchorElement>) {
-      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
-        return;
-      event.preventDefault();
-      setQuery({ page: target });
-      revealResults();
-    },
-  });
   const step = (target: number, label: string, Icon: typeof ChevronLeft) =>
     target < 1 || target > last ? (
       // A link with nowhere to go: still announced, not focusable.
@@ -90,7 +98,7 @@ export function Pagination({
     );
 
   return (
-    <div className="text-13 text-ink-2 tnum flex flex-wrap items-center gap-x-4 gap-y-2 max-md:justify-between">
+    <div className="text-13 text-ink-2 tnum flex flex-wrap items-center gap-x-4 gap-y-2 max-md:hidden">
       <span>
         {fmt(from)}–{fmt(to)} of {fmt(matching)}
       </span>
@@ -116,11 +124,8 @@ export function Pagination({
         />
       </label>
       {last > 1 && (
-        <nav
-          aria-label="Pagination"
-          className="ml-auto max-md:ml-0 max-md:w-full"
-        >
-          <ul className="m-0 flex list-none items-center gap-0.5 p-0 max-md:justify-center">
+        <nav aria-label="Pagination" className="ml-auto">
+          <ul className="m-0 flex list-none items-center gap-0.5 p-0">
             <li>{step(page - 1, 'Previous page', ChevronLeft)}</li>
             {pageItems(page, last).map((p, i) => (
               <li key={p === '…' ? `gap-${i}` : p}>

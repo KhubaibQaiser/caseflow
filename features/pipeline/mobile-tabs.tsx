@@ -30,7 +30,7 @@ export function MobileTabs({
     <div className="md:hidden">
       <div className="flex items-center gap-2">
         {/* The control is a full-width row on a phone (screens-v1.html). */}
-        <div className="min-w-0 flex-1 [&_[role=radiogroup]]:w-full [&_[role=radiogroup]]:self-stretch [&_label]:min-h-9 [&_label]:flex-1 [&_label]:justify-center [&>div]:self-stretch">
+        <div className="min-w-0 flex-1 [&_[role=radiogroup]]:w-full [&_[role=radiogroup]]:self-stretch [&_label]:min-h-9 [&_label]:flex-1 [&_label]:justify-center [&_label]:px-2 [&>div]:self-stretch">
           <Segmented
             label="Status"
             hideLabel

@@ -55,6 +55,41 @@ describe('Pagination', () => {
     );
   });
 
+  it.each([
+    [true, 'scrollIntoView', 'scrollTo'],
+    [false, 'scrollTo', 'scrollIntoView'],
+  ])(
+    'a page change reveals the results (md and up: %s)',
+    async (wide, used, unused) => {
+      const user = userEvent.setup();
+      const spies = {
+        scrollIntoView: vi.fn(),
+        scrollTo: vi.fn(),
+      };
+      window.HTMLElement.prototype.scrollIntoView = spies.scrollIntoView;
+      window.scrollTo = spies.scrollTo;
+      vi.stubGlobal('matchMedia', (q: string) => ({
+        matches: wide && q.includes('min-width'),
+        media: q,
+        addEventListener() {},
+        removeEventListener() {},
+      }));
+      render(
+        <>
+          <h2 data-results-focus tabIndex={-1}>
+            Results
+          </h2>
+          <Pagination page={2} pageSize={250} matching={1284} />
+        </>,
+        { wrapper: wrapper({ searchParams: '?page=2' }) },
+      );
+      await user.click(screen.getByRole('link', { name: 'Page 3' }));
+      expect(spies[used as keyof typeof spies]).toHaveBeenCalled();
+      expect(spies[unused as keyof typeof spies]).not.toHaveBeenCalled();
+      vi.unstubAllGlobals();
+    },
+  );
+
   it('changing the page focuses the results and changing size resets the page', async () => {
     const user = userEvent.setup();
     const onUrlUpdate = vi.fn();

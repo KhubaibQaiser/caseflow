@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, lazy, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import type { ContactRow } from '@/lib/contracts/contact';
 import { STATUSES } from '@/lib/contracts/enums';
@@ -17,6 +18,7 @@ import type {
   PipelineSorts,
 } from '@/lib/contracts/pipeline-sort';
 import type { Result } from '@/lib/contracts/result';
+import { Headroom } from '@/components/shell/headroom';
 import { usePermission } from '@/lib/auth/permissions-context';
 
 import { useFiltersPanel } from '../contacts/filters/use-filters-panel';
@@ -46,6 +48,8 @@ type BoardProps = {
   /** Each column's sort, as the URL asks for it; the columns were loaded in these orders. */
   sorts: PipelineSorts;
   facets: ContactFacets;
+  /** The page title row; on a phone it hides on scroll while the status tabs stay. */
+  header?: ReactNode;
   /** The `filters_open` cookie, read on the server. */
   filtersOpen: boolean;
   onMove(id: string, to: Status): Promise<Result<ContactRow>>;
@@ -70,6 +74,7 @@ function Results({
   filters,
   sorts,
   facets,
+  header,
   filtersOpen,
   onMove,
   onLoadMore,
@@ -139,15 +144,17 @@ function Results({
   return (
     <>
       {/* First on a phone, straight under the title; the toolbar's search and filters follow. */}
-      {showBoard && (
-        <MobileTabs
-          columns={columns}
-          value={tab}
-          onChange={setTab}
-          sorts={sorts}
-          onSortChange={setSort}
-        />
-      )}
+      <Headroom title={header} pin={showBoard}>
+        {showBoard && (
+          <MobileTabs
+            columns={columns}
+            value={tab}
+            onChange={setTab}
+            sorts={sorts}
+            onSortChange={setSort}
+          />
+        )}
+      </Headroom>
       {!none && (
         <Toolbar
           facets={facets}

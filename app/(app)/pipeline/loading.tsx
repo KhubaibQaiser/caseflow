@@ -1,3 +1,4 @@
+import { headroomLayout } from '@/components/shell/headroom-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { listPageFrame } from '@/features/contacts/list/frame';
 import {
@@ -27,16 +28,18 @@ export default function PipelineLoading() {
       <span className="sr-only" role="status">
         Loading pipeline
       </span>
-      <HeaderSkeleton titleWidth="w-24" />
-      {/* Tabs first on a phone, as on the board. */}
-      <div className="md:hidden">
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-10.5 min-w-0 flex-1 rounded-lg" />
-          <Skeleton className="rounded-ctl size-10.5" />
-        </div>
-        {/* The "sorted by" line. */}
-        <div className="mt-2 flex h-[19.5px] items-center">
-          <Skeleton className="h-3 w-44" />
+      <div className={headroomLayout}>
+        <HeaderSkeleton titleWidth="w-24" />
+        {/* Tabs first on a phone, as on the board. */}
+        <div className="md:hidden">
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-10.5 min-w-0 flex-1 rounded-lg" />
+            <Skeleton className="rounded-ctl size-10.5" />
+          </div>
+          {/* The "sorted by" line. */}
+          <div className="mt-2 flex h-[19.5px] items-center">
+            <Skeleton className="h-3 w-44" />
+          </div>
         </div>
       </div>
       <ToolbarSkeleton />

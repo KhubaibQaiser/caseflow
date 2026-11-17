@@ -1,3 +1,4 @@
+import { headroomLayout } from '@/components/shell/headroom-layout';
 import { Skeleton } from '@/components/ui/skeleton';
 import { listPageFrame } from '@/features/contacts/list/frame';
 import {
@@ -26,8 +27,10 @@ export default function ContactsLoading() {
       <span className="sr-only" role="status">
         Loading contacts
       </span>
-      <HeaderSkeleton titleWidth="w-28" />
-      <ToolbarSkeleton />
+      <div className={headroomLayout}>
+        <HeaderSkeleton titleWidth="w-28" />
+        <ToolbarSkeleton />
+      </div>
       <div className="border-line bg-surface rounded-surface min-h-0 flex-1 overflow-hidden border">
         <div className="border-line bg-panel hidden h-8.5 items-center gap-6 border-b px-2.5 md:flex">
           {HEADERS.map((w, i) => (
