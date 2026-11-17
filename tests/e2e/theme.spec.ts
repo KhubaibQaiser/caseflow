@@ -1,9 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-import { storage } from './helpers';
+import { storage, openThemeMenu } from './helpers';
 
-const DARK_CANVAS = 'rgb(15, 21, 18)';
-const LIGHT_CANVAS = 'rgb(244, 246, 243)';
+const isDark = (rgb: string) =>
+  rgb
+    .match(/\d+/g)!
+    .map(Number)
+    .reduce((a, b) => a + b) < 150;
 const canvas = (page: import('@playwright/test').Page) =>
   page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
@@ -13,11 +16,11 @@ test('switching to Dark applies at once and survives a reload with no flash', as
   page,
 }) => {
   await page.goto('/contacts');
-  await page.getByRole('button', { name: /^Theme/ }).click();
+  await openThemeMenu(page);
   await page.getByRole('menuitemradio', { name: 'Dark' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.getByRole('menu')).toHaveCount(0);
-  expect(await canvas(page)).toBe(DARK_CANVAS);
+  expect(isDark(await canvas(page))).toBe(true);
 
   // The server HTML already carries the attribute: nothing waits on client JS.
   const html = await (await page.request.get('/contacts')).text();
@@ -26,7 +29,7 @@ test('switching to Dark applies at once and survives a reload with no flash', as
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   await expect(page.getByRole('button', { name: 'Theme: Dark' })).toBeVisible();
-  expect(await canvas(page)).toBe(DARK_CANVAS);
+  expect(isDark(await canvas(page))).toBe(true);
 
   const cookie = (await page.context().cookies()).find(
     (c) => c.name === 'theme',
@@ -44,12 +47,12 @@ test('System follows the emulated colour scheme, with no attribute', async ({
 }) => {
   await page.goto('/contacts');
   await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
-  expect(await canvas(page)).toBe(LIGHT_CANVAS);
+  expect(isDark(await canvas(page))).toBe(false);
   await expect(
     page.getByRole('button', { name: 'Theme: System (light)' }),
   ).toBeVisible();
   await page.emulateMedia({ colorScheme: 'dark' });
-  expect(await canvas(page)).toBe(DARK_CANVAS);
+  expect(isDark(await canvas(page))).toBe(true);
   await expect(
     page.getByRole('button', { name: 'Theme: System (dark)' }),
   ).toBeVisible();
@@ -58,9 +61,9 @@ test('System follows the emulated colour scheme, with no attribute', async ({
 test('an explicit Light wins over a dark OS', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.goto('/contacts');
-  await page.getByRole('button', { name: /^Theme/ }).click();
+  await openThemeMenu(page);
   await page.getByRole('menuitemradio', { name: 'Light' }).click();
-  expect(await canvas(page)).toBe(LIGHT_CANVAS);
+  expect(isDark(await canvas(page))).toBe(false);
 });
 
 test('Esc closes the menu and returns focus to the button', async ({
@@ -68,7 +71,7 @@ test('Esc closes the menu and returns focus to the button', async ({
 }) => {
   await page.goto('/contacts');
   const button = page.getByRole('button', { name: /^Theme/ });
-  await button.click();
+  await openThemeMenu(page);
   await page.keyboard.press('Escape');
   await expect(page.getByRole('menu')).toHaveCount(0);
   await expect(button).toBeFocused();

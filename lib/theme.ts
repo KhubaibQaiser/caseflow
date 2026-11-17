@@ -1,7 +1,9 @@
 import { z } from 'zod';
 
+import type { Theme } from './theme-label';
+
 export const ThemeSchema = z.enum(['system', 'light', 'dark']);
-export type Theme = z.infer<typeof ThemeSchema>;
+export type { Theme } from './theme-label';
 
 export const THEME_COOKIE = 'theme';
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -27,10 +29,4 @@ export function readThemeCookie(cookie: string): Theme {
   return parseTheme(m?.[1]);
 }
 
-/** aria-label and tooltip. systemDark is null until the browser has told us (server render). */
-export function themeLabel(theme: Theme, systemDark: boolean | null): string {
-  if (theme === 'light') return 'Theme: Light';
-  if (theme === 'dark') return 'Theme: Dark';
-  if (systemDark === null) return 'Theme: System';
-  return `Theme: System (${systemDark ? 'dark' : 'light'})`;
-}
+export { themeLabel } from './theme-label';

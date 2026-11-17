@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -21,6 +21,14 @@ beforeEach(() => {
   mockDark(false);
 });
 
+// The menu code loads lazily; until then the button is a stand-in with no popup.
+const loaded = () =>
+  waitFor(() =>
+    expect(
+      document.querySelector('button[aria-haspopup="menu"]'),
+    ).not.toBeNull(),
+  );
+
 describe('ThemeToggle', () => {
   it('labels the button with the theme and, for System, the effective one', () => {
     mockDark(true);
@@ -40,6 +48,7 @@ describe('ThemeToggle', () => {
   it('opens a Theme menu of three radios, the current one checked', async () => {
     document.documentElement.dataset.theme = 'light';
     render(<ThemeToggle />);
+    await loaded();
     await userEvent.click(screen.getByRole('button', { name: 'Theme: Light' }));
     const menu = screen.getByRole('menu');
     expect(within(menu).getByText('Theme')).toBeInTheDocument();
@@ -58,6 +67,7 @@ describe('ThemeToggle', () => {
 
   it('picking Dark sets the attribute and the cookie, closes the menu and updates the label', async () => {
     render(<ThemeToggle />);
+    await loaded();
     await userEvent.click(screen.getByRole('button', { name: /^Theme/ }));
     await userEvent.click(screen.getByRole('menuitemradio', { name: 'Dark' }));
     expect(document.documentElement.dataset.theme).toBe('dark');
@@ -71,6 +81,7 @@ describe('ThemeToggle', () => {
   it('picking System removes the attribute', async () => {
     document.documentElement.dataset.theme = 'dark';
     render(<ThemeToggle />);
+    await loaded();
     await userEvent.click(screen.getByRole('button', { name: /^Theme/ }));
     await userEvent.click(
       screen.getByRole('menuitemradio', { name: 'System' }),

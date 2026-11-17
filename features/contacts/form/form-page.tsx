@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { PageHeading } from '@/components/ui/page-heading';
 
 /** Breadcrumb and heading shared by the create and edit pages. */
@@ -17,10 +16,7 @@ export function FormPage({
   return (
     <div className="flex flex-col gap-3.5">
       <div className="flex flex-col gap-1.5">
-        <div
-          data-theme-slot
-          className="flex min-h-8.5 items-center justify-between gap-2.5 max-md:min-h-0"
-        >
+        <div className="flex min-h-8.5 items-center max-md:min-h-0 md:pe-11">
           <nav aria-label="Breadcrumb">
             <ol className="text-13 text-ink-2 m-0 flex list-none flex-wrap gap-x-1.5 p-0">
               {crumbs.map((c, i) => (
@@ -42,7 +38,6 @@ export function FormPage({
               ))}
             </ol>
           </nav>
-          <ThemeToggle className="max-md:hidden" />
         </div>
         <PageHeading className="text-ink m-0 text-xl font-semibold tracking-tight md:text-2xl">
           {title}

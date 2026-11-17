@@ -2,7 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 import { newContact } from './data';
-import { settleAnimations, storage } from './helpers';
+import { settleAnimations, storage, openThemeMenu } from './helpers';
 
 // axe finds no serious or critical issue on any screen, signed in as each role. (The per-screen specs
 // already assert zero violations in their own states; this is the one place that walks every screen.)
@@ -60,7 +60,7 @@ for (const scheme of ['light', 'dark'] as const) {
     test('the open menu passes axe', async ({ page }) => {
       await page.goto('/contacts');
       await page.waitForLoadState('networkidle');
-      await page.getByRole('button', { name: /^Theme/ }).click();
+      await openThemeMenu(page);
       await expect(page.getByRole('menuitemradio')).toHaveCount(3);
       await settleAnimations(page);
       const { violations } = await new AxeBuilder({ page })

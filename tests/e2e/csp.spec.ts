@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { storage } from './helpers';
+import { storage, openThemeMenu } from './helpers';
 
 // Collects every CSP violation (event) and console error while a page loads and is used.
 async function watch(page: Page) {
@@ -63,7 +63,7 @@ test('the theme toggle is CSP-clean, and the choice still shows after a reload',
 }) => {
   const problems = await watch(page);
   await open(page, '/contacts');
-  await page.getByRole('button', { name: /^Theme/ }).click();
+  await openThemeMenu(page);
   await page.getByRole('menuitemradio', { name: 'Dark' }).click();
   await page.reload();
   await page.waitForLoadState('networkidle');
