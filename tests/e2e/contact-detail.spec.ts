@@ -496,6 +496,10 @@ test.describe('loading boundaries', () => {
     await page.waitForTimeout(1000); // inside the delay
     // A one-shot count: a retrying assertion would pass as soon as the delayed page replaced the skeleton.
     expect(await page.getByText('Loading contacts').count()).toBe(0);
+    // and it shows the form's own skeleton
+    await expect(
+      page.getByRole('status', { name: 'Loading contact' }),
+    ).toBeVisible();
     await expect(
       page.getByRole('heading', { name: 'New contact' }),
     ).toBeVisible();
