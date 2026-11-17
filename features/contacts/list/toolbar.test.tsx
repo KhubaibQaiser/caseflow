@@ -1,4 +1,5 @@
 import {
+  cleanup,
   act,
   fireEvent,
   render,
@@ -272,5 +273,28 @@ describe('Toolbar sort (mobile)', () => {
     await waitFor(() => expect(lastUrl(onUrlUpdate).get('sort')).toBe('name'));
     expect(lastUrl(onUrlUpdate).get('dir')).toBe('desc');
     expect(lastUrl(onUrlUpdate).has('page')).toBe(false);
+  });
+});
+
+describe('Toolbar sort', () => {
+  const shown = (hideSort: boolean) => {
+    function T() {
+      const filtersButton = useRef<HTMLButtonElement>(null);
+      return (
+        <Toolbar
+          isPending={false}
+          filtersButton={filtersButton}
+          hideSort={hideSort}
+        />
+      );
+    }
+    render(<T />, { wrapper: wrapper() });
+    return screen.queryByRole('button', { name: /^Sort/ });
+  };
+
+  it('is there for the list and gone for the board, which is always in urgency order', () => {
+    expect(shown(false)).toBeInTheDocument();
+    cleanup();
+    expect(shown(true)).not.toBeInTheDocument();
   });
 });

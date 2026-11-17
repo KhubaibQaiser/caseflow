@@ -113,6 +113,7 @@ function Results({
           facets={facets}
           isPending={isPending}
           panel={panel}
+          hideSort
           filtersButton={filtersButton}
           onFiltersIntent={() => void loadPanel()}
         />

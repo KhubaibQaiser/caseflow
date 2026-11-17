@@ -31,6 +31,7 @@ export function Toolbar({
   panel,
   filtersButton,
   onFiltersIntent,
+  hideSort = false,
 }: {
   /** Omitted on the error screen, where the counts are unknown. */
   facets?: ContactFacets;
@@ -40,6 +41,8 @@ export function Toolbar({
   filtersButton: RefObject<HTMLButtonElement | null>;
   /** Hover or focus on the Filters button: start loading the panel's code. */
   onFiltersIntent?: () => void;
+  /** The board is always in urgency order, so a sort control would do nothing there. */
+  hideSort?: boolean;
 }) {
   const [query, setQuery] = useListQuery();
   // The box is local; the URL gets one write, 250ms after the last key. nuqs's own debounce times each key
@@ -122,16 +125,18 @@ export function Toolbar({
             </span>
           )}
         </Button>
-        <Suspense
-          fallback={
-            <SortButton
-              label={sortLabel(query.sort, query.dir)}
-              className="h-9 flex-1 md:hidden"
-            />
-          }
-        >
-          <SortMenu className="h-9 flex-1 md:hidden" />
-        </Suspense>
+        {!hideSort && (
+          <Suspense
+            fallback={
+              <SortButton
+                label={sortLabel(query.sort, query.dir)}
+                className="h-9 flex-1 md:hidden"
+              />
+            }
+          >
+            <SortMenu className="h-9 flex-1 md:hidden" />
+          </Suspense>
+        )}
       </div>
       <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
         <QuickViews counts={facets?.quickViews} />
