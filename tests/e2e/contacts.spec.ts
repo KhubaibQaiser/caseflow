@@ -323,6 +323,8 @@ test('the filters panel applies once, resets the page, remembers it is open and 
   await button.click();
   await page.reload();
   await expect(panel).toBeVisible();
+  // The server renders the open panel, but its Esc handler and checkboxes only work once hydrated.
+  await page.waitForLoadState('networkidle');
   await panel.getByRole('checkbox', { name: /^Closed / }).check();
   await page.keyboard.press('Escape');
   await expect(panel).toBeHidden();
