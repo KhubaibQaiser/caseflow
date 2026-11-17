@@ -64,4 +64,26 @@ describe('Sheet', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
   });
+
+  it('can carry header actions and a named close button', () => {
+    render(
+      <Dialog open>
+        <Sheet
+          side="right"
+          title="Filters"
+          actions={<button type="button">Clear all</button>}
+          closeLabel="Close filters"
+          footer={null}
+        >
+          body
+        </Sheet>
+      </Dialog>,
+    );
+    expect(
+      screen.getByRole('button', { name: 'Clear all' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: 'Close filters' }),
+    ).toBeInTheDocument();
+  });
 });

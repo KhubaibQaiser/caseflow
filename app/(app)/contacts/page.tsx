@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { PageHeader } from '@/components/shell/page-header';
@@ -24,10 +25,11 @@ export default async function ContactsPage({
 }: PageProps<'/contacts'>) {
   // Bad params fall back to defaults; they never error (spec 8.3).
   const query = loadListQuery(await searchParams);
-  const [result, facets, tz] = await Promise.all([
+  const [result, facets, tz, jar] = await Promise.all([
     searchContacts(query),
     getContactFacets(toFilters(query)),
     getRequestTimeZone(),
+    cookies(),
   ]);
   // A stale ?page=999 lands on the last page, with the URL saying so (spec 8.9).
   const page = clampPage(query.page, result.matching, query.size);
@@ -49,6 +51,8 @@ export default async function ContactsPage({
         facets={facets}
         page={page}
         pageSize={query.size}
+        // The panel opens as the user left it (desktop only; the client ignores this on narrow screens).
+        filtersOpen={jar.get('filters_open')?.value === '1'}
       />
     </div>
   );
