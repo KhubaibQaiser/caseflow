@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 
-/* Design tokens (spec 8.13). The only file where colour literals are allowed. Light theme only in v1. */
+/* Design tokens (spec 8.13). The only file where colour literals are allowed. Light is the base; dark overrides follow. */
 :root {
   --canvas: #f4f6f3;
   --surface: #ffffff;
@@ -34,6 +34,94 @@
   --r-surface: 10px;
   --r-pill: 999px;
   --tabbar: 60px;
+  color-scheme: light;
+}
+
+/* Dark palette (DESIGN.md). The two blocks below must stay identical; lib/theme.test.ts enforces it.
+   data-theme=dark is the explicit choice; the media block is System following the OS. */
+:root[data-theme='dark'] {
+  --canvas: #0f1512;
+  --surface: #161e1a;
+  --panel: #121915;
+  --line: #2a3631;
+  --line-soft: #202a26;
+  --ink: #e6ece8;
+  --ink-2: #9fada6;
+  --accent: #7cc4a6;
+  --accent-soft: #1f352c;
+  --overdue: #ff9d8f;
+  --overdue-bg: #3b1d19;
+  --today: #f0c368;
+  --today-bg: #372a0d;
+  --lead-border: #4d5d56;
+  --closed-bg: #242e29;
+  --ring: #2c5a49;
+  --on-accent: #0b1a13;
+  --accent-hover: #95d4ba;
+  --lead-ink: #c3cfc9;
+  --control-border: #6e7e77;
+  --track: #1f2924;
+  --error-ring: #5a2a24;
+  --skeleton: #1f2924;
+  --skeleton-hi: #2a3631;
+  --accent-on-ink: #1f5c4a;
+  --scrim: rgb(0 0 0 / 0.6);
+  --raised: 0 1px 2px rgb(0 0 0 / 0.5);
+  --overlay: -10px 8px 28px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --canvas: #0f1512;
+    --surface: #161e1a;
+    --panel: #121915;
+    --line: #2a3631;
+    --line-soft: #202a26;
+    --ink: #e6ece8;
+    --ink-2: #9fada6;
+    --accent: #7cc4a6;
+    --accent-soft: #1f352c;
+    --overdue: #ff9d8f;
+    --overdue-bg: #3b1d19;
+    --today: #f0c368;
+    --today-bg: #372a0d;
+    --lead-border: #4d5d56;
+    --closed-bg: #242e29;
+    --ring: #2c5a49;
+    --on-accent: #0b1a13;
+    --accent-hover: #95d4ba;
+    --lead-ink: #c3cfc9;
+    --control-border: #6e7e77;
+    --track: #1f2924;
+    --error-ring: #5a2a24;
+    --skeleton: #1f2924;
+    --skeleton-hi: #2a3631;
+    --accent-on-ink: #1f5c4a;
+    --scrim: rgb(0 0 0 / 0.6);
+    --raised: 0 1px 2px rgb(0 0 0 / 0.5);
+    --overlay: -10px 8px 28px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+/* The theme button shows the effective theme: both glyphs are in the markup and CSS picks one, so there is no flash. */
+.theme-moon {
+  display: none;
+}
+:root[data-theme='dark'] .theme-sun {
+  display: none;
+}
+:root[data-theme='dark'] .theme-moon {
+  display: block;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .theme-sun {
+    display: none;
+  }
+  :root:not([data-theme='light']) .theme-moon {
+    display: block;
+  }
 }
 
 @theme inline {
@@ -147,7 +235,6 @@
 /* Layered so Tailwind utilities can override these. */
 @layer base {
   html {
-    color-scheme: light;
     scrollbar-color: var(--lead-border) var(--canvas);
     scrollbar-width: thin;
   }

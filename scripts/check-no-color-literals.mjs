@@ -21,6 +21,7 @@ const IGNORE = [
   // These two spell out colour literals on purpose.
   'scripts/check-no-color-literals.mjs',
   'scripts/check-no-color-literals.test.ts',
+  'lib/theme-colors.ts', // viewport.themeColor literals; lib/theme.test.ts ties them to --canvas
 ];
 const PATTERN =
   /#[0-9a-fA-F]{3,8}\b|\b(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb|color)\(/g;
