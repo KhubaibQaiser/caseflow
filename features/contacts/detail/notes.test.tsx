@@ -185,29 +185,14 @@ describe('Notes composer', () => {
     window.history.replaceState(null, '');
   });
 
-  it('says so when there are no notes', () => {
+  it('shows an admin with no notes the composer only', async () => {
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
-    expect(screen.getByText('No notes yet.')).toBeInTheDocument();
-  });
-
-  it('moves focus to the composer only when the user picks Add note', async () => {
-    const u = user();
-    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
-    const box = await composer();
-    expect(box).not.toHaveFocus();
-
-    await u.click(screen.getByRole('button', { name: 'Add note' }));
-    // Tiptap focuses on the next frame.
-    await waitFor(() => expect(box).toHaveFocus());
-  });
-
-  it('offers no Add note button once there are notes, or to a viewer', () => {
-    const { unmount } = renderAs(
-      'admin',
-      <Notes tz="UTC" notes={[note()]} onAdd={vi.fn()} />,
-    );
+    await composer();
+    expect(screen.queryByText('No notes yet.')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Add note' })).toBeNull();
-    unmount();
+  });
+
+  it('tells a viewer with no notes so, without a button', () => {
     renderAs('viewer', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
     expect(screen.getByText('No notes yet.')).toBeVisible();
     expect(screen.queryByRole('button', { name: 'Add note' })).toBeNull();

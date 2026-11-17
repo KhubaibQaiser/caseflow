@@ -4,7 +4,7 @@ A legal-intake mini CRM. Track every prospective client, a **contact**, from fir
 
 **Live:** [caseflow-drab.vercel.app](https://caseflow-drab.vercel.app) · **Demo access:** an **Admin** (full access) and a read-only **Viewer**. Credentials are in the submission message.
 
-**What's in it:** a contact list with search, filters with live counts, urgency sort and paging. Contact detail with a timeline, reschedule and rich-text notes. Create and edit forms with validation, conflict handling and phone numbers formatted by country, with that country's example as the placeholder. A pipeline with **Move to…** and a sort per column (urgency, name, recently updated, newest). Two roles, with disabled controls that say why. Loading, empty, error, 404 and 403 states on every screen. Light and dark themes, System by default, remembered per device. On phones the pager stays pinned and the header slides away as you scroll.
+**What's in it:** a contact list with search, filters with live counts, urgency sort and paging. Contact detail with a timeline, reschedule and rich-text notes at a readable width. Create and edit forms with validation, conflict handling and phone numbers formatted by country, with that country's example as the placeholder. A pipeline with **Move to…** and a sort per column (urgency, name, recently updated, newest). Two roles, with disabled controls that say why. Loading, empty, error, 404 and 403 states on every screen. Light and dark themes, System by default, remembered per device. On phones the pager stays pinned and the header slides away as you scroll.
 
 ## Component structure and state
 
