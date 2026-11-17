@@ -1,6 +1,7 @@
 import type { ContactRow } from '@/lib/contracts/contact';
 import { STATUSES } from '@/lib/contracts/enums';
 import type { Status } from '@/lib/contracts/enums';
+import type { PipelineSort } from '@/lib/contracts/pipeline-sort';
 import type { FollowUpTone } from '@/lib/dates/labels';
 
 export const PAGE_SIZE = 50;
@@ -28,14 +29,24 @@ export type Columns = Record<Status, ColumnData>;
 export const followUpOf = (r: PipelineRow): FollowUpView =>
   r.status === 'closed' ? r.closed : r.open;
 
-// Urgency order (AGENTS.md): rank, then the soonest date, then the most recently updated.
-function before(a: PipelineRow, b: PipelineRow): boolean {
-  const [ra, rb] = [followUpOf(a).rank, followUpOf(b).rank];
-  if (ra !== rb) return ra < rb;
-  if (a.followUpOn && b.followUpOn && a.followUpOn !== b.followUpOn)
-    return a.followUpOn < b.followUpOn;
-  // Instants, not text: the server's offsets and precision differ from our own clock's.
-  return Date.parse(a.updatedAt) > Date.parse(b.updatedAt);
+// Instants, not text: the server's offsets and precision differ from our own clock's.
+const newer = (a: string, b: string) => Date.parse(a) > Date.parse(b);
+
+// A column's order. Urgency (AGENTS.md): rank, then the soonest date, then the most recently updated.
+// The others mirror search_contacts (name A–Z, updated desc, created desc), ties by most recently updated.
+function before(a: PipelineRow, b: PipelineRow, sort: PipelineSort): boolean {
+  if (sort === 'name') {
+    const c = a.fullName.localeCompare(b.fullName, 'en');
+    if (c !== 0) return c < 0;
+  } else if (sort === 'created') {
+    if (a.createdAt !== b.createdAt) return newer(a.createdAt, b.createdAt);
+  } else if (sort === 'urgency') {
+    const [ra, rb] = [followUpOf(a).rank, followUpOf(b).rank];
+    if (ra !== rb) return ra < rb;
+    if (a.followUpOn && b.followUpOn && a.followUpOn !== b.followUpOn)
+      return a.followUpOn < b.followUpOn;
+  }
+  return newer(a.updatedAt, b.updatedAt);
 }
 
 /** Where a column has this id, if anywhere. */
@@ -53,6 +64,7 @@ export function applyMove(
   id: string,
   to: Status,
   now: string,
+  sort: PipelineSort = 'urgency',
 ): Columns {
   const from = columnOf(columns, id);
   const row = from && columns[from].rows.find((r) => r.id === id);
@@ -60,7 +72,7 @@ export function applyMove(
 
   const moved: PipelineRow = { ...row, status: to, updatedAt: now };
   const target = columns[to];
-  const at = target.rows.findIndex((r) => before(moved, r));
+  const at = target.rows.findIndex((r) => before(moved, r, sort));
   const place =
     at >= 0
       ? at
@@ -84,13 +96,14 @@ export function applyMove(
 
 /**
  * The next page of a column. Moves shift the server's pages (a card that left pulls later rows up),
- * so the action also sends the page before; rows already here win, and the merge keeps urgency order.
+ * so the action also sends the page before; rows already here win, and the merge keeps the column's order.
  */
 export function appendRows(
   columns: Columns,
   status: Status,
   more: PipelineRow[],
   matching: number,
+  sort: PipelineSort = 'urgency',
 ): Columns {
   const have = new Set(
     STATUSES.flatMap((s) => columns[s].rows.map((r) => r.id)),
@@ -98,7 +111,7 @@ export function appendRows(
   const rows = [
     ...columns[status].rows,
     ...more.filter((r) => !have.has(r.id)),
-  ].sort((a, b) => (before(a, b) ? -1 : before(b, a) ? 1 : 0));
+  ].sort((a, b) => (before(a, b, sort) ? -1 : before(b, a, sort) ? 1 : 0));
   return {
     ...columns,
     [status]: { rows, matching, pages: columns[status].pages + 1 },
