@@ -239,4 +239,39 @@ describe('DatePicker', () => {
       screen.getByRole('option', { name: 'October', hidden: true }),
     ).toBeDisabled();
   });
+
+  it('always offers the year of the selected value and of min, however far out', async () => {
+    const user = userEvent.setup();
+    const years = () =>
+      [
+        ...screen
+          .getByRole('combobox', { name: /Year/ })
+          .querySelectorAll('option'),
+      ].map((o) => o.value);
+
+    const old = render(
+      <DatePicker value="2005-03-01" onChange={vi.fn()} label="Created" />,
+    );
+    await user.click(screen.getByRole('button', { name: /Created/ }));
+    expect(years()).toContain('2005');
+    old.unmount();
+
+    const far = render(
+      <DatePicker value="2040-01-01" onChange={vi.fn()} label="Created" />,
+    );
+    await user.click(screen.getByRole('button', { name: /Created/ }));
+    expect(years()).toContain('2040');
+    far.unmount();
+
+    render(
+      <DatePicker
+        value={null}
+        min="2045-06-01"
+        onChange={vi.fn()}
+        label="Created"
+      />,
+    );
+    await user.click(screen.getByRole('button', { name: /Created/ }));
+    expect(years()).toContain('2045');
+  });
 });

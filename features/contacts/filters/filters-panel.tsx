@@ -48,7 +48,11 @@ const MESSAGES = {
   reversed: 'End is before start.',
 } as const;
 
-/** Desktop: a non-modal side panel under the toolbar. Narrow: a modal sheet. Both edit a draft until Apply. */
+/**
+ * Desktop: a fixed side panel over a backdrop. It is pointer-modal (a click on the backdrop closes it, so the page
+ * behind can't be used) but keyboard non-modal: no focus trap, and Tab can still leave it, which is intended.
+ * Esc closes it from anywhere. Narrow: a modal sheet. Both edit a draft until Apply.
+ */
 export function FiltersPanel(props: FiltersPanelProps) {
   const desktop = useIsDesktop();
   const [query, setQuery] = useListQuery();

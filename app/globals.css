@@ -67,7 +67,7 @@
   --skeleton-hi: #2a3631;
   --accent-on-ink: #07557c;
   --scrim: rgb(0 0 0 / 0.6);
-  --panel-scrim: rgb(0 0 0 / 0.36);
+  --panel-scrim: rgb(0 0 0 / 0.55);
   --raised: 0 1px 2px rgb(0 0 0 / 0.5);
   --overlay: -10px 8px 28px rgb(0 0 0 / 0.5);
   color-scheme: dark;
@@ -101,7 +101,7 @@
     --skeleton-hi: #2a3631;
     --accent-on-ink: #07557c;
     --scrim: rgb(0 0 0 / 0.6);
-    --panel-scrim: rgb(0 0 0 / 0.36);
+    --panel-scrim: rgb(0 0 0 / 0.55);
     --raised: 0 1px 2px rgb(0 0 0 / 0.5);
     --overlay: -10px 8px 28px rgb(0 0 0 / 0.5);
     color-scheme: dark;

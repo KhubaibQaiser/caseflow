@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import type { ReactElement } from 'react';
-import { format } from 'date-fns';
+import { format, max, min as earliestOf } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import type { ChevronProps } from 'react-day-picker';
 import CalendarDays from 'lucide-react/icons/calendar-days';
@@ -60,6 +60,17 @@ export function DatePicker({
   const today = new Date();
   const selected = value ? parseDateOnly(value) : undefined;
   const minDate = min ? parseDateOnly(min) : undefined;
+  // The dropdowns always reach the value and min, however far from today. Nothing before min is pickable, so min is the floor.
+  const startMonth = earliestOf(
+    [minDate ?? new Date(today.getFullYear() - 10, 0), selected].filter(
+      (d) => d !== undefined,
+    ),
+  );
+  const endMonth = max(
+    [new Date(today.getFullYear() + 10, 11), selected, minDate].filter(
+      (d) => d !== undefined,
+    ),
+  );
   // ponytail: "today" is the render clock, so a server/browser year boundary could differ for a moment on Dec 31.
   const display = value
     ? formatDateShort(value, toDateOnly(new Date()))
@@ -110,8 +121,8 @@ export function DatePicker({
           selected={selected}
           defaultMonth={selected ?? minDate}
           captionLayout="dropdown"
-          startMonth={minDate ?? new Date(today.getFullYear() - 10, 0)}
-          endMonth={new Date(today.getFullYear() + 10, 11)}
+          startMonth={startMonth}
+          endMonth={endMonth}
           disabled={minDate && { before: minDate }}
           onSelect={(date: Date) => commit(toDateOnly(date))}
           components={{ Chevron }}
