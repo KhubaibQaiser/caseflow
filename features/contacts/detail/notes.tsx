@@ -1,19 +1,17 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 import { useEffect, useId, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
 import { Can, usePermission } from '@/lib/auth/permissions-context';
+import { markReturn } from '@/lib/auth/return-marker';
 import type { Note } from '@/lib/contracts/contact';
 import { ROLE_LABEL } from '@/lib/contracts/permissions';
 import type { Result } from '@/lib/contracts/result';
-import {
-  NOTE_MAX_CHARS,
-  richPlainText,
-  type RichDoc,
-} from '@/lib/contracts/rich-text-core';
+import { NOTE_MAX_CHARS, type RichDoc } from '@/lib/contracts/rich-text-core';
 import { formatTimestamp, formatTimestampFull } from '@/lib/dates/labels';
 
 import { attempt, useSessionExpired } from './action-result';
@@ -24,20 +22,11 @@ import { RichText } from './rich-text';
 const COUNTER_FROM = Math.floor(NOTE_MAX_CHARS * 0.8) + 1;
 const DRAFT_KEY = 'caseflowNoteDraft';
 
-// Browser-only and pure, so the lazy initial state survives StrictMode's double call.
-// The value is only used as the editor's starting content, which drops anything its schema lacks.
-function readDraft(): NoteDraft | null {
+// Browser-only and pure, so the lazy initial state survives StrictMode's double call. It is only a
+// candidate: the editor chunk checks it against the note schema (Zod stays out of this bundle).
+function readDraft(): unknown {
   if (typeof window === 'undefined') return null;
-  const raw: unknown = window.history.state?.[DRAFT_KEY];
-  if (typeof raw !== 'object' || raw === null) return null;
-  if (!('type' in raw) || raw.type !== 'doc') return null;
-  const doc = raw as RichDoc;
-  try {
-    const text = richPlainText(doc).trim();
-    return text ? { doc, text } : null;
-  } catch {
-    return null;
-  }
+  return window.history.state?.[DRAFT_KEY] ?? null;
 }
 
 // Tiptap is large and the composer is not needed for first paint, so it loads after hydration.
@@ -80,7 +69,7 @@ export function Notes({
   tz: string;
 }) {
   const [restored] = useState(readDraft);
-  const [draft, setDraft] = useState<NoteDraft | null>(restored);
+  const [draft, setDraft] = useState<NoteDraft | null>(null);
   const [pending, setPending] = useState(false);
   const [failure, setFailure] = useState<Failure | null>(null);
   const [announce, setAnnounce] = useState('');
@@ -93,10 +82,11 @@ export function Notes({
   const counterId = useId();
   const canWrite = usePermission('notes.write');
   const expired = useSessionExpired();
+  const pathname = usePathname();
 
   // Back from sign-in after a session expiry: the history entry still carries the note.
   useEffect(() => {
-    if (!readDraft()) return;
+    if (readDraft() === null) return;
     const rest = Object.fromEntries(
       Object.entries(window.history.state).filter(([k]) => k !== DRAFT_KEY),
     );
@@ -134,6 +124,7 @@ export function Notes({
         { ...window.history.state, [DRAFT_KEY]: draft.doc },
         '',
       );
+      markReturn(pathname); // tells /login that Back leads to this draft
       expired();
     } else if (code === 'forbidden') {
       setFailure({
@@ -169,9 +160,10 @@ export function Notes({
             }
             invalid={failure !== null}
             readOnly={pending}
-            initialDoc={restored?.doc}
+            restored={restored}
             onChange={(d) => {
               setDraft(d);
+              setFailure(null); // editing again retires the last error
               // Typing retires the message; the editor's own clear after a save must not.
               if (d.text) setAnnounce('');
             }}

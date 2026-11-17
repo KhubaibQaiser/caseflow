@@ -9,7 +9,14 @@ import {
 } from '@tiptap/react';
 import { Plugin } from '@tiptap/pm/state';
 import StarterKit from '@tiptap/starter-kit';
-import { useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
+import {
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { FormEvent, Ref } from 'react';
 import Bold from 'lucide-react/icons/bold';
 import Italic from 'lucide-react/icons/italic';
@@ -22,6 +29,7 @@ import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
 import { Input, controlClass } from '@/components/ui/input';
 import { Tooltip } from '@/components/ui/tooltip';
+import { RichDocSchema } from '@/lib/contracts/rich-text';
 import {
   NOTE_MAX_CHARS,
   isAllowedHref,
@@ -143,7 +151,8 @@ type NoteEditorProps = {
   describedBy?: string;
   invalid?: boolean;
   readOnly?: boolean;
-  initialDoc?: RichDoc;
+  /** A draft saved before sign-in. Untrusted: it is checked against the note schema here. */
+  restored?: unknown;
   onChange(draft: NoteDraft): void;
   /** Cmd or Ctrl+Enter. */
   onSubmit(): void;
@@ -158,7 +167,7 @@ export default function NoteEditor({
   describedBy,
   invalid,
   readOnly = false,
-  initialDoc,
+  restored,
   onChange,
   onSubmit,
   handle,
@@ -168,6 +177,10 @@ export default function NoteEditor({
   useEffect(() => {
     latest.current = { onChange, onSubmit };
   });
+  const initialDoc = useMemo(() => {
+    const p = RichDocSchema.safeParse(restored);
+    return p.success ? p.data : undefined;
+  }, [restored]);
   const [linkOpen, setLinkOpen] = useState(false);
   const linkRef = useRef<() => void>(() => {});
   const toolbarId = useId();
@@ -214,8 +227,19 @@ export default function NoteEditor({
   });
 
   useEffect(() => {
-    editor?.setEditable(!readOnly);
+    editor?.setEditable(!readOnly, false); // not an edit: do not announce it
   }, [editor, readOnly]);
+
+  // Tiptap does not announce its starting content; tell the composer about a restored draft once.
+  const announced = useRef(false);
+  useEffect(() => {
+    if (!editor || !initialDoc || announced.current) return;
+    announced.current = true;
+    latest.current.onChange({
+      doc: initialDoc,
+      text: richPlainText(initialDoc).trim(),
+    });
+  }, [editor, initialDoc]);
 
   // aria-invalid and aria-describedby ride on the contenteditable itself.
   useEffect(() => {

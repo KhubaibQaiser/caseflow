@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Note } from '@/lib/contracts/contact';
+import { clearReturn, hasReturn } from '@/lib/auth/return-marker';
 import { fail, ok } from '@/lib/contracts/result';
 import { docFromText } from '@/lib/contracts/rich-text';
 
@@ -176,6 +177,9 @@ describe('Notes composer', () => {
     expect(window.history.state?.caseflowNoteDraft).toMatchObject({
       type: 'doc',
     });
+    // /login learns that Back leads to this draft.
+    expect(hasReturn('/contacts/c-00001')).toBe(true);
+    clearReturn();
     window.history.replaceState(null, '');
   });
 

@@ -16,6 +16,7 @@ import {
   type Filters,
   type ListQuery,
 } from '@/lib/contracts/list-query';
+import { RichDocSchema, docFromText } from '@/lib/contracts/rich-text';
 import { todayIn } from '@/lib/dates/date-only';
 import { urgencyOf } from '@/lib/dates/urgency';
 import { getRequestTimeZone } from '@/lib/dates/server';
@@ -204,7 +205,11 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
     notes: c.notes.map((n) => ({
       id: n.id,
       body: n.body,
-      bodyJson: n.body_json,
+      // One stored note that fails the allowlist (the database only checks it is an object) must not
+      // make the whole contact unopenable: show its plain-text mirror instead.
+      bodyJson: RichDocSchema.safeParse(n.body_json).success
+        ? n.body_json
+        : docFromText(n.body),
       createdAt: n.created_at,
       author: { name: n.author.display_name, role: n.author.role },
     })),

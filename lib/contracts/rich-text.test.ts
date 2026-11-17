@@ -254,7 +254,10 @@ describe('parseRichNote survives hostile input', () => {
   });
 
   it('refuses a document with an enormous number of nodes without walking it all', () => {
-    const wide = doc(...Array.from({ length: 200_000 }, () => p(text('x'))));
+    const wide = {
+      type: 'doc',
+      content: Array.from({ length: 200_000 }, () => p(text('x'))),
+    };
     expect(parseRichNote(wide).ok).toBe(false);
   });
 

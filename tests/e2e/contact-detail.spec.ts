@@ -10,6 +10,7 @@ import { followUpView } from '@/lib/dates/labels';
 import { urgencyOf } from '@/lib/dates/urgency';
 
 import { fixtureRows } from './fixture-rows';
+import { storage } from './helpers';
 
 // The page reads the fake data layer and a fake viewer until T22. The fixtures are pure and
 // dated from "today", so the spec rebuilds the same rows the server renders (the tz cookie is UTC).
@@ -23,15 +24,9 @@ const withNotes = rows.find(
 )!;
 const noNotes = rows.find((r) => idNumber(r) % 2 === 1 && r.email)!;
 
-async function setup(
-  context: BrowserContext,
-  baseURL: string | undefined,
-  role: 'admin' | 'viewer' = 'admin',
-) {
-  await context.addCookies([
-    { name: 'fake-role', value: role, url: baseURL! },
-    { name: 'tz', value: 'UTC', url: baseURL! },
-  ]);
+// Auth is the saved Admin session (global-setup); the tz cookie keeps "today" equal to the fixtures'.
+async function setup(context: BrowserContext, baseURL: string | undefined) {
+  await context.addCookies([{ name: 'tz', value: 'UTC', url: baseURL! }]);
 }
 
 // Axe samples colours as they are drawn, so let pop-in and fade animations finish first.
@@ -375,35 +370,39 @@ test('keyboard: Enter opens the move menu on its first item', async ({
   await expect(page.getByRole('button', { name: 'Move to…' })).toBeFocused();
 });
 
-test('a viewer reads everything and every write control says why it is off', async ({
-  page,
-  context,
-  baseURL,
-}) => {
-  await setup(context, baseURL, 'viewer');
-  await page.goto(`/contacts/${withNotes.id}`);
-  const main = page.getByRole('main');
+test.describe('as a viewer', () => {
+  test.use({ storageState: storage.viewer });
 
-  await expect(
-    main.getByText("Viewers can read notes but can't add them."),
-  ).toBeVisible();
-  await expect(page.getByRole('textbox')).toHaveCount(0);
-  await expect(main.getByRole('article')).toHaveCount(2);
-  for (const name of ['Move to…', 'Edit', 'Reschedule'])
-    await expect(main.getByRole('button', { name })).toHaveAttribute(
-      'aria-disabled',
-      'true',
+  test('a viewer reads everything and every write control says why it is off', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await setup(context, baseURL);
+    await page.goto(`/contacts/${withNotes.id}`);
+    const main = page.getByRole('main');
+
+    await expect(
+      main.getByText("Viewers can read notes but can't add them."),
+    ).toBeVisible();
+    await expect(page.getByRole('textbox')).toHaveCount(0);
+    await expect(main.getByRole('article')).toHaveCount(2);
+    for (const name of ['Move to…', 'Edit', 'Reschedule'])
+      await expect(main.getByRole('button', { name })).toHaveAttribute(
+        'aria-disabled',
+        'true',
+      );
+
+    // The tooltip's code loads after hydration; focusing before it lands would hand focus to a remounted button.
+    await page.waitForLoadState('networkidle');
+    await main.getByRole('button', { name: 'Move to…' }).focus();
+    await expect(page.getByRole('tooltip')).toHaveText(
+      "Viewers can't edit contacts. Ask an admin.",
     );
-
-  // The tooltip's code loads after hydration; focusing before it lands would hand focus to a remounted button.
-  await page.waitForLoadState('networkidle');
-  await main.getByRole('button', { name: 'Move to…' }).focus();
-  await expect(page.getByRole('tooltip')).toHaveText(
-    "Viewers can't edit contacts. Ask an admin.",
-  );
-  await page.keyboard.press('Enter');
-  await expect(page.getByRole('menu')).toHaveCount(0);
-  expect((await axe(page)).violations).toEqual([]);
+    await page.keyboard.press('Enter');
+    await expect(page.getByRole('menu')).toHaveCount(0);
+    expect((await axe(page)).violations).toEqual([]);
+  });
 });
 
 test('an unknown contact shows the not-found screen with a way back', async ({

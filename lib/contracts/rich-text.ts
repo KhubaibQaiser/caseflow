@@ -139,20 +139,47 @@ export const RichDocSchema: z.ZodType<RichDoc, unknown> = z
     return nodes <= MAX_NODES && depth <= MAX_LIST_DEPTH;
   }, 'Too large or too deeply nested.');
 
+// A cheap, non-recursive look at the raw value before Zod sees it: Zod's lazy list parser recurses,
+// so thousands of nested levels would overflow the stack before any depth rule ran.
+const MAX_JSON_DEPTH = 64;
+const MAX_JSON_NODES = 5_000;
+
+function withinLimits(raw: unknown): boolean {
+  const stack: { value: unknown; depth: number }[] = [{ value: raw, depth: 1 }];
+  let seen = 0;
+  while (stack.length > 0) {
+    const { value, depth } = stack.pop()!;
+    if (typeof value !== 'object' || value === null) continue;
+    if (depth > MAX_JSON_DEPTH || ++seen > MAX_JSON_NODES) return false;
+    for (const child of Object.values(value))
+      stack.push({ value: child, depth: depth + 1 });
+  }
+  return true;
+}
+
 export type RichNoteResult =
   { ok: true; doc: RichDoc; text: string } | { ok: false; message: string };
 
-/** Validates a note from the browser and derives the plain text stored beside it. Messages never echo the input. */
+const NOT_ALLOWED: RichNoteResult = {
+  ok: false,
+  message: "That formatting isn't allowed.",
+};
+
+/** Validates a note from the browser and derives the plain text stored beside it. Messages never echo the input; nothing thrown escapes. */
 export function parseRichNote(raw: unknown): RichNoteResult {
-  const p = RichDocSchema.safeParse(raw);
-  if (!p.success)
-    return { ok: false, message: "That formatting isn't allowed." };
-  const text = richPlainText(p.data).trim();
-  if (text === '') return { ok: false, message: 'Write a note.' };
-  if (text.length > NOTE_MAX_CHARS)
-    return {
-      ok: false,
-      message: `Note must be ${NOTE_MAX_CHARS} characters or fewer.`,
-    };
-  return { ok: true, doc: p.data, text };
+  try {
+    if (!withinLimits(raw)) return NOT_ALLOWED;
+    const p = RichDocSchema.safeParse(raw);
+    if (!p.success) return NOT_ALLOWED;
+    const text = richPlainText(p.data).trim();
+    if (text === '') return { ok: false, message: 'Write a note.' };
+    if (text.length > NOTE_MAX_CHARS)
+      return {
+        ok: false,
+        message: `Note must be ${NOTE_MAX_CHARS} characters or fewer.`,
+      };
+    return { ok: true, doc: p.data, text };
+  } catch {
+    return NOT_ALLOWED;
+  }
 }
