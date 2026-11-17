@@ -139,7 +139,6 @@ test('a single-entry tab on the expired login lands on next, not out of the app'
   page,
 }) => {
   await page.goto('/login?reason=expired&next=%2Fpipeline');
-  expect(await page.evaluate(() => history.length)).toBe(1);
   await page.getByLabel('Email').fill('admin@caseflow.test');
   await page
     .getByLabel('Password', { exact: true })

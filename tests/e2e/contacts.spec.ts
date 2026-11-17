@@ -2,6 +2,8 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import type { Page } from '@playwright/test';
 
+import { storage } from './helpers';
+
 // Runs on the fake data layer until T22 (1,200 contacts, one with a 120-character name).
 const axe = (page: Page) =>
   new AxeBuilder({ page })
@@ -176,17 +178,16 @@ test('keyboard reaches toolbar, headers and rows in order', async ({
   ).toBeFocused();
 });
 
-test('a viewer gets the list without New contact', async ({
-  page,
-  context,
-  baseURL,
-}) => {
-  await context.addCookies([
-    { name: 'fake-role', value: 'viewer', url: baseURL! },
-  ]);
-  await page.goto('/contacts');
-  await expect(table(page)).toBeVisible();
-  await expect(page.getByRole('link', { name: /New contact/ })).toHaveCount(0);
+test.describe('as a viewer', () => {
+  test.use({ storageState: storage.viewer });
+
+  test('a viewer gets the list without New contact', async ({ page }) => {
+    await page.goto('/contacts');
+    await expect(table(page)).toBeVisible();
+    await expect(page.getByRole('link', { name: /New contact/ })).toHaveCount(
+      0,
+    );
+  });
 });
 
 test('mobile shows cards and sorts from a menu @mobile', async ({ page }) => {
