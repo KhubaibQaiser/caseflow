@@ -13,8 +13,8 @@ import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 
+import { PhoneLink } from '@/components/ui/phone-link';
 import { StatusPill, UrgencyPill } from '@/components/ui/pill';
-import { formatPhoneLite } from '@/utils/format-phone';
 import { cn } from '@/utils/cn';
 
 import {
@@ -81,7 +81,7 @@ const columns = helper.columns([
     enableSorting: false,
     cell: ({ getValue }) => {
       const phone = getValue();
-      return phone ? formatPhoneLite(phone) : muted('No phone');
+      return phone ? <PhoneLink phone={phone} /> : muted('No phone');
     },
   }),
   helper.accessor('email', {
@@ -91,9 +91,13 @@ const columns = helper.columns([
     cell: ({ getValue }) => {
       const email = getValue();
       return email ? (
-        <span title={email} className="text-ink-2 block max-w-45 truncate">
+        <a
+          href={`mailto:${email}`}
+          title={email}
+          className="text-ink-2 hover:text-ink block max-w-45 truncate underline-offset-3 hover:underline"
+        >
           {email}
-        </span>
+        </a>
       ) : (
         muted('No email')
       );

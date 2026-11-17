@@ -42,6 +42,27 @@ describe('ContactsTable', () => {
     expect(all[1]).toHaveAttribute('aria-rowindex', '252');
   });
 
+  it('links phone and email to call and mail, and leaves blanks as text', () => {
+    render(
+      table({
+        rows: [
+          row(0, { phone: '+15125550148', email: 'm@example.com' }),
+          row(1, { phone: null, email: null }),
+        ],
+        matching: 2,
+      }),
+    );
+    expect(
+      screen.getByRole('link', { name: '(512) 555-0148' }),
+    ).toHaveAttribute('href', 'tel:+15125550148');
+    expect(screen.getByRole('link', { name: 'm@example.com' })).toHaveAttribute(
+      'href',
+      'mailto:m@example.com',
+    );
+    expect(screen.getByText('No phone').closest('a')).toBeNull();
+    expect(screen.getByText('No email').closest('a')).toBeNull();
+  });
+
   it('sort header reflects aria-sort and toggles', async () => {
     const user = userEvent.setup();
     const onSort = vi.fn();

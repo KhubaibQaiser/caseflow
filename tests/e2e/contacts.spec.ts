@@ -18,6 +18,8 @@ const axe = async (page: Page) => {
 // Scoped to main: while the page streams in, React parks a hidden copy outside it (role queries skip it, text queries don't).
 const main = (page: Page) => page.getByRole('main');
 const table = (page: Page) => page.getByRole('table');
+// Rows also link phone (tel:) and email (mailto:); the name is the one link to the contact.
+const nameLinks = (page: Page) => table(page).locator('a[href^="/contacts/"]');
 // The URL moves first; the old rows stay (aria-busy, full contrast) until the new ones arrive.
 const settled = (page: Page) =>
   expect(main(page).locator('[aria-busy="true"]')).toHaveCount(0);
@@ -129,7 +131,7 @@ test('rapid typing shows results for the final query and resets the page', async
     .pressSequentially('ahme', { delay: 40 });
   await expect(page).toHaveURL(/\/contacts\?q=ahme$/);
   await settled(page);
-  const names = await table(page).getByRole('link').allTextContents();
+  const names = await nameLinks(page).allTextContents();
   expect(names.length).toBeGreaterThan(0);
   for (const n of names) expect(n.toLowerCase()).toContain('ahme');
 });
@@ -205,7 +207,7 @@ test('long names truncate with a tooltip and never widen the table', async ({
   const token = `LongName${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
   await newContact({ name: token + 'x'.repeat(120 - token.length) });
   await page.goto(`/contacts?q=${token}`);
-  const link = table(page).getByRole('link');
+  const link = nameLinks(page);
   await expect(link).toHaveCount(1);
   const name = (await link.textContent())!;
   expect(name).toHaveLength(120);
@@ -257,7 +259,7 @@ test('keyboard reaches toolbar, headers and rows in order', async ({
   await expect(page.getByRole('button', { name: 'Waiting' })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(
-    table(page).getByRole('row').nth(1).getByRole('link'),
+    table(page).getByRole('row').nth(1).locator('a[href^="/contacts/"]'),
   ).toBeFocused();
 });
 
@@ -443,7 +445,7 @@ test('a slow earlier response never replaces the latest results', async ({
   await page.waitForTimeout(3000); // the held ahmed response has now arrived
   await settled(page);
   await expect(page).toHaveURL(/q=okafor/);
-  const names = await table(page).getByRole('link').allTextContents();
+  const names = await nameLinks(page).allTextContents();
   expect(names.length).toBeGreaterThan(0);
   for (const n of names) expect(n.toLowerCase()).toContain('okafor');
 });
