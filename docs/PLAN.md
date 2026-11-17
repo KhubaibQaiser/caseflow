@@ -709,7 +709,7 @@ it('viewer sees no New contact button', () => {})
   - `MoveMenu` (shipped as its own PR, #24, so detail and pipeline could run in parallel) `{current: Status; onMove(s): Promise<Result<ContactRow>>; disabledReason?: string}`. It's a DropdownMenu listing the other two statuses as pills. Reused by the pipeline.
   - `Notes` `{notes: Note[]; onAdd(body): Promise<Result<Note>>}`:
     - The composer's Save is disabled while the text is empty or a save is pending. Cmd/Ctrl+Enter submits.
-    - **On failure the text is kept**, with an inline error and Retry. On success the field clears and the new note is announced.
+    - **On failure the text is kept**, with an inline error: "Note not saved. Check your connection and save again." The one Save button retries the kept draft; there is no separate Retry (Khubaib, 2026-11-17). On success the field clears and the new note is announced.
     - For viewers, the composer is replaced with "Viewers can read notes but can't add them."
   - `Timeline` `{activities}`. Copy per type: "{actor} created this contact" / "moved this to {to}" / "set follow-up to {date}" / "added a note" / "edited {fields}". It renders no copy for `deleted` or `restored` (unreachable in v1). Each uses a `<time dateTime>` with the full timestamp in a title.
   - `FollowUpCard`: an urgency pill, the date, and **Reschedule** (a DatePicker in a Popover, saving on select).
@@ -738,7 +738,7 @@ it('viewer sees no New contact button', () => {})
     - Fieldsets: Person, Matter, Intake (layout from `screens-v1.html`).
     - On submit errors, `ErrorSummary` takes focus and links to each field; `contactMethod` errors render under the email/phone pair.
     - **Server `fieldErrors` are applied with `setError`.**
-    - A `conflict` result shows `ConflictBanner` with "Reload latest" (`router.refresh()` plus a form reset to the server values) and "Overwrite" (resubmit with the new `updatedAt`).
+    - A `conflict` result shows `ConflictBanner` with "Reload latest" (`router.refresh()` plus a form reset to the server values) only. ~~"Overwrite" (resubmit with the new `updatedAt`)~~ is superseded: Reload latest only (Khubaib, 2026-11-17). The save stamp stays frozen until reload.
     - Other failures show "Save failed. Your changes are still here." with Retry, keeping the input.
     - Success navigates to `/contacts/{id}` and shows the toast "Contact saved".
   - `useUnsavedGuard(isDirty)`: a `beforeunload` handler. Cancel asks for confirmation with a Dialog ("Discard changes?") when the form is dirty.
@@ -872,7 +872,7 @@ Shipped:
 **Files:**
 - Modify: `lib/data/index.ts` (re-export from `./supabase`); the pages and layouts that pass the T10 actions as props
 - Delete: `lib/data/fake.ts` (keep `fixtures.ts` only for component tests)
-- Create: `tests/e2e/{contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts`. T22a already shipped `auth.spec.ts`, `helpers.ts` (`signInAs`, storage state) and the global-setup storage state; reuse them.
+- Create: `tests/e2e/{detail,viewer,mobile,a11y,smoke}.spec.ts`. Extend the existing `contacts.spec.ts`, `contact-form.spec.ts` and `pipeline.spec.ts`. T22a already shipped `auth.spec.ts`, `helpers.ts` (`signInAs`, storage state) and the global-setup storage state; reuse them.
 
 - [ ] **Step 1: Write the failing e2e specs** (local Supabase, seeded):
   - **`contacts.spec.ts`:**
