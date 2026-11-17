@@ -203,6 +203,24 @@ describe('Toolbar search', () => {
     await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
   });
 
+  it('the clear button empties the search and returns focus to it', async () => {
+    const user = userEvent.setup();
+    const onUrlUpdate = vi.fn();
+    renderToolbar({ searchParams: '?q=ortega', onUrlUpdate });
+    const box = screen.getByRole('searchbox');
+
+    await user.click(screen.getByRole('button', { name: 'Clear search' }));
+    await waitFor(() => expect(box).toHaveValue(''));
+    expect(box).toHaveFocus();
+    await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
+    expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull();
+  });
+
+  it('offers no clear button while the search is empty', () => {
+    renderToolbar({});
+    expect(screen.queryByRole('button', { name: 'Clear search' })).toBeNull();
+  });
+
   it('keeps a whitespace-only search out of the URL', async () => {
     const user = userEvent.setup();
     const onUrlUpdate = vi.fn();

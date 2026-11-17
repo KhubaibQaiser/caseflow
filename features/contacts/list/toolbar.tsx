@@ -2,6 +2,7 @@
 
 import ListFilter from 'lucide-react/icons/list-filter';
 import Search from 'lucide-react/icons/search';
+import X from 'lucide-react/icons/x';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 
@@ -46,6 +47,7 @@ export function Toolbar({
   // separately, so q and the page reset could land apart (an extra server render with a stale page).
   const [text, setText] = useState(query.q ?? '');
   const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const searchBox = useRef<HTMLInputElement>(null);
   // What this box last wrote (or started from): a q that differs came from outside the box.
   const lastSent = useRef(query.q ?? '');
   useEffect(() => () => clearTimeout(timer.current), []);
@@ -76,6 +78,7 @@ export function Toolbar({
           className="text-ink-2 pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2"
         />
         <Input
+          ref={searchBox}
           id={SEARCH_ID}
           type="search"
           autoComplete="off"
@@ -95,8 +98,22 @@ export function Toolbar({
             setText('');
             commit('');
           }}
-          className="h-10 pr-2.5 pl-8 md:h-8.5 [&::-webkit-search-cancel-button]:appearance-none"
+          className={`h-10 pl-8 md:h-8.5 [&::-webkit-search-cancel-button]:appearance-none ${text ? 'pr-9' : 'pr-2.5'}`}
         />
+        {text && (
+          <button
+            type="button"
+            aria-label="Clear search"
+            onClick={() => {
+              setText('');
+              commit('');
+              searchBox.current?.focus();
+            }}
+            className="text-ink-2 hover:bg-track hover:text-ink absolute top-1/2 right-1.5 grid size-6 -translate-y-1/2 cursor-pointer place-items-center rounded-full transition-colors duration-150"
+          >
+            <X aria-hidden className="size-3.5" />
+          </button>
+        )}
       </div>
       <div className="flex gap-2">
         <Button
