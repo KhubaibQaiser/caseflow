@@ -73,6 +73,7 @@ Full records in [`docs/adr/`](docs/adr/README.md). Detailed setup, deploy and se
 - Undo for moves.
 - Keyboard shortcuts and global search.
 - A CSP report endpoint.
+- Product analytics and real-user monitoring (Core Web Vitals per route), plus exception tracking and alerting, with Sentry or one tool such as PostHog covering both. Server Actions and error boundaries would report there.
 - More roles, sign-up and invites, password reset, MFA and SSO.
 - A staging project with PR previews, and a nightly demo reset.
 
