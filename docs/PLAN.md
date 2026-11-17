@@ -49,7 +49,7 @@ then in parallel worktrees:
   BE:  T5 → T6 → T7 → T8 → T9 → T10
   FE:  T11 → T12 → T12b → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
   OPS: T20 → T21
-then: T22a (auth go-live, done) → T22b (real data layer and e2e) → T22c (security headers) → T22d (concurrency, ADR-0011) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission) → T26 (hygiene audit, recommend only)
+then: T22a (auth go-live, done) → T22b (real data layer and e2e) → T22c (security headers) → T22d (concurrency, ADR-0011: deferred past v1) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission) → T26 (hygiene audit, recommend only)
 stretch: S1 dark mode · S2 Attorney role + staging previews
 ```
 
@@ -913,6 +913,8 @@ Shipped:
 - [ ] **Step 4: Commit** `"Add nonce CSP and static security headers"`. Merge with a merge commit.
 
 ### Task 22d: Concurrency per ADR-0011 (after T22b, its own PR)
+
+**Deferred past v1** (Khubaib, 2026-11-17). ADR-0011 is accepted as the design; v1 ships version checks on contact edits only.
 
 Needs ADR-0011 accepted by Khubaib. Read it first. Spec: §7.5, §8.9, §8.14.
 

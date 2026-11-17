@@ -70,7 +70,7 @@ The demo is tuned for a few reviewers at once. Here is what holds today and what
 - **Search is a simple match,** which is fine at thousands of contacts but would want a trigram or full-text index at hundreds of thousands.
 - **Free-tier infrastructure:** Supabase free tier and Vercel Hobby, with no read replicas or connection pooling tuning.
 
-**How it would grow** ([ADR-0011](adr/0011-concurrent-edits-and-change-feed.md), proposed)
+**How it would grow** ([ADR-0011](adr/0011-concurrent-edits-and-change-feed.md), accepted, not built in v1)
 
 1. Version-check moves the same way edits are checked, with a clear "moved by someone else" message.
 2. A change feed: a trigger writes each change to a log, Postgres `LISTEN` picks it up, and the server streams it to open screens over Server-Sent Events, so lists and boards update live.
@@ -80,7 +80,7 @@ The demo is tuned for a few reviewers at once. Here is what holds today and what
 ## 7. Future enhancements
 
 1. Drag and drop on desktop, keyboard shortcuts (j/k, quick status change) and a command palette.
-2. Live collaboration: version-checked moves and a Postgres `LISTEN` change feed streamed over SSE, so open screens update without refresh ([ADR-0011](adr/0011-concurrent-edits-and-change-feed.md), proposed).
+2. Live collaboration: version-checked moves and a Postgres `LISTEN` change feed streamed over SSE, so open screens update without refresh ([ADR-0011](adr/0011-concurrent-edits-and-change-feed.md), accepted, not built in v1).
 3. Undo for moves, global search across notes.
 4. Invites, password reset, more granular roles.
 5. Error tracking, real-user monitoring and product analytics; PR preview environments with a staging database.

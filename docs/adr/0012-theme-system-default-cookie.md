@@ -6,7 +6,7 @@ Offer System, Light and Dark, default to System, and remember the choice in a pe
 
 ## Status
 
-`proposed`
+`accepted` (2026-11-17). Shipped.
 
 ## Date
 

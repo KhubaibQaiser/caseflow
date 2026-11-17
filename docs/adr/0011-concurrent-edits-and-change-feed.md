@@ -6,7 +6,7 @@ Check a version on every write, and stream changes to every open screen from an 
 
 ## Status
 
-`proposed`
+`accepted` (2026-11-17). Implementation is deferred past v1: v1 version-checks contact edits only; moves and reschedules are last-write-wins, and screens refresh on navigation. This ADR is the design for the next step.
 
 ## Date
 
