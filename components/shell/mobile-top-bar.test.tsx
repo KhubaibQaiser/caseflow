@@ -6,7 +6,7 @@ import { PermissionsProvider } from '@/lib/auth/permissions-context';
 import { MobileTopBar } from './mobile-top-bar';
 
 describe('MobileTopBar', () => {
-  it('is the brand mark only, for an admin too', () => {
+  it('is the brand mark and the theme button, no links, for an admin too', () => {
     render(
       <PermissionsProvider
         viewer={{
@@ -20,5 +20,6 @@ describe('MobileTopBar', () => {
     );
     expect(screen.getByText('Caseflow')).toBeVisible();
     expect(screen.queryByRole('link')).toBeNull();
+    expect(screen.getByRole('button', { name: /^Theme/ })).toBeInTheDocument();
   });
 });

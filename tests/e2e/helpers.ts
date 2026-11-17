@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 
 export type Role = 'admin' | 'viewer';
 
@@ -56,4 +56,11 @@ export async function settleAnimations(page: Page) {
     undefined,
     { timeout: 5_000 },
   );
+}
+
+/** Opens the theme menu once its lazy code has loaded (before that the button is a stand-in). */
+export async function openThemeMenu(page: Page) {
+  const button = page.getByRole('button', { name: /^Theme/ });
+  await expect(button).toHaveAttribute('aria-haspopup', 'menu');
+  await button.click();
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { signInAction } from '@/features/auth/actions';
 import { LoginForm } from '@/features/auth/login-form';
 
@@ -13,8 +14,12 @@ export default async function LoginPage({ searchParams }: PageProps<'/login'>) {
   return (
     <main
       id="main"
-      className="bg-canvas flex min-h-dvh flex-1 items-center justify-center p-4"
+      className="bg-canvas relative flex min-h-dvh flex-1 items-center justify-center p-4"
     >
+      {/* First in DOM order, but the email field still takes focus on load. */}
+      <div className="absolute end-3 top-3">
+        <ThemeToggle />
+      </div>
       <LoginForm
         action={signInAction}
         reason={first(params.reason) === 'expired' ? 'expired' : undefined}
