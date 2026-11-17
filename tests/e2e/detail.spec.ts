@@ -207,7 +207,9 @@ test('adding a note clears the composer, lists it first and announces it', async
   await expect(page.getByRole('article')).toHaveCount(3);
   // The same note leads the Activity timeline, then survives a reload (it was really saved).
   const activity = page.getByRole('region', { name: 'Activity' });
-  await expect(activity.getByText('Alex Morgan added a note')).toBeVisible();
+  await expect(
+    activity.getByText('Alex Morgan added a note').first(),
+  ).toBeVisible();
   await page.reload();
   await expect(page.getByRole('article')).toHaveCount(3);
   await expect(

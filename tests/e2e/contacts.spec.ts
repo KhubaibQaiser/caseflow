@@ -165,7 +165,11 @@ test('a stale page clamps to the last page and bad values are ignored', async ({
 }) => {
   await page.goto('/contacts?page=999&status=foo');
   await expect(page).toHaveURL(/\/contacts\?page=1[01]$/);
-  await expect(page.locator('a[aria-current="page"]')).toHaveText(/^1[01]$/);
+  await expect(
+    page
+      .getByRole('navigation', { name: 'Pagination' })
+      .locator('[aria-current="page"]'),
+  ).toHaveText(/^1[01]$/);
   await expect(
     main(page).getByText(new RegExp(`^2,\\d{3}–${TOTAL} of ${TOTAL}$`)),
   ).toBeVisible();
@@ -383,7 +387,7 @@ test('a 100-character search never widens the page at 320px', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 320, height: 700 });
-  const q = 'x'.repeat(100);
+  const q = 'q'.repeat(100);
   await page.goto(`/contacts?q=${q}`);
   await expect(main(page).getByText(`Search: “${q}”`)).toBeVisible();
   expect(

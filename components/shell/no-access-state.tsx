@@ -5,7 +5,7 @@ import { ErrorState } from '@/components/ui/error-state';
 
 /**
  * Signed in, but no profile row (NoProfileError). Never sends the user to /login:
- * the proxy would bounce them straight back. The (app) layout renders this (T22).
+ * the proxy would bounce them straight back. The (app) layout renders this.
  */
 export function NoAccessState({
   signOut,

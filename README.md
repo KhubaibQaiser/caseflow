@@ -4,14 +4,15 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 
 ## Status
 
-- M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
+- M0 is done: scaffold, contracts, date helpers and design tokens.
+- The app runs on real data (T22b): every screen reads Supabase through `lib/data` and writes through the Server Actions. The fake data layer is gone.
 - App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
-- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22b. The filters panel is T15 (done).
-- FE: the pipeline board at `/pipeline` (T18), also on the fake data layer: optimistic Move to…, per-column paging, mobile tabs.
+- FE: the contacts list at `/contacts` (T14), on Supabase. The filters panel is T15 (done).
+- FE: the pipeline board at `/pipeline` (T18): optimistic Move to…, per-column paging, mobile tabs.
 - Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` (since T22a, PR #23). `/dev/auth` shows every state with canned results (404 in production).
 - Contact detail is done (T16): `/contacts/[id]` (`app/(app)/contacts/[id]`, `features/contacts/detail`). Breadcrumb, header (status, matter, "Enquired Nov 12 · waiting 4d", **Move to…**, **Edit**, a 44px **Call** button below 768px), Follow-up card (**Reschedule** saves on pick; Clear removes the date), Details, Notes and the Activity timeline. `loading.tsx` mirrors the layout, `error.tsx` retries with `retry()`, and `not-found.tsx` reads "This contact doesn't exist." with Back to contacts (it also serves `/contacts/[id]/edit`).
-- Next: T22b (real data layer and e2e), T22c (security headers), T22d (concurrency, ADR-0011), then T23-T26 (deploy, hardening, README, hygiene audit).
+- Next: T22c (security headers), T22d (concurrency, ADR-0011), then T23-T26 (deploy, hardening, README, hygiene audit).
 - Live URL: not deployed yet.
 
 ## Stack
@@ -43,7 +44,7 @@ Sign-in is enforced by default, so `pnpm dev` needs `supabase start`, the local 
 - `pnpm lint`: ESLint plus the colour-literal check
 - `pnpm test`: unit tests
 - `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
-- `pnpm e2e`: Playwright end-to-end tests. Needs the local stack seeded (`pnpm seed`) and `SUPABASE_*` and `SEED_*_PASSWORD` in the environment. Global setup signs in Admin and Viewer once (sessions saved under `tests/e2e/.auth/`); specs run as Admin, and opt in to `storage.viewer` or `storage.signedOut` from `tests/e2e/helpers.ts`. `E2E_PORT` moves the local server off 3000
+- `pnpm e2e`: Playwright end-to-end tests. Needs the local stack seeded (`pnpm seed`) and `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and `SEED_*_PASSWORD` in the environment (specs create their own contacts as Admin). `BASE_URL` points it at a deployment; `smoke.spec.ts` is the read-only check for that. Global setup signs in Admin and Viewer once (sessions saved under `tests/e2e/.auth/`); specs run as Admin, and opt in to `storage.viewer` or `storage.signedOut` from `tests/e2e/helpers.ts`. `E2E_PORT` moves the local server off 3000
 - `pnpm format`, `pnpm format:check`: Prettier
 - `pnpm seed`: create the role accounts and reset the firm data (see Seeding below)
 - `pnpm db:types`: regenerate Supabase types from the local stack
@@ -60,7 +61,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 - `lib/contracts`: Zod schemas and types shared by browser and server (contact, filters, list query, facets, permissions, results)
 - `lib/dates`: date-only helpers; dates cross the wire as `'YYYY-MM-DD'` strings
-- `lib/data`: the server-only data layer; a fake in-memory implementation for now, swapped for Supabase later
+- `lib/data`: the server-only data layer; Supabase RPCs and queries on the request-scoped client
 - `components/ui`: token-styled primitives (button, button link, field, inputs, choice groups, pills, chip, skeleton, empty and error states); forced-colours safe
   - `EmptyState` and `ErrorState` take `page` to become a whole page: the title is an h1 that takes focus on mount (`PageHeading`)
   - Overlays wrap Radix (dialog, sheet, popover, dropdown menu, tooltip); they animate on `data-state` and stand still under reduced motion
@@ -77,7 +78,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 - `utils/cn.ts`: class joiner built on tailwind-merge, taught our token names
 - `supabase/`: local stack config and migrations (RBAC tables, contacts, notes, activities, RLS, `has_permission`, query RPCs)
 - `app/(app)/[...missing]`: catches unknown URLs and calls `notFound()`, so the 404 renders in the `(app)` segment (inside the app shell once it exists); `app/not-found.tsx` is the standalone fallback
-- `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); `e2e/` holds Playwright specs, run against `pnpm build && pnpm start`. `contact-detail.spec.ts` answers the write Server Actions itself (writes need the database T22 wires up) and builds its expected rows from the same fixtures the fake layer renders, so T22 should swap the stubs for real saves
+- `tests/`: `integration/` holds the RBAC suite (needs `supabase start`); `e2e/` holds Playwright specs, run against `pnpm build && pnpm start` on a seeded local stack. Every save is a real round trip. `tests/e2e/data.ts` creates a contact per test (as the seeded Admin, through RLS) so specs never share rows; the only injected failure is a dropped connection on one Server Action. Run `supabase db reset` and `pnpm seed` first, and wait a few minutes after an integration run (local sign-in rate limit)
 
 ## CI
 
@@ -187,11 +188,11 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 
 ## Data layer, viewer and proxy
 
-- `lib/data/supabase.ts` has the same signatures as `lib/data/fake.ts`; T22b flips `lib/data/index.ts`. It runs on the request-scoped client, so RLS applies.
+- `lib/data/index.ts` re-exports `lib/data/supabase.ts`. It runs on the request-scoped client, so RLS applies.
 - RPC replies are snake_case. They are mapped to camelCase and parsed with the contract schemas. A bad row throws `DataError` (message only, no row data).
 - `getContact` returns `null` when the contact is missing or deleted. Notes and activities are newest first (ties by `id`); the timeline hides `deleted` and `restored`.
 - `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
-- `lib/auth/viewer.ts` is the entry point the app imports. It re-exports the real `lib/auth/viewer-supabase.ts` (the `fake-role` cookie viewer is gone).
+- `lib/auth/viewer.ts` is the entry point the app imports. It re-exports the real `lib/auth/viewer-supabase.ts`.
 - `getViewer()` verifies the JWT with `getClaims()`, then reads the role from `profiles`. `requirePermission` redirects when signed out and calls Next's `forbidden()` otherwise, which renders `app/(app)/forbidden.tsx` (`experimental.authInterrupts`). `assertPermission` returns a `Result` (`forbidden` or `unauthorized`) for Server Actions, so the form keeps what was typed.
 - Auth enforcement in `proxy.ts` is on by default and off only when `AUTH_ENFORCED=false` exactly (a missing variable, even on Vercel, keeps sign-in on). Nothing in CI, Playwright or the env example sets it; tooling that needs it off must opt out explicitly.
 - `proxy.ts` only checks sign-in: refreshes the session, sends anonymous requests to `/login?next=…` (plus `reason=expired` if an `sb-` cookie exists), and sends signed-in users from `/login` to `/contacts`. `/dev/*` is a 404 when `VERCEL_ENV=production`.
@@ -207,7 +208,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 
 ## Contact form (T17)
 
-- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`); T22b only swaps the data source.
+- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`).
 - The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 220 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
 - Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.

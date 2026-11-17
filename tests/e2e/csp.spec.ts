@@ -76,7 +76,7 @@ test('a contact edit form loads clean', async ({ page }) => {
       (as) =>
         as
           .map((a) => a.getAttribute('href') ?? '')
-          .find((h) => /^\/contacts\/c-[^/]+$/.test(h)) ?? '',
+          .find((h) => /^\/contacts\/[0-9a-f-]{36}$/.test(h)) ?? '',
     );
   expect(href).not.toBe('');
   await open(page, `${href}/edit`);
@@ -96,30 +96,9 @@ test('a contact detail page: the note editor, a link and a saved rich note are C
       (as) =>
         as
           .map((a) => a.getAttribute('href') ?? '')
-          .find((h) => /^\/contacts\/c-[^/]+$/.test(h)) ?? '',
+          .find((h) => /^\/contacts\/[0-9a-f-]{36}$/.test(h)) ?? '',
     );
   expect(href).not.toBe('');
-  // Writes need the real data layer (T22b); answer the Server Action with a saved note, keeping the reply's framing.
-  await page.route(`**${href}*`, async (route) => {
-    const req = route.request();
-    if (req.method() !== 'POST' || !req.headers()['next-action'])
-      return route.continue();
-    const [, doc] = JSON.parse(req.postData() ?? '[]') as [string, unknown];
-    const real = await route.fetch();
-    const head = (await real.text()).split('\n')[0];
-    const note = {
-      id: 'n-csp',
-      body: 'x',
-      bodyJson: doc,
-      createdAt: new Date().toISOString(),
-      author: { name: 'Alex Morgan', role: 'admin' },
-    };
-    await route.fulfill({
-      status: 200,
-      headers: { 'content-type': 'text/x-component' },
-      body: `${head}\n1:${JSON.stringify({ ok: true, data: note })}\n`,
-    });
-  });
   await open(page, href);
 
   const box = page.getByRole('textbox', { name: 'Add a note' });

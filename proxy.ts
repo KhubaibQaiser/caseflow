@@ -27,7 +27,7 @@ async function route(request: NextRequest) {
   )
     return NextResponse.rewrite(here('/__not-found'), { request, status: 404 });
 
-  // Until T22 nothing in the app signs in, so enforcing would lock everyone out.
+  // Off only for local work that skips sign-in (AUTH_ENFORCED=false).
   if (!authEnforced()) return NextResponse.next({ request });
 
   let response = NextResponse.next({ request });

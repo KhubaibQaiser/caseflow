@@ -227,7 +227,13 @@ test('@mobile one column at a time, chosen by tabs with counts', async ({
 test('@mobile a 120-character name never widens the page, in any column', async ({
   page,
 }) => {
-  await board(page, '/pipeline?q=Worthington');
+  const token = `Wth${Math.random().toString(36).slice(2, 8)}`;
+  for (const status of ['lead', 'active', 'closed'] as const)
+    await newContact({
+      name: token + status[0] + 'w'.repeat(119 - token.length),
+      status,
+    });
+  await board(page, `/pipeline?q=${token}`);
   const tabs = page.getByRole('radiogroup', { name: 'Status' });
   let seen = 0;
   for (const s of ['Lead', 'Active', 'Closed']) {
@@ -240,7 +246,7 @@ test('@mobile a 120-character name never widens the page, in any column', async 
       ),
     ).toBe(true);
   }
-  expect(seen).toBeGreaterThan(0);
+  expect(seen).toBe(3);
 });
 
 test('@mobile the Move menu stays clear of the sticky tab bar near the screen foot', async ({

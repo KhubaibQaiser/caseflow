@@ -1,6 +1,6 @@
 import 'server-only';
 
-// The app imports from here; the fake `fake-role` viewer is gone (T22a).
+// The app imports the viewer from here.
 export {
   assertPermission,
   getViewer,

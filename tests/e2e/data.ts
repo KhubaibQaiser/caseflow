@@ -60,9 +60,17 @@ export async function newContact(over: NewContact = {}) {
     .single();
   if (error) throw new Error(`newContact: ${error.message}`);
   for (const body of over.notes ?? []) {
-    const n = await db
-      .from('notes')
-      .insert({ contact_id: data.id, author_id: userId, body });
+    const n = await db.from('notes').insert({
+      contact_id: data.id,
+      author_id: userId,
+      body,
+      body_json: {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: body }] },
+        ],
+      },
+    });
     if (n.error) throw new Error(`newContact note: ${n.error.message}`);
   }
   return { id: data.id as string, fullName, email, phone };

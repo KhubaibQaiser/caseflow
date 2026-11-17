@@ -18,7 +18,9 @@ test('Edit and Move are aria-disabled with the reason, and the composer is repla
     const control = main.getByRole('button', { name });
     await expect(control).toHaveAttribute('aria-disabled', 'true');
     await control.focus();
-    await expect(page.getByRole('tooltip')).toContainText("Viewers can't");
+    await expect(page.getByRole('tooltip').last()).toContainText(
+      "Viewers can't",
+    );
   }
   await expect(
     main.getByText("Viewers can read notes but can't add them."),
