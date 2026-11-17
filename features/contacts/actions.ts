@@ -10,6 +10,7 @@ import {
 } from '@/lib/contracts/contact';
 import { STATUSES, type Status } from '@/lib/contracts/enums';
 import type { Permission } from '@/lib/contracts/permissions';
+import { parseRichNote } from '@/lib/contracts/rich-text';
 import { fail, ok, zodFieldErrors, type Result } from '@/lib/contracts/result';
 import { assertPermission } from '@/lib/auth/viewer-supabase';
 import {
@@ -26,11 +27,6 @@ import { createServerSupabase } from '@/lib/supabase/server';
 
 const Id = z.uuid();
 const Stamp = z.iso.datetime({ offset: true });
-const NoteBody = z
-  .string()
-  .trim()
-  .min(1, 'Write a note.')
-  .max(2000, 'Note must be 2000 characters or fewer.');
 const gone = () => fail('not_found', 'That contact no longer exists.');
 const invalid = (fieldErrors: Record<string, string>) =>
   fail('validation', 'Fix the highlighted fields.', { fieldErrors });
@@ -125,16 +121,21 @@ export async function rescheduleAction(
 
 export async function addNoteAction(
   contactId: string,
-  body: string,
+  raw: unknown,
 ): Promise<Result<Note>> {
   const c = await start('notes.write');
   if (!c.ok) return c;
   if (!Id.safeParse(contactId).success) return gone();
-  const b = NoteBody.safeParse(body);
-  if (!b.success)
-    return invalid({ body: zodFieldErrors(b.error).form ?? 'Invalid note.' });
+  // The allowlist (nodes, marks, attrs, link schemes) and the 2,000-character text cap live in one place.
+  const n = parseRichNote(raw);
+  if (!n.ok) return invalid({ body: n.message });
   return done(
-    await insertNote(c.data.db, contactId, b.data, c.data.viewer),
+    await insertNote(
+      c.data.db,
+      contactId,
+      { body: n.text, bodyJson: n.doc },
+      c.data.viewer,
+    ),
     contactId,
   );
 }

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { todayIn } from '@/lib/dates/date-only';
 import { ACTIVITY_TYPES, MATTER_TYPES, STATUSES } from '@/lib/contracts/enums';
+import { RichDocSchema, richPlainText } from '@/lib/contracts/rich-text';
 import { localConfig, resetData, serviceClient } from './setup';
 
 // Env passwords keep local logins stable after a run; the constants are throwaway fallbacks.
@@ -137,6 +138,24 @@ describe('seed', () => {
     expect(backwards).toBe(0);
     expect(new Set(rows.map((r) => r.updated_at)).size).toBeGreaterThan(2400);
     expect(rows.every((r) => r.updated_by !== null)).toBe(true);
+  });
+
+  it('seeds notes as valid Tiptap documents, some with lists and links, mirrored in body', async () => {
+    const rows = await all('notes', 'body, body_json');
+    expect(rows.length).toBeGreaterThan(1000);
+    let lists = 0;
+    let links = 0;
+    for (const r of rows) {
+      const p = RichDocSchema.safeParse(r.body_json);
+      expect(p.success).toBe(true);
+      if (!p.success) continue;
+      expect(richPlainText(p.data)).toBe(String(r.body));
+      const json = JSON.stringify(p.data);
+      if (/"(bullet|ordered)List"/.test(json)) lists++;
+      if (json.includes('"link"')) links++;
+    }
+    expect(lists).toBeGreaterThan(50);
+    expect(links).toBeGreaterThan(50);
   });
 
   it('seeds 0-3 notes per contact', async () => {

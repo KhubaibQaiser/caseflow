@@ -14,6 +14,7 @@ import {
   type Filters,
   type ListQuery,
 } from '@/lib/contracts/list-query';
+import { docFromText } from '@/lib/contracts/rich-text';
 import { addDaysDateOnly, todayIn } from '@/lib/dates/date-only';
 import { getRequestTimeZone } from '@/lib/dates/server';
 import { makeFixtureRows } from './fixtures';
@@ -245,12 +246,18 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
         {
           id: `${r.id}-n2`,
           body: 'Called back and confirmed the details.\nPrefers calls after 5pm.',
+          bodyJson: docFromText(
+            'Called back and confirmed the details.\nPrefers calls after 5pm.',
+          ),
           createdAt: at(r.createdAt, 180),
           author: { name: ACTOR, role: 'admin' as const },
         },
         {
           id: `${r.id}-n1`,
           body: 'Left voicemail. Asked them not to speak to the other side before we call back.',
+          bodyJson: docFromText(
+            'Left voicemail. Asked them not to speak to the other side before we call back.',
+          ),
           createdAt: at(r.createdAt, 30),
           author: { name: ACTOR, role: 'admin' as const },
         },

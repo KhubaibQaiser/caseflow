@@ -3,6 +3,7 @@ import type { ReactElement, ReactNode } from 'react';
 
 import { PermissionsProvider } from '@/lib/auth/permissions-context';
 import type { ContactDetail, Note } from '@/lib/contracts/contact';
+import { docFromText } from '@/lib/contracts/rich-text';
 import { ROLE_PERMISSIONS, type Role } from '@/lib/contracts/permissions';
 
 // A wrapper (not a nested element) so rerender() keeps the provider.
@@ -25,6 +26,7 @@ export function renderAs(role: Role, ui: ReactElement) {
 export const note = (over: Partial<Note> = {}): Note => ({
   id: 'n-1',
   body: 'Left voicemail.',
+  bodyJson: docFromText('Left voicemail.'),
   createdAt: '2026-11-13T16:12:00.000Z',
   author: { name: 'Alex Morgan', role: 'admin' },
   ...over,

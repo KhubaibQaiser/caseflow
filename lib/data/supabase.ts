@@ -146,6 +146,7 @@ const DetailRaw = z.object({
     z.object({
       id: z.string(),
       body: z.string(),
+      body_json: z.unknown(),
       created_at: z.string(),
       author: z.object({ display_name: z.string(), role: z.string() }),
     }),
@@ -172,7 +173,7 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
     .select(
       `id, full_name, email, phone, matter_type, referral_source, status,
        follow_up_on, summary, created_at, updated_at,
-       notes(id, body, created_at, author:profiles!notes_author_id_fkey(display_name, role)),
+       notes(id, body, body_json, created_at, author:profiles!notes_author_id_fkey(display_name, role)),
        activities(id, type, payload, created_at, actor:profiles!activities_actor_id_fkey(display_name))`,
     )
     .eq('id', id)
@@ -203,6 +204,7 @@ export async function getContact(id: string): Promise<ContactDetail | null> {
     notes: c.notes.map((n) => ({
       id: n.id,
       body: n.body,
+      bodyJson: n.body_json,
       createdAt: n.created_at,
       author: { name: n.author.display_name, role: n.author.role },
     })),

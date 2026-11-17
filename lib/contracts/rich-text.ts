@@ -1,48 +1,23 @@
 import { z } from 'zod';
 
+import {
+  NOTE_MAX_CHARS,
+  isAllowedHref,
+  richPlainText,
+  type RichBlock,
+  type RichDoc,
+  type RichList,
+  type RichListItem,
+} from './rich-text-core';
+
+export * from './rich-text-core';
+
 // The only formatting a note may carry (Tiptap JSON): bold, italic, links, bullet and numbered
 // lists, hard breaks. Everything is a strict object, so an unknown node, mark or attribute is
 // rejected rather than stored. The server validates with this before anything is written.
 
-export const NOTE_MAX_CHARS = 2000;
 const MAX_NODES = 500;
 const MAX_LIST_DEPTH = 5;
-const HREF_MAX = 2048;
-
-/** http, https and mailto only; no whitespace or control characters, no relative or scheme-less values. */
-export function isAllowedHref(href: string): boolean {
-  if (href.length === 0 || href.length > HREF_MAX) return false;
-  if (/[\s\u0000-\u001f\u007f]/.test(href)) return false;
-  try {
-    const u = new URL(href);
-    if (u.protocol === 'http:' || u.protocol === 'https:')
-      return u.hostname !== '';
-    return u.protocol === 'mailto:' && u.pathname !== '';
-  } catch {
-    return false;
-  }
-}
-
-export type RichMark =
-  | { type: 'bold' }
-  | { type: 'italic' }
-  | { type: 'link'; attrs: { href: string } };
-export type RichText = { type: 'text'; text: string; marks?: RichMark[] };
-export type RichInline = RichText | { type: 'hardBreak' };
-export type RichParagraph = { type: 'paragraph'; content?: RichInline[] };
-export type RichListItem = {
-  type: 'listItem';
-  content: (RichParagraph | RichList)[];
-};
-export type RichList =
-  | { type: 'bulletList'; content: RichListItem[] }
-  | {
-      type: 'orderedList';
-      attrs?: { start: number } | undefined;
-      content: RichListItem[];
-    };
-export type RichBlock = RichParagraph | RichList;
-export type RichDoc = { type: 'doc'; content: RichBlock[] };
 
 const Href = z
   .string()
@@ -163,40 +138,6 @@ export const RichDocSchema: z.ZodType<RichDoc, unknown> = z
     }
     return nodes <= MAX_NODES && depth <= MAX_LIST_DEPTH;
   }, 'Too large or too deeply nested.');
-
-function inlineText(content: RichInline[] | undefined): string {
-  return (content ?? [])
-    .map((n) => (n.type === 'hardBreak' ? '\n' : n.text))
-    .join('');
-}
-
-function lines(block: RichBlock): string[] {
-  if (block.type === 'paragraph') return inlineText(block.content).split('\n');
-  return block.content.flatMap((item) => item.content.flatMap(lines));
-}
-
-/** The note as plain text, one line per paragraph and list item, with no markers or formatting. Mirrors `notes.body`. */
-export function richPlainText(doc: RichDoc): string {
-  return doc.content
-    .flatMap(lines)
-    .filter((l) => l.trim() !== '')
-    .join('\n');
-}
-
-/** Typed text as a document: one paragraph per non-blank line. */
-export function docFromText(value: string): RichDoc {
-  const paragraphs = value
-    .split(/\r?\n/)
-    .filter((l) => l.trim() !== '')
-    .map((l): RichParagraph => ({
-      type: 'paragraph',
-      content: [{ type: 'text', text: l }],
-    }));
-  return {
-    type: 'doc',
-    content: paragraphs.length ? paragraphs : [{ type: 'paragraph' }],
-  };
-}
 
 export type RichNoteResult =
   { ok: true; doc: RichDoc; text: string } | { ok: false; message: string };

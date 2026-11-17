@@ -7,7 +7,7 @@ import {
   type RichDoc,
   type RichInline,
   type RichListItem,
-} from '@/lib/contracts/rich-text';
+} from '@/lib/contracts/rich-text-core';
 
 // Walks the validated JSON into React elements. Text goes through React's escaping; nothing here
 // builds HTML strings, so there is no innerHTML to get wrong.

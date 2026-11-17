@@ -1,3 +1,4 @@
+import { docFromText } from '@/lib/contracts/rich-text';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -113,12 +114,22 @@ describe('data layer against the local stack', () => {
   it('getContact joins authors and actors, newest first, and hides deleted rows', async () => {
     const id = await seed({ full_name: 'Detail Case', summary: 'Hello' });
     const admin = current as SupabaseClient;
-    await admin
-      .from('notes')
-      .insert([{ contact_id: id, author_id: adminId, body: 'first' }]);
-    await admin
-      .from('notes')
-      .insert([{ contact_id: id, author_id: adminId, body: 'second' }]);
+    await admin.from('notes').insert([
+      {
+        contact_id: id,
+        author_id: adminId,
+        body: 'first',
+        body_json: docFromText('first'),
+      },
+    ]);
+    await admin.from('notes').insert([
+      {
+        contact_id: id,
+        author_id: adminId,
+        body: 'second',
+        body_json: docFromText('second'),
+      },
+    ]);
     const d = await getContact(id);
     expect(d?.summary).toBe('Hello');
     expect(d?.notes.map((n) => n.body)).toEqual(['second', 'first']);
