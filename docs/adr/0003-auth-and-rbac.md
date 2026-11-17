@@ -6,7 +6,7 @@ Use pre-seeded Admin and Viewer accounts with email and password login, one shar
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 

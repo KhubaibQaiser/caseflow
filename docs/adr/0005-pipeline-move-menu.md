@@ -6,7 +6,7 @@ Use a "Move to…" menu for pipeline moves, with no drag and drop, and order eac
 
 ## Status
 
-`proposed`
+`accepted` (Khubaib, 2026-11-17)
 
 ## Date
 
