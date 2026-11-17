@@ -5,7 +5,7 @@ import { Suspense, lazy, useEffect, useRef, useTransition } from 'react';
 
 import { PageHeader } from '@/components/shell/page-header';
 import { ErrorState } from '@/components/ui/error-state';
-import { NewContactLink } from '@/features/contacts/list/empty-states';
+import { NewContactLink } from '@/features/contacts/list/new-contact-link';
 import { listFrame } from '@/features/contacts/list/frame';
 
 import { reasonClass, useOffline } from '../../error-content';
