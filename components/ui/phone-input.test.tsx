@@ -54,6 +54,18 @@ describe('PhoneInput', () => {
     expect(value()).toBe('+447400123456');
   });
 
+  it("shows the selected country's example number as the placeholder", async () => {
+    render(<Harness initial="+15125550148" />);
+    const input = screen.getByLabelText('Phone');
+    expect(await screen.findByPlaceholderText('(201) 555-0123')).toBe(input);
+    await userEvent.click(screen.getByRole('button', { name: /country/i }));
+    await userEvent.type(screen.getByRole('combobox'), 'united king');
+    await userEvent.click(
+      screen.getByRole('option', { name: /United Kingdom/ }),
+    );
+    expect(await screen.findByPlaceholderText('07400 123456')).toBe(input);
+  });
+
   it('shows a stored number nationally', () => {
     render(<Harness initial="+15125550148" />);
     expect(screen.getByLabelText('Phone')).toHaveValue('(512) 555-0148');
