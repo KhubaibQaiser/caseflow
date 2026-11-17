@@ -270,3 +270,50 @@ test('@mobile the Move menu stays clear of the sticky tab bar near the screen fo
   expect(menu!.y + menu!.height).toBeLessThanOrEqual(bar!.y);
   expect(menu!.y).toBeGreaterThanOrEqual(0);
 });
+
+test('Lead sorted by Name A–Z orders the cards, survives a reload and keeps the order on Show 50 more', async ({
+  page,
+}) => {
+  await board(page, '/pipeline');
+  const names = (status: string) =>
+    cards(page, status).locator('[data-card-link]').allInnerTexts();
+  const byName = (list: string[]) =>
+    [...list].sort((a, b) => a.localeCompare(b, 'en'));
+  const urgent = await names('Lead');
+  const activeBefore = await names('Active');
+  expect(urgent).not.toEqual(byName(urgent));
+
+  await column(page, 'Lead')
+    .getByRole('button', { name: 'Sort Lead: Urgency' })
+    .click();
+  expect((await axe(page)).violations).toEqual([]);
+  await page.getByRole('menuitemradio', { name: 'Name A–Z' }).click();
+  await expect(page).toHaveURL(/leadSort=name/);
+  const chip = column(page, 'Lead').getByRole('button', {
+    name: 'Sort Lead: Name A–Z',
+  });
+  await expect(chip).toHaveText('Name A–Z');
+  await expect(cards(page, 'Lead')).toHaveCount(50);
+  const sorted = await names('Lead');
+  expect(sorted).toEqual(byName(sorted));
+  // Only the Lead column changed.
+  expect(await names('Active')).toEqual(activeBefore);
+  expect(page.url()).not.toMatch(/activeSort|closedSort/);
+
+  await board(page, page.url());
+  await expect(chip).toBeVisible();
+  expect(await names('Lead')).toEqual(sorted);
+
+  await column(page, 'Lead')
+    .getByRole('button', { name: /Show 50 more/ })
+    .click();
+  await expect(cards(page, 'Lead')).toHaveCount(100);
+  const more = await names('Lead');
+  expect(more.slice(0, 50)).toEqual(sorted);
+  expect(more).toEqual(byName(more));
+
+  // Back to the default leaves the URL.
+  await chip.click();
+  await page.getByRole('menuitemradio', { name: /^Urgency/ }).click();
+  await expect(page).not.toHaveURL(/leadSort/);
+});

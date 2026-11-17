@@ -41,6 +41,7 @@ const cols = (): Columns => ({
 const props = (over: Partial<Parameters<typeof Board>[0]> = {}) => ({
   columns: cols(),
   filters: {},
+  sorts: { lead: 'urgency', active: 'urgency', closed: 'urgency' } as const,
   facets: FACETS,
   filtersOpen: false,
   onMove: vi.fn().mockResolvedValue(ok(pipelineRow('only', 'active'))),
@@ -93,5 +94,72 @@ describe('Board', () => {
     expect(
       tabs.compareDocumentPosition(search) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it('writes a column pick to its own URL param, and urgency back out of it', async () => {
+    const user = userEvent.setup();
+    const onUrlUpdate = vi.fn();
+    render(<Board {...props()} />, { wrapper: wrapper({ onUrlUpdate }) });
+    await user.click(
+      (
+        await screen.findAllByRole('button', { name: 'Sort Lead: Urgency' })
+      )[0]!,
+    );
+    await user.click(
+      await screen.findByRole('menuitemradio', { name: 'Name A–Z' }),
+    );
+    await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
+    const url = onUrlUpdate.mock.calls.at(-1)![0].searchParams;
+    expect(url.get('leadSort')).toBe('name');
+    expect(url.get('activeSort')).toBeNull();
+  });
+
+  it("asks Show 50 more in the column's sort", async () => {
+    const user = userEvent.setup();
+    const onLoadMore = vi
+      .fn()
+      .mockResolvedValue(ok({ rows: [], matching: 120 }));
+    const sorts = {
+      lead: 'updated',
+      active: 'urgency',
+      closed: 'urgency',
+    } as const;
+    render(<Board {...props({ onLoadMore, sorts })} />, { wrapper: wrapper() });
+    await user.click(screen.getByRole('button', { name: /Show 50 more/ }));
+    expect(onLoadMore).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'lead', sort: 'updated', page: 1 }),
+    );
+  });
+
+  it("a new sort replaces only that column with the server's first page", () => {
+    const active = pipelineRow('act', 'active', { fullName: 'Active Person' });
+    const base = {
+      ...cols(),
+      active: { rows: [active], matching: 1, pages: 1 },
+    };
+    const { rerender } = render(<Board {...props({ columns: base })} />, {
+      wrapper: wrapper(),
+    });
+    const next = {
+      ...base,
+      lead: {
+        rows: [pipelineRow('z', 'lead', { fullName: 'Zed First' })],
+        matching: 120,
+        pages: 1,
+      },
+      active: { rows: [], matching: 0, pages: 1 },
+    };
+    rerender(
+      <Board
+        {...props({
+          columns: next,
+          sorts: { lead: 'name', active: 'urgency', closed: 'urgency' },
+        })}
+      />,
+    );
+    expect(screen.getByText('Zed First')).toBeInTheDocument();
+    expect(screen.queryByText('Solo Contact')).not.toBeInTheDocument();
+    // Active kept its rows: its sort did not change.
+    expect(screen.getByText('Active Person')).toBeInTheDocument();
   });
 });

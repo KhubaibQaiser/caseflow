@@ -11,6 +11,8 @@ const props = {
   rows,
   matching: 642,
   canMove: true,
+  sort: 'urgency' as const,
+  onSortChange: vi.fn(),
   onMove: vi.fn(),
   onLoadMore: vi.fn(),
 };
