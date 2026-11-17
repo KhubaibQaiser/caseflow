@@ -26,8 +26,7 @@ describe('buildCsp', () => {
     expect(directive(csp, 'script-src')).toBe(
       "'self' 'nonce-abc' 'strict-dynamic'",
     );
-    expect(directive(csp, 'style-src')).toBe("'self' 'nonce-abc'");
-    expect(directive(csp, 'style-src-attr')).toBe("'unsafe-inline'");
+    expect(directive(csp, 'style-src')).toBe("'self' 'unsafe-inline'");
     expect(directive(csp, 'img-src')).toBe("'self' data: blob:");
     expect(directive(csp, 'font-src')).toBe("'self'");
     expect(directive(csp, 'connect-src')).toBe("'self'");

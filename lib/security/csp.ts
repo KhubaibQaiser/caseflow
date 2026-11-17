@@ -11,9 +11,9 @@ export function buildCsp(nonce: string, { dev, production }: CspMode): string {
   return [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ''}`,
-    `style-src 'self' 'nonce-${nonce}'`,
-    // React renders style="" attributes (virtual rows, Radix positioning); a nonce can't cover attributes.
-    "style-src-attr 'unsafe-inline'",
+    // Not a nonce: sonner and react-remove-scroll (Radix) inject <style> at runtime with no nonce hook,
+    // and React renders style="" attributes (virtual rows, popper positioning). Scripts stay strict.
+    "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
     "connect-src 'self'",
