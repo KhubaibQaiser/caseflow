@@ -35,6 +35,13 @@ const count = async (page: Page, status: string) =>
     ),
   );
 
+// A Lead another spec creates meanwhile shifts the server's pages, so a second page can bring 100 or 101 cards.
+const secondPage = async (page: Page) => {
+  const n = cards(page, 'Lead');
+  await expect.poll(() => n.count()).toBeGreaterThanOrEqual(100);
+  expect(await n.count()).toBeLessThanOrEqual(101);
+};
+
 /** Drops the next Server Action POST on the wire, as a lost connection would. */
 async function dropNextAction(page: Page) {
   let dropped = false;
@@ -134,7 +141,7 @@ test('Show 50 more appends the next rows and counts what is left', async ({
   await expect(more).toHaveText(/^Show 50 more · [\d,]+ left$/);
   expect(lead).toBeGreaterThan(100);
   await more.click();
-  await expect(cards(page, 'Lead')).toHaveCount(100);
+  await secondPage(page);
   await expect(
     column(page, 'Lead').getByRole('button', { name: /Show 50 more/ }),
   ).toHaveText(/^Show 50 more · [\d,]+ left$/);
@@ -227,7 +234,7 @@ test('@mobile one column at a time, chosen by tabs with counts', async ({
 test('@mobile a 120-character name never widens the page, in any column', async ({
   page,
 }) => {
-  const token = `Wth${Math.random().toString(36).slice(2, 8)}`;
+  const token = `Wth${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
   for (const status of ['lead', 'active', 'closed'] as const)
     await newContact({
       name: token + status[0] + 'w'.repeat(119 - token.length),
@@ -269,4 +276,51 @@ test('@mobile the Move menu stays clear of the sticky tab bar near the screen fo
   const bar = await page.locator('[data-tab-bar]').boundingBox();
   expect(menu!.y + menu!.height).toBeLessThanOrEqual(bar!.y);
   expect(menu!.y).toBeGreaterThanOrEqual(0);
+});
+
+test('Lead sorted by Name A–Z orders the cards, survives a reload and keeps the order on Show 50 more', async ({
+  page,
+}) => {
+  await board(page, '/pipeline');
+  const names = (status: string) =>
+    cards(page, status).locator('[data-card-link]').allInnerTexts();
+  const byName = (list: string[]) =>
+    [...list].sort((a, b) => a.localeCompare(b, 'en'));
+  const urgent = await names('Lead');
+  const activeBefore = await names('Active');
+  expect(urgent).not.toEqual(byName(urgent));
+
+  await column(page, 'Lead')
+    .getByRole('button', { name: 'Sort Lead: Urgency' })
+    .click();
+  expect((await axe(page)).violations).toEqual([]);
+  await page.getByRole('menuitemradio', { name: 'Name A–Z' }).click();
+  await expect(page).toHaveURL(/leadSort=name/);
+  const chip = column(page, 'Lead').getByRole('button', {
+    name: 'Sort Lead: Name A–Z',
+  });
+  await expect(chip).toHaveText('Name A–Z');
+  await expect(cards(page, 'Lead')).toHaveCount(50);
+  const sorted = await names('Lead');
+  expect(sorted).toEqual(byName(sorted));
+  // Only the Lead column changed.
+  expect(await names('Active')).toEqual(activeBefore);
+  expect(page.url()).not.toMatch(/activeSort|closedSort/);
+
+  await board(page, page.url());
+  await expect(chip).toBeVisible();
+  const again = await names('Lead');
+  expect(again).toEqual(byName(again));
+
+  await column(page, 'Lead')
+    .getByRole('button', { name: /Show 50 more/ })
+    .click();
+  await secondPage(page);
+  const more = await names('Lead');
+  expect(more).toEqual(byName(more));
+
+  // Back to the default leaves the URL.
+  await chip.click();
+  await page.getByRole('menuitemradio', { name: /^Urgency/ }).click();
+  await expect(page).not.toHaveURL(/leadSort/);
 });

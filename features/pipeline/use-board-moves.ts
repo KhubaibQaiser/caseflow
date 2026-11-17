@@ -1,16 +1,32 @@
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
+import {
+  useEffect,
+  useOptimistic,
+  useRef,
+  useState,
+  useTransition,
+} from 'react';
 
 import { toast } from '@/components/ui/toaster';
 import type { ContactRow } from '@/lib/contracts/contact';
 import { STATUSES, STATUS_LABEL } from '@/lib/contracts/enums';
 import type { Status } from '@/lib/contracts/enums';
+import type {
+  PipelineSort,
+  PipelineSorts,
+} from '@/lib/contracts/pipeline-sort';
 import { fail } from '@/lib/contracts/result';
 import type { Result } from '@/lib/contracts/result';
 
 import { appendRows, applyMove } from './rows';
 import type { Columns, PipelineRow } from './rows';
+
+const URGENCY: PipelineSorts = {
+  lead: 'urgency',
+  active: 'urgency',
+  closed: 'urgency',
+};
 
 type Move = { id: string; to: Status; at: string };
 
@@ -25,10 +41,22 @@ export function useBoardMoves(
   onMove: (id: string, to: Status) => Promise<Result<ContactRow>>,
   /** The session ended: the caller sends the user to sign in. */
   onExpired?: () => void,
+  /** Each column's sort; a change replaces just that column with `initial`'s first page. */
+  sorts: PipelineSorts = URGENCY,
 ) {
   const [base, setBase] = useState(initial);
+  // A column whose sort changed is replaced by the server's first page in the new order; the others keep what was paged in.
+  const [seen, setSeen] = useState(sorts);
+  if (STATUSES.some((s) => seen[s] !== sorts[s])) {
+    setSeen(sorts);
+    setBase((b) => {
+      const next = { ...b };
+      for (const s of STATUSES) if (seen[s] !== sorts[s]) next[s] = initial[s];
+      return next;
+    });
+  }
   const [columns, optimistic] = useOptimistic(base, (state, m: Move) =>
-    applyMove(state, m.id, m.to, m.at),
+    applyMove(state, m.id, m.to, m.at, sorts[m.to]),
   );
   const [, startTransition] = useTransition();
 
@@ -49,7 +77,13 @@ export function useBoardMoves(
         if (result.ok) {
           startTransition(() =>
             setBase((b) =>
-              applyMove(b, id, to, result.ok ? result.data.updatedAt : at),
+              applyMove(
+                b,
+                id,
+                to,
+                result.ok ? result.data.updatedAt : at,
+                sorts[to],
+              ),
             ),
           );
           toast.success(`${name ?? 'Contact'} moved to ${STATUS_LABEL[to]}.`);
@@ -75,8 +109,20 @@ export function useBoardMoves(
       });
   }
 
-  function append(status: Status, rows: PipelineRow[], matching: number) {
-    setBase((b) => appendRows(b, status, rows, matching));
+  // The sorts as of the latest render: a page that comes back after its column changed sort belongs to the old order.
+  const latest = useRef(sorts);
+  useEffect(() => {
+    latest.current = sorts;
+  });
+  function append(
+    status: Status,
+    rows: PipelineRow[],
+    matching: number,
+    /** The sort the page was asked for under. */
+    sort: PipelineSort,
+  ) {
+    if (latest.current[status] !== sort) return;
+    setBase((b) => appendRows(b, status, rows, matching, sort));
   }
 
   return { columns, move, append };

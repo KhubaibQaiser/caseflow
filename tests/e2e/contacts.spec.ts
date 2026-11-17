@@ -202,7 +202,7 @@ test('a quick view filters, shows a chip, and the chip removes it', async ({
 test('long names truncate with a tooltip and never widen the table', async ({
   page,
 }) => {
-  const token = `Fth${Math.random().toString(36).slice(2, 8)}`;
+  const token = `LongName${crypto.randomUUID().replace(/-/g, '').slice(0, 12)}`;
   await newContact({ name: token + 'x'.repeat(120 - token.length) });
   await page.goto(`/contacts?q=${token}`);
   const link = table(page).getByRole('link');

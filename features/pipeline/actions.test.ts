@@ -61,17 +61,31 @@ describe('loadMoreColumnAction', () => {
     const r = await loadMoreColumnAction({
       status: 'lead',
       filters: {},
+      sort: 'name',
       page: 2,
     });
     expect(getPipelineColumn.mock.calls.map((c) => c[2])).toEqual([50, 100]);
+    expect(getPipelineColumn.mock.calls.map((c) => c[4])).toEqual([
+      'name',
+      'name',
+    ]);
     expect(r.ok && r.data.rows.map((x) => x.id)).toEqual(['r50', 'r100']);
     expect(r.ok && r.data.matching).toBe(642);
   });
 
   it.each([
-    [{ status: 'lead', filters: {}, page: 0 }],
-    [{ status: 'won', filters: {}, page: 1 }],
-    [{ status: 'lead', filters: { followUp: 'custom' }, page: 1 }],
+    [{ status: 'lead', filters: {}, sort: 'urgency', page: 0 }],
+    [{ status: 'won', filters: {}, sort: 'urgency', page: 1 }],
+    [
+      {
+        status: 'lead',
+        filters: { followUp: 'custom' },
+        sort: 'urgency',
+        page: 1,
+      },
+    ],
+    [{ status: 'lead', filters: {}, sort: 'status', page: 1 }],
+    [{ status: 'lead', filters: {}, page: 1 }],
     ['nope'],
   ])('rejects a bad request %j', async (raw) => {
     const r = await loadMoreColumnAction(raw);
@@ -85,6 +99,7 @@ describe('loadMoreColumnAction', () => {
       const r = await loadMoreColumnAction({
         status: 'lead',
         filters: {},
+        sort: 'urgency',
         page: 1,
       });
       expect(!r.ok && r.error.code).toBe(g);
