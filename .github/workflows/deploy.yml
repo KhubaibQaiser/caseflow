@@ -86,7 +86,19 @@ jobs:
       - run: pnpm dlx "$VERCEL_CLI" build --prod
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # Re-check after the slow migrate and build steps: a newer push may have landed meanwhile.
+      - id: recheck
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tip=$(gh api "repos/${{ github.repository }}/commits/main" --jq .sha)
+          if [ "$tip" = "${{ github.event.workflow_run.head_sha }}" ]; then
+            echo "current=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::${{ github.event.workflow_run.head_sha }} is no longer the tip of main; skipping deploy"
+          fi
       - id: deploy
+        if: steps.recheck.outputs.current == 'true'
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         run: |
@@ -101,6 +113,7 @@ jobs:
 
       # tests/e2e/smoke.spec.ts lands in T22/T23; skip until it exists.
       - name: Smoke test
+        if: steps.recheck.outputs.current == 'true'
         env:
           BASE_URL: ${{ steps.deploy.outputs.url }}
           SEED_VIEWER_PASSWORD: ${{ secrets.SEED_VIEWER_PASSWORD }}
