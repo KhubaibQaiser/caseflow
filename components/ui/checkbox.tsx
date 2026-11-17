@@ -17,7 +17,13 @@ export const optionMark =
 /** Native checkbox; the whole row is the click target. */
 export function Checkbox({ label, count, className, ...props }: CheckboxProps) {
   return (
-    <label className={optionRow}>
+    // A zero count mutes the row (still selectable; ink-2 keeps 4.5:1, and the 0 is written out).
+    <label
+      className={cn(
+        optionRow,
+        count === 0 && 'text-ink-2 has-checked:text-ink',
+      )}
+    >
       <span className="relative grid size-4 shrink-0 place-items-center">
         <input
           type="checkbox"

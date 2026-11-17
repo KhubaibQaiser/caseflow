@@ -131,6 +131,53 @@ describe('Toolbar search', () => {
     }
   });
 
+  it('an outside q change cancels a keystroke still waiting to be written', () => {
+    vi.useFakeTimers();
+    try {
+      const onUrlUpdate = vi.fn();
+      function Outside() {
+        const [, setQuery] = useListQuery();
+        return (
+          <button type="button" onClick={() => setQuery({ q: null })}>
+            Remove chip
+          </button>
+        );
+      }
+      renderToolbar({ searchParams: '?q=smith', onUrlUpdate }, <Outside />);
+      const box = screen.getByRole('searchbox');
+      fireEvent.change(box, { target: { value: 'smithe' } });
+      act(() => void vi.advanceTimersByTime(100));
+      fireEvent.click(screen.getByRole('button', { name: 'Remove chip' }));
+      expect(box).toHaveValue('');
+      act(() => void vi.advanceTimersByTime(400));
+      // The removed q stays removed: "smithe" never lands.
+      for (const [update] of onUrlUpdate.mock.calls)
+        expect((update.searchParams as URLSearchParams).get('q')).not.toBe(
+          'smithe',
+        );
+      expect(box).toHaveValue('');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a URL echo that arrives after a newer keystroke does not clobber it', () => {
+    vi.useFakeTimers();
+    try {
+      renderToolbar({ rateLimitFactor: 1 });
+      const box = screen.getByRole('searchbox');
+      fireEvent.change(box, { target: { value: 'ab' } });
+      // The commit and the next key land before React renders the echo of q=ab.
+      act(() => {
+        vi.advanceTimersByTime(250);
+        fireEvent.change(box, { target: { value: 'abc' } });
+      });
+      expect(box).toHaveValue('abc');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('the box follows q when the URL changes from outside', async () => {
     const user = userEvent.setup();
     function Outside() {
@@ -171,14 +218,14 @@ describe('Toolbar search', () => {
     await waitFor(() => expect(onUrlUpdate).toHaveBeenCalled());
     await waitFor(() => expect(lastUrl(onUrlUpdate).has('q')).toBe(false));
     // The box mirrors the URL, so whitespace alone simply doesn't take.
-    expect(box).toHaveValue('');
+    await waitFor(() => expect(box).toHaveValue(''));
   });
 });
 
 describe('Toolbar filters', () => {
   it('counts applied filter groups on the Filters button', () => {
     renderToolbar({ searchParams: '?status=lead,active&fu=overdue&q=ana' });
-    const button = screen.getByRole('button', { name: 'Filters, 2 applied' });
+    const button = screen.getByRole('button', { name: 'Filters 2 applied' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
   });
 
@@ -246,7 +293,7 @@ describe('Toolbar without a panel (error screen)', () => {
       return <Toolbar isPending={false} filtersButton={ref} />;
     }
     render(<Bare />, { wrapper: wrapper({ searchParams: '?status=lead' }) });
-    const button = screen.getByRole('button', { name: 'Filters, 1 applied' });
+    const button = screen.getByRole('button', { name: 'Filters 1 applied' });
     expect(button).toHaveAttribute('aria-disabled', 'true');
     expect(button).toHaveAttribute('aria-expanded', 'false');
     await user.click(button);

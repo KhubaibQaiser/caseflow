@@ -33,12 +33,14 @@ function setup({
   open = true,
   hideStatus,
   facets = FACETS,
+  focusOnOpen,
 }: {
   searchParams?: string;
   desktop?: boolean;
   open?: boolean;
   hideStatus?: boolean;
   facets?: typeof FACETS;
+  focusOnOpen?: boolean;
 } = {}) {
   stubViewport(desktop);
   const onUrlUpdate = vi.fn();
@@ -49,6 +51,7 @@ function setup({
       onOpenChange={onOpenChange}
       facets={facets}
       hideStatus={hideStatus}
+      focusOnOpen={focusOnOpen}
     />
   );
   const view = render(ui(open), {
@@ -204,12 +207,85 @@ describe('FiltersPanel groups and facets', () => {
     expect(screen.getByRole('group', { name: /^Follow-up/ })).toBeVisible();
   });
 
-  it('opens groups that hold a selection, even the usually collapsed one', () => {
+  it('opens a collapsed group that holds a selection', () => {
     setup({ searchParams: '?createdFrom=2020-11-01' });
     const from = screen.getByRole('button', { name: 'From: Sun, Nov 1, 2020' });
     expect(from.closest('details')).toHaveAttribute('open');
-    const status = screen.getByRole('group', { name: 'Status' });
-    expect(status.closest('details')).toHaveAttribute('open');
+  });
+
+  it('on desktop only Created date collapses (and starts closed)', () => {
+    setup();
+    const collapsible = (name: string) =>
+      screen.getByRole('group', { name }).closest('details');
+    for (const name of [
+      'Status',
+      'Follow-up',
+      'Matter type',
+      'Referral source',
+    ])
+      expect(collapsible(name)).toBeNull();
+    expect(collapsible('Created date')).not.toBeNull();
+    expect(collapsible('Created date')).not.toHaveAttribute('open');
+  });
+
+  it("collapsible rows get the comp's .more rule; plain headings do not", () => {
+    setup();
+    const summary = screen
+      .getByRole('group', { name: 'Created date' })
+      .closest('details')!.firstElementChild!;
+    expect(summary.className).toContain('border-t');
+    expect(summary.className).toContain('border-line');
+    expect(
+      screen.getByRole('heading', { name: 'Status' }).className,
+    ).not.toContain('border-t');
+  });
+
+  it('slides in only when the user opens it, not when restored from the cookie', () => {
+    setup({ focusOnOpen: true });
+    expect(screen.getByRole('complementary').className).toContain(
+      'animate-sheet-in',
+    );
+  });
+
+  it('does not slide in when it was open on page load', () => {
+    setup();
+    expect(screen.getByRole('complementary').className).not.toContain(
+      'animate-sheet-in',
+    );
+  });
+
+  it('on a phone Matter type, Referral source and Created date collapse', () => {
+    setup({ desktop: false });
+    const collapsible = (name: string) =>
+      screen.getByRole('group', { name }).closest('details');
+    for (const name of ['Status', 'Follow-up'])
+      expect(collapsible(name)).toBeNull();
+    for (const name of ['Matter type', 'Referral source', 'Created date'])
+      expect(collapsible(name)).not.toHaveAttribute('open');
+  });
+
+  it('mutes a zero count but keeps the option usable and the 0 visible', () => {
+    setup({
+      facets: {
+        ...FACETS,
+        facets: {
+          ...FACETS.facets,
+          status: { lead: 0, active: 5, closed: 0 },
+          followUp: { ...FACETS.facets.followUp, overdue: 0 },
+        },
+      },
+    });
+    const muted = (el: HTMLElement) => el.closest('label')!.className;
+    expect(muted(screen.getByRole('checkbox', { name: 'Lead 0' }))).toContain(
+      'text-ink-2',
+    );
+    expect(muted(screen.getByRole('radio', { name: 'Overdue 0' }))).toContain(
+      'text-ink-2',
+    );
+    expect(
+      muted(screen.getByRole('checkbox', { name: 'Active 5' })),
+    ).not.toContain('text-ink-2');
+    expect(screen.getByRole('checkbox', { name: 'Lead 0' })).toBeEnabled();
   });
 });
 

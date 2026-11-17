@@ -2,6 +2,7 @@
 
 import { Suspense, lazy, useRef } from 'react';
 
+import { cn } from '@/utils/cn';
 import type { ContactFacets } from '@/lib/contracts/facets';
 import { serializeListQuery } from '@/lib/contracts/list-query';
 
@@ -79,7 +80,10 @@ function Results({
         // The panel floats over the right edge of this region, under the toolbar, so the table never reflows.
         <div className="relative flex min-h-0 flex-1 flex-col gap-3">
           {matching === 0 ? (
-            <Filtered />
+            // The side panel covers 232px of this region (256 less main's gutter), so centre in what is left.
+            <div data-empty className={cn(panel.open && 'lg:pr-58')}>
+              <Filtered />
+            </div>
           ) : (
             <>
               <BusyRegion busy={isPending}>
