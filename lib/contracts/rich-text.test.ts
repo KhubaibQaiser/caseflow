@@ -5,6 +5,7 @@ import {
   docFromText,
   isAllowedHref,
   parseRichNote,
+  safeParseRichDoc,
   richPlainText,
 } from './rich-text';
 
@@ -276,5 +277,36 @@ describe('parseRichNote survives hostile input', () => {
 
   it('still accepts a legitimately nested note', () => {
     expect(parseRichNote(nest(3)).ok).toBe(true);
+  });
+});
+
+describe('safeParseRichDoc', () => {
+  it('accepts a valid document', () => {
+    const r = safeParseRichDoc(docFromText('Hello'));
+    expect(r.success).toBe(true);
+  });
+
+  it('fails, rather than throws, for 20,000 levels of nesting', () => {
+    let inner: unknown = { type: 'paragraph' };
+    for (let i = 0; i < 20_000; i++)
+      inner = {
+        type: 'bulletList',
+        content: [
+          { type: 'listItem', content: [{ type: 'paragraph' }, inner] },
+        ],
+      };
+    expect(safeParseRichDoc({ type: 'doc', content: [inner] }).success).toBe(
+      false,
+    );
+  });
+
+  it('fails for a value that throws when read', () => {
+    const trap = {
+      type: 'doc',
+      get content(): unknown {
+        throw new Error('boom');
+      },
+    };
+    expect(safeParseRichDoc(trap).success).toBe(false);
   });
 });

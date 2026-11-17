@@ -16,12 +16,14 @@ vi.mock('@/lib/dates/server', () => ({
 import { ContactRowSchema, type ContactRow } from '@/lib/contracts/contact';
 import { loadListQuery, type ListQuery } from '@/lib/contracts/list-query';
 import { ContactFacetsSchema } from '@/lib/contracts/facets';
+import { docFromText } from '@/lib/contracts/rich-text';
 import { addDaysDateOnly } from '@/lib/dates/date-only';
 import { makeFixtureRows } from './fixtures';
 import {
   getContact,
   getContactFacets,
   getPipelineColumn,
+  insertNote,
   searchContacts,
 } from './fake';
 
@@ -78,6 +80,39 @@ describe('fake data layer', () => {
     const stamps = even?.activities.map((a) => a.createdAt) ?? [];
     expect(stamps).toEqual([...stamps].sort().reverse());
     expect(even?.activities.at(-1)?.type).toBe('created');
+  });
+
+  it('insertNote lists the note first and adds a note_added activity, as the database trigger does', async () => {
+    const before = await getContact('c-00001'); // odd id: no seeded notes
+    expect(before?.notes).toHaveLength(0);
+    const r = await insertNote(
+      'c-00001',
+      { body: 'Called back', bodyJson: docFromText('Called back') },
+      { id: 'u-1', displayName: 'Alex Morgan', role: 'admin' },
+    );
+    expect(r).toMatchObject({
+      ok: true,
+      data: { body: 'Called back', author: { name: 'Alex Morgan' } },
+    });
+
+    const after = await getContact('c-00001');
+    expect(after?.notes.map((n) => n.body)).toEqual(['Called back']);
+    expect(after?.activities[0]).toMatchObject({
+      type: 'note_added',
+      actor: { name: 'Alex Morgan' },
+    });
+    expect(after?.activities.length).toBe((before?.activities.length ?? 0) + 1);
+    const stamps = after?.activities.map((a) => a.createdAt) ?? [];
+    expect(stamps).toEqual([...stamps].sort().reverse());
+  });
+
+  it('insertNote reports not_found for an unknown contact', async () => {
+    const r = await insertNote(
+      'nope',
+      { body: 'x', bodyJson: docFromText('x') },
+      { id: 'u-1', displayName: 'Alex Morgan', role: 'admin' },
+    );
+    expect(r).toMatchObject({ ok: false, error: { code: 'not_found' } });
   });
 
   it('clamps out-of-range page', async () => {

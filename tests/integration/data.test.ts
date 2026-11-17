@@ -40,6 +40,7 @@ import {
   adminClient,
   anonClient,
   anonSignedIn,
+  localConfig,
   PASSWORD,
   resetData,
   serviceClient,
@@ -138,6 +139,36 @@ describe('data layer against the local stack', () => {
     expect(d?.notes).toHaveLength(2);
     const fallback = d?.notes.find((n) => n.body === 'Plain fallback');
     expect(fallback?.bodyJson).toEqual(docFromText('Plain fallback'));
+  });
+
+  it('getContact still opens a contact whose stored note is 5,000 lists deep', async () => {
+    const id = await seed({ full_name: 'Deep Read' });
+    const { url, anon } = localConfig();
+    const { data: sess } = await (current as SupabaseClient).auth.getSession();
+    // Built as a string: a nested object this deep would overflow JSON.stringify before it was sent.
+    const n = 5_000;
+    const open =
+      '{"type":"bulletList","content":[{"type":"listItem","content":[{"type":"paragraph"},';
+    const json =
+      '{"type":"doc","content":[' +
+      open.repeat(n) +
+      '{"type":"paragraph"}' +
+      ']}]}'.repeat(n) +
+      ']}';
+    const res = await fetch(`${url}/rest/v1/notes`, {
+      method: 'POST',
+      headers: {
+        apikey: anon,
+        authorization: `Bearer ${sess.session?.access_token}`,
+        'content-type': 'application/json',
+      },
+      body: `{"contact_id":"${id}","author_id":"${adminId}","body":"Deep fallback","body_json":${json}}`,
+    });
+    expect(res.status, await res.clone().text()).toBeLessThan(300);
+
+    const d = await getContact(id);
+    expect(d?.fullName).toBe('Deep Read');
+    expect(d?.notes[0]?.bodyJson).toEqual(docFromText('Deep fallback'));
   });
 
   it('getContact joins authors and actors, newest first, and hides deleted rows', async () => {
