@@ -431,6 +431,8 @@ describe('ContactForm', () => {
       {
         keep: 1,
         caseflowDraft: {
+          mode: 'edit',
+          id: 'c1',
           values: {
             fullName: 'Restored Name',
             email: 'marisol@example.com',
@@ -463,6 +465,37 @@ describe('ContactForm', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalled());
     expect(onSubmit.mock.calls[0]?.[1]).toBe(
       '2026-11-01T00:00:00.000000+00:00',
+    );
+  });
+
+  it('ignores a draft saved for another contact or mode', () => {
+    const draft = (mode: string, id: string | null) => ({
+      caseflowDraft: {
+        mode,
+        id,
+        values: {
+          fullName: 'Someone Else',
+          email: 'x@example.com',
+          phone: '',
+          matterType: 'family',
+          referralSource: '',
+          status: 'lead',
+          followUpOn: null,
+          summary: '',
+        },
+        stamp: 'old',
+      },
+    });
+    window.history.replaceState(draft('edit', 'other-id'), '');
+    renderForm(vi.fn<Submit>(), 'edit');
+    expect(screen.getByRole('textbox', { name: /Full name/ })).toHaveValue(
+      'Marisol Ortega',
+    );
+    cleanup();
+    window.history.replaceState(draft('create', null), '');
+    renderForm(vi.fn<Submit>(), 'edit');
+    expect(screen.getByRole('textbox', { name: /Full name/ })).toHaveValue(
+      'Marisol Ortega',
     );
   });
 
