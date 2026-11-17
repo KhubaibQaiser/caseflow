@@ -36,7 +36,7 @@
 1. **Long content** (120-character names, long emails, a 1,000-character summary) must truncate with a `title` tooltip in the table, cards and detail header, and must never widen the layout. Test: T14 Step 1.
 2. **Typing fast in search, or pressing back and forward through URL states,** must leave the screen showing results for the latest query only. Test: T22b `contacts.spec.ts` "rapid typing shows results for the final query".
 3. **Double-clicking Save, Apply, Move or Save note** must send exactly one request. Tests: T17 Step 1, T18 Step 1, T16 Step 1.
-4. **A session that dies mid-action** must redirect to `/login?reason=expired&next=…` and keep the form input in the browser history. Test: T22b `auth.spec.ts` "expired session on save redirects with next".
+4. **A session that dies mid-action** must redirect to `/login?reason=expired&next=…` and keep the form input in the browser history. Test: T22a `auth.spec.ts` "expired session on save redirects with next" (shipped in PR #23).
 5. **The page falls out of range after filtering** (on page 5, then a filter leaves one page): any change to filters, search, sort or page size resets `page` to 1, and an out-of-range `page` clamps to the last page on the server. Tests: T2 `clampPage`, T14 Step 1.
 
 ---
@@ -273,7 +273,7 @@ it('followUpView', () => {
   - Also: `::selection`, `caret-color`, scrollbar and `:focus-visible` (a 3px ring) themed.
 - **Figtree** through `next/font/google` (weights 400–700, `display:'swap'`, variable `--font-sans`). `font-variant-numeric: tabular-nums` utility class `.tnum`.
 - **`getRequestTimeZone(): Promise<string>`** reads the `tz` cookie and applies `resolveTimeZone`.
-- **`lib/data/index.ts`** re-exports these signatures from `./fake` (switched to `./supabase` in T22):
+- **`lib/data/index.ts`** re-exports these signatures from `./fake` (switched to `./supabase` in T22b):
   - `searchContacts(q: ListQuery): Promise<{rows: ContactRow[]; total: number; matching: number}>`
   - `getContactFacets(f: Filters): Promise<ContactFacets>`
   - `getPipelineColumn(status: Status, f: Filters, offset: number, limit?: number): Promise<{rows: ContactRow[]; matching: number}>`
@@ -484,7 +484,7 @@ it('viewer can call both RPCs', async () => {})
 - Create: `lib/data/mutations.ts`, `features/contacts/actions.ts`, `features/auth/actions.ts`
 - Test: `tests/integration/mutations.test.ts`, `features/auth/actions.test.ts`
 
-**Interfaces (produces; FE components receive these as props until T22):**
+**Interfaces (produces; FE components receive these as props until T22b):**
 - **`lib/data/mutations.ts`.** Each takes `(db: SupabaseClient<Database>, …)` and returns a `Result`:
   - `insertContact(db, input: ContactInput): Result<{id}>`
   - `updateContact(db, id, input, expectedUpdatedAt: string): Result<ContactRow>`. It runs `update … where id=$1 and updated_at=$2`. With 0 rows: if the row exists, return `conflict` ("This contact was changed since you opened it."), otherwise `not_found`.
@@ -599,7 +599,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
 ### Task 13: App shell, permissions context and forbidden state
 
 **Files:**
-- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22), `app/forbidden.tsx`
+- Create: `lib/auth/permissions-context.tsx`, `components/shell/{sidebar,tab-bar,account-block,page-header,timezone-sync,forbidden-state}.tsx`, `app/(app)/layout.tsx` (fake viewer until T22a), `app/forbidden.tsx`
 - Test: `lib/auth/permissions-context.test.tsx`, `components/shell/timezone-sync.test.tsx`
 
 **Interfaces (produces):**
@@ -790,7 +790,7 @@ it('viewer sees no New contact button', () => {})
 - Test: `features/auth/login-form.test.tsx`
 
 **Interfaces:**
-- **Consumes:** `signInAction` (T10; a stub action returning fixtures until T22), `SignInSchema` (T2).
+- **Consumes:** `signInAction` (T10; a stub action returning fixtures until T22a), `SignInSchema` (T2).
 - **Produces:** `LoginForm` `{action; reason?: 'expired'; next?: string}`:
   - `useActionState(action, null)`.
   - Hidden inputs `tz` (`Intl…timeZone`) and `next`.
@@ -870,17 +870,11 @@ Shipped:
 ### Task 22b: Wire the real data layer and the full e2e suite
 
 **Files:**
-- Modify: `lib/data/index.ts` (re-export from `./supabase`); the pages and layouts that pass the T10 actions as props; `app/(app)/layout.tsx` (`getViewer()` instead of the fake viewer)
+- Modify: `lib/data/index.ts` (re-export from `./supabase`); the pages and layouts that pass the T10 actions as props
 - Delete: `lib/data/fake.ts` (keep `fixtures.ts` only for component tests)
-- Create: `tests/e2e/{auth,contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts`, `tests/e2e/helpers.ts` (`signInAs(page, 'admin'|'viewer')`)
+- Create: `tests/e2e/{contacts,contact-form,detail,pipeline,viewer,mobile,a11y,smoke}.spec.ts`. T22a already shipped `auth.spec.ts`, `helpers.ts` (`signInAs`, storage state) and the global-setup storage state; reuse them.
 
 - [ ] **Step 1: Write the failing e2e specs** (local Supabase, seeded):
-  - **`auth.spec.ts`:**
-    - field errors
-    - wrong password gives "Email or password is incorrect."
-    - Admin sign-in lands on `/contacts`
-    - sign out
-    - "expired session on save redirects with next" (corrupt the `sb-*` cookie, click Save on the edit form, expect `/login?reason=expired&next=%2Fcontacts%2F…`)
   - **`contacts.spec.ts`:**
     - search "5550148" finds the row
     - filter Status, Apply (the panel closes), then the chip and the count "N of 2,500"
@@ -891,30 +885,30 @@ Shipped:
     - `?page=999` clamps to the last page
   - **`contact-form.spec.ts`:** empty submit gives the summary and focus; fill and save lands on the detail page with the toast; edit summary and save.
   - **`detail.spec.ts`:** add a note, then it appears in the notes and the timeline ("Alex Morgan added a note"); Reschedule updates the pill.
-  - **`pipeline.spec.ts`:** moving a Lead card to Active moves it with the toast; after a reload the state persists; "Show 50 more" appends 50 cards.
+  - **`pipeline.spec.ts`:** (real actions, replacing the Playwright route stubs for move, add note and reschedule) moving a Lead card to Active moves it with the toast; after a reload the state persists; "Show 50 more" appends 50 cards.
   - **`viewer.spec.ts`:** Edit and Move are `aria-disabled` with tooltip text; the composer is replaced; there's no New contact button; `/contacts/new` shows "You can't add contacts".
   - **`mobile.spec.ts` (`@mobile`):** the tab bar is visible; the cards render; the Filters sheet opens, traps focus and closes on Esc.
   - **`a11y.spec.ts`:** axe has **no serious or critical violations** on `/login`, `/contacts`, `/contacts/[id]`, `/contacts/new`, `/contacts/[id]/edit` and `/pipeline`, as both Admin and Viewer.
   - **`smoke.spec.ts`:** the Viewer signs in on `BASE_URL` and the contacts table has rows. It's read-only.
-- [ ] **Step 2: Run** `pnpm e2e`. Expected: FAIL (fake data, stubbed actions).
-- [ ] **Step 3: Wire it up.** Switch `lib/data/index.ts`, pass the real actions into the components, use the real `getViewer` in the layout, delete `fake.ts`, and run `pnpm db:types`.
+- [ ] **Step 2: Run** `pnpm e2e`. Expected: FAIL (fake data, route-stubbed actions).
+- [ ] **Step 3: Wire it up.** Switch `lib/data/index.ts`, pass the real actions into the components, delete `fake.ts` (keep `fixtures.ts` for component tests), remove the route stubs, and run `pnpm db:types`. The real viewer, No access, `forbidden()` and auth-on-by-default are already done in T22a.
 - [ ] **Step 4: Run** `pnpm test && pnpm test:integration && pnpm e2e`. Expected: all PASS, including the axe checks.
 - [ ] **Step 5: Commit** in two parts: the specs (`"Add end-to-end and accessibility specs"`), then `"Wire Supabase data layer and Server Actions into the screens"`. Merge with a merge commit.
 
 ### Task 22c: Security headers (in progress)
 
 **Files:**
-- Modify: `proxy.ts`, `next.config.ts`
-- Create: `tests/e2e/csp.spec.ts`
+- Create: `lib/security/csp.ts` (builds the policy), `tests/e2e/csp.spec.ts`
+- Modify: `proxy.ts` (sets the CSP on every response path), `next.config.ts`, `app/layout.tsx` (`await connection()` so every route is dynamic and gets a nonce)
 
 **Interfaces (produces):**
 - A nonce-based Content-Security-Policy set in `proxy.ts`, with `strict-dynamic`.
 - `style-src 'unsafe-inline'` is accepted, because sonner and Radix inject styles at runtime.
 - Zod runs in `jitless` mode in the browser only, so it needs no `unsafe-eval`.
-- Static headers (frame, referrer, content-type, permissions) in `next.config.ts`.
+- Static headers in `next.config.ts`: `Referrer-Policy: strict-origin-when-cross-origin`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Permissions-Policy` (camera, microphone, geolocation, payment, usb and interest-cohort denied), `Cross-Origin-Opener-Policy: same-origin`, and HSTS only when `VERCEL_ENV=production`. `poweredByHeader` is off.
 
 - [ ] **Step 1: Write the failing e2e** `csp.spec.ts`: load every screen and fail on any CSP violation report in the console.
-- [ ] **Step 2: Add** the nonce CSP in `proxy.ts` and the static headers in `next.config.ts`.
+- [ ] **Step 2: Add** `lib/security/csp.ts`, set the nonce CSP in `proxy.ts`, add `await connection()` to the root layout, and add the static headers in `next.config.ts`.
 - [ ] **Step 3: Run** `pnpm e2e`. Expected: PASS, with no violations.
 - [ ] **Step 4: Commit** `"Add nonce CSP and static security headers"`. Merge with a merge commit.
 
