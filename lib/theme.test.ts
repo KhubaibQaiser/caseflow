@@ -90,4 +90,15 @@ describe('globals.css dark palette', () => {
     expect(canvas(lightBlock)).toBe(THEME_COLOR_LIGHT);
     expect(canvas(explicit)).toBe(THEME_COLOR_DARK);
   });
+
+  it('keeps app/icon.svg on the accent tokens, light and dark', () => {
+    const svg = readFileSync('app/icon.svg', 'utf8');
+    const tok = (block: string, name: string) =>
+      grab(block, new RegExp(`--${name}:\\s*(#[0-9a-f]{6})`, 'i'));
+    const [lightCss, darkCss] = svg.split('@media');
+    expect(lightCss).toContain(tok(lightBlock, 'accent'));
+    expect(lightCss).toContain(tok(lightBlock, 'on-accent'));
+    expect(darkCss).toContain(tok(explicit, 'accent'));
+    expect(darkCss).toContain(tok(explicit, 'on-accent'));
+  });
 });

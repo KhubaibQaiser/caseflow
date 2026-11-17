@@ -30,10 +30,11 @@ describe('ThemeToggle', () => {
     ).toBeInTheDocument();
   });
 
-  it('holds both glyphs so CSS can pick one without a flash', () => {
+  it('holds all three glyphs so CSS can pick one from the html attribute without a flash', () => {
     const { container } = render(<ThemeToggle />);
     expect(container.querySelector('.theme-sun')).not.toBeNull();
     expect(container.querySelector('.theme-moon')).not.toBeNull();
+    expect(container.querySelector('.theme-system')).not.toBeNull();
   });
 
   it('opens a Theme menu of three radios, the current one checked', async () => {

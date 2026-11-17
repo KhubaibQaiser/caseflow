@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18">
+  <style>
+    .b { fill: #07557c }
+    .l { stroke: #fafdff }
+    @media (prefers-color-scheme: dark) {
+      .b { fill: #82cff6 }
+      .l { stroke: #181b1c }
+    }
+  </style>
+  <rect class="b" width="18" height="18" rx="5"/>
+  <path class="l" d="M5 5v7h8" fill="none" stroke-width="2"/>
+</svg>

@@ -73,6 +73,7 @@ export function ThemeToggle({ className }: { className?: string }) {
               className,
             )}
           >
+            <Monitor aria-hidden className="theme-system size-4.5" />
             <Sun aria-hidden className="theme-sun size-4.5" />
             <Moon aria-hidden className="theme-moon size-4.5" />
           </button>
