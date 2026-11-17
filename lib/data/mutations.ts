@@ -200,3 +200,19 @@ export async function insertNote(
     ? ok(p.data)
     : fail('server', 'Something went wrong. Try again.');
 }
+
+export async function getPhone(
+  db: Db,
+  id: string,
+): Promise<Result<string | null>> {
+  const { data, error } = await db
+    .from('contacts')
+    .select('phone')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .maybeSingle();
+  if (error) return mapError(error);
+  return data
+    ? ok(data.phone)
+    : fail('not_found', 'That contact no longer exists.');
+}

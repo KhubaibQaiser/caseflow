@@ -153,7 +153,7 @@ export function Notes({
           {/* One frame: toolbar, editor and footer. Focus anywhere inside lights all of it. */}
           <div
             data-note-composer
-            className="border-control-border bg-surface rounded-ctl focus-within:border-accent focus-within:outline-accent has-[[aria-invalid=true]]:border-overdue border transition-colors duration-150 focus-within:shadow-[0_0_0_3px_var(--ring)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-solid has-[[aria-invalid=true]]:shadow-[0_0_0_3px_var(--error-ring)]"
+            className="border-control-border bg-surface rounded-ctl focus-within:border-accent focus-within:outline-accent has-[[aria-invalid=true]]:border-overdue has-[[aria-invalid=true]]:focus-within:outline-overdue border transition-colors duration-150 focus-within:outline-1 focus-within:outline-offset-0 focus-within:outline-solid"
           >
             <NoteEditor
               handle={editor}

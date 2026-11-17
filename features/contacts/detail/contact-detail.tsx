@@ -26,6 +26,8 @@ type ContactDetailViewProps = {
   onAddNote(doc: RichDoc): Promise<Result<Note>>;
   /** The activity timeline, rendered on the server so its parsing never ships to the browser. */
   timeline: ReactNode;
+  /** The phone in its display format, formatted on the server. */
+  phoneText?: string;
 };
 
 /** The page body. Moves and reschedules show at once from the action's reply; the revalidated page replaces them. */
@@ -37,6 +39,7 @@ export function ContactDetailView({
   onReschedule,
   onAddNote,
   timeline,
+  phoneText,
 }: ContactDetailViewProps) {
   const report = useReportFailure();
   // Valid only while the server copy it was derived from is still the one rendered.
@@ -81,7 +84,7 @@ export function ContactDetailView({
             today={today}
             onReschedule={reschedule}
           />
-          <DetailsList contact={live} />
+          <DetailsList contact={live} phoneText={phoneText} />
           <Notes notes={contact.notes} onAdd={onAddNote} tz={tz} />
         </div>
         {timeline}

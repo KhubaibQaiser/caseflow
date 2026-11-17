@@ -140,3 +140,66 @@ test('a dirty form asks before the sidebar leaves it', async ({ page }) => {
   await page.getByRole('button', { name: 'Discard' }).click();
   await expect(page).toHaveURL(/\/pipeline$/);
 });
+
+async function fillBasics(page: import('@playwright/test').Page, name: string) {
+  await page.goto('/contacts/new');
+  await page.waitForLoadState('networkidle');
+  await page.getByRole('textbox', { name: /Full name/ }).fill(name);
+  await page
+    .getByRole('combobox', { name: /Matter type/ })
+    .selectOption('Family');
+}
+
+test('a UK number is chosen from the picker, saved as E.164 and shown internationally', async ({
+  page,
+}) => {
+  const name = `E2E Phone ${Math.random().toString(36).slice(2, 8)}`;
+  await fillBasics(page, name);
+  await page.getByRole('button', { name: /^Country code/ }).click();
+  await page
+    .getByRole('combobox', { name: 'Search countries' })
+    .fill('united king');
+  await page.getByRole('option', { name: /United Kingdom/ }).click();
+  await page.getByRole('textbox', { name: 'Phone' }).fill('07400 123456');
+  expect((await axe(page)).violations).toEqual([]);
+  await page.getByRole('button', { name: 'Save contact' }).click();
+
+  await expect(page).toHaveURL(/\/contacts\/[0-9a-f-]{36}$/);
+  const link = page
+    .getByRole('main')
+    .getByRole('link', { name: '+44 7400 123456' });
+  await expect(link).toHaveAttribute('href', 'tel:+447400123456');
+});
+
+test('a pasted international number switches the country; a US number shows nationally', async ({
+  page,
+}) => {
+  const name = `E2E Phone ${Math.random().toString(36).slice(2, 8)}`;
+  await fillBasics(page, name);
+  await page.getByRole('textbox', { name: 'Phone' }).fill('+1 512 555 0148');
+  await expect(page.getByRole('button', { name: /^Country code/ })).toHaveText(
+    'US +1',
+  );
+  await expect(page.getByRole('textbox', { name: 'Phone' })).toHaveValue(
+    '(512) 555-0148',
+  );
+  await page.getByRole('button', { name: 'Save contact' }).click();
+  await expect(page).toHaveURL(/\/contacts\/[0-9a-f-]{36}$/);
+  await expect(
+    page.getByRole('main').getByRole('link', { name: '(512) 555-0148' }),
+  ).toHaveAttribute('href', 'tel:+15125550148');
+});
+
+test('an invalid number shows an error on blur, linked to the field', async ({
+  page,
+}) => {
+  await fillBasics(page, 'E2E Bad Phone');
+  const phone = page.getByRole('textbox', { name: 'Phone' });
+  await phone.fill('555');
+  await phone.blur();
+  const error = page.getByText('Enter a valid phone number.');
+  await expect(error).toBeVisible();
+  await expect(phone).toHaveAttribute('aria-invalid', 'true');
+  await expect(phone).toHaveAttribute('aria-describedby', /phone-error/);
+  expect((await axe(page)).violations).toEqual([]);
+});

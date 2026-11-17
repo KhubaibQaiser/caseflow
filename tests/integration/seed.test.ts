@@ -176,6 +176,12 @@ describe('seed', () => {
     expect(new Set(phones).size).toBe(phones.length);
   });
 
+  it('writes every phone as E.164', async () => {
+    const phones = (await all('contacts', 'phone')).filter((r) => r.phone);
+    expect(phones.length).toBeGreaterThan(1500);
+    expect(phones.every((r) => /^\+1\d{10}$/.test(String(r.phone)))).toBe(true);
+  });
+
   it('lets the admin sign in with SEED_ADMIN_PASSWORD', async () => {
     const c = localConfig();
     const client = createClient(c.url, c.anon, {

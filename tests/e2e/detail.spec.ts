@@ -54,8 +54,8 @@ test('detail shows the contact, its follow-up, notes and activity', async ({
     main.getByRole('link', { name: withNotes.email! }),
   ).toHaveAttribute('href', `mailto:${withNotes.email}`);
   await expect(
-    main.getByRole('link', { name: withNotes.phone! }),
-  ).toHaveAttribute('href', /^tel:\d+$/);
+    main.getByRole('link', { name: '(212) 555-0199' }),
+  ).toHaveAttribute('href', `tel:${withNotes.phone}`);
   await expect(main.getByRole('article')).toHaveCount(2);
   const activity = main.getByRole('region', { name: 'Activity' });
   await expect(
@@ -439,9 +439,9 @@ test('@mobile one column with a large Call button', async ({
   await page.goto(`/contacts/${withNotes.id}`);
 
   const call = page.getByRole('link', { name: `Call ${withNotes.fullName}` });
-  await expect(call).toHaveAttribute('href', /^tel:\d+$/);
+  await expect(call).toHaveAttribute('href', /^tel:\+?\d+$/);
   expect((await call.boundingBox())!.height).toBeGreaterThanOrEqual(44);
-  // The top bar is the mark only; the way back is a 32px "Contacts" link above the name.
+  // The top bar has no back link (just the mark and the theme button); the way back is a 32px "Contacts" link above the name.
   await expect(
     page.getByRole('link', { name: 'New', exact: true }),
   ).toHaveCount(0);

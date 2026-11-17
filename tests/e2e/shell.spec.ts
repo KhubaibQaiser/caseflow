@@ -91,7 +91,7 @@ test('an admin opens the write-only page', async ({ page }) => {
   expect(response?.status()).toBe(200);
 });
 
-test('@mobile the top bar is the mark only; New contact sits in the page header row', async ({
+test('@mobile the top bar is the mark and the theme button; New contact sits in the page header row', async ({
   page,
 }) => {
   await page.goto('/no-such-page');
