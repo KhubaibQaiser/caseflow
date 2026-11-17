@@ -119,6 +119,40 @@ describe('signInAction', () => {
     });
   });
 
+  it.each(['999.1.1.1', 'not-an-ip', '', '1.2.3.4:80'])(
+    'does not forward x-forwarded-for=%j (not an IP)',
+    async (xff) => {
+      m.headers = new Headers({ 'x-forwarded-for': xff });
+      m.signInWithPassword.mockResolvedValue({
+        data: { session: null },
+        error: authError(400, 'invalid_credentials'),
+      });
+      await signInAction(null, form(good));
+      expect(m.createSignInClient).toHaveBeenCalledWith(null);
+    },
+  );
+
+  it('forwards an IPv6 address', async () => {
+    m.headers = new Headers({ 'x-forwarded-for': '2001:db8::1' });
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(400, 'invalid_credentials'),
+    });
+    await signInAction(null, form(good));
+    expect(m.createSignInClient).toHaveBeenCalledWith('2001:db8::1');
+  });
+
+  it('returns ok instead of redirecting when the browser will go back', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: { access_token: 'a', refresh_token: 'r' } },
+      error: null,
+    });
+    expect(
+      await signInAction(null, form({ ...good, back: '1', next: '/x' })),
+    ).toEqual({ ok: true, data: null });
+    expect(m.setSession).toHaveBeenCalled();
+  });
+
   it('sets the session and tz cookie, then redirects to a safe next', async () => {
     m.signInWithPassword.mockResolvedValue({
       data: { session: { access_token: 'a', refresh_token: 'r' } },
