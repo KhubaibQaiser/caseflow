@@ -40,12 +40,14 @@ export default async function ContactsPage({
   return (
     // md+: the page fills the viewport (main's 34px padding aside) and the table scrolls inside it.
     <div className={listPageFrame}>
-      <PageHeader
-        title="Contacts"
-        meta={`${fmt(result.matching)} of ${fmt(result.total)}`}
-        actions={<NewContactLink />}
-      />
       <ContactsView
+        header={
+          <PageHeader
+            title="Contacts"
+            meta={`${fmt(result.matching)} of ${fmt(result.total)}`}
+            actions={<NewContactLink />}
+          />
+        }
         rows={toListRows(result.rows, todayIn(tz), tz)}
         total={result.total}
         matching={result.matching}

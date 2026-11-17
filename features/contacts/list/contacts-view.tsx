@@ -1,6 +1,9 @@
 'use client';
 
 import { Suspense, lazy, useRef } from 'react';
+import type { ReactNode } from 'react';
+
+import { Headroom } from '@/components/shell/headroom';
 
 import type { ContactFacets } from '@/lib/contracts/facets';
 import { serializeListQuery } from '@/lib/contracts/list-query';
@@ -13,6 +16,7 @@ import { ContactCards } from './contact-cards';
 import { ContactsTable } from './contacts-table';
 import { Filtered, FirstRun } from './empty-states';
 import type { ListRow } from './list-rows';
+import { MobileFooter } from './mobile-footer';
 import { Pagination } from './pagination';
 import { Toolbar } from './toolbar';
 
@@ -32,6 +36,8 @@ type ContactsViewProps = {
   pageSize: number;
   /** The `filters_open` cookie, read on the server. */
   filtersOpen: boolean;
+  /** The page title row; on a phone it hides with the toolbar as the page scrolls. */
+  header?: ReactNode;
 };
 
 export { BusyRegion };
@@ -52,6 +58,7 @@ function Results({
   page,
   pageSize,
   filtersOpen,
+  header,
 }: ContactsViewProps) {
   const [query, setQuery, isPending] = useListQuery();
   const filtersButton = useRef<HTMLButtonElement>(null);
@@ -60,15 +67,17 @@ function Results({
   return (
     <>
       {/* With no contacts at all there is nothing to search or filter. */}
-      {total > 0 && (
-        <Toolbar
-          facets={facets}
-          isPending={isPending}
-          panel={panel}
-          filtersButton={filtersButton}
-          onFiltersIntent={() => void loadPanel()}
-        />
-      )}
+      <Headroom title={header}>
+        {total > 0 && (
+          <Toolbar
+            facets={facets}
+            isPending={isPending}
+            panel={panel}
+            filtersButton={filtersButton}
+            onFiltersIntent={() => void loadPanel()}
+          />
+        )}
+      </Headroom>
       <p role="status" className="sr-only">
         {matching.toLocaleString('en-US')}{' '}
         {matching === 1 ? 'contact' : 'contacts'}
@@ -103,6 +112,11 @@ function Results({
                 />
               </BusyRegion>
               <Pagination
+                page={query.page}
+                pageSize={query.size}
+                matching={matching}
+              />
+              <MobileFooter
                 page={query.page}
                 pageSize={query.size}
                 matching={matching}

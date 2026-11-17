@@ -45,11 +45,8 @@ describe('/contacts page', () => {
 
   it('renders the filters panel as the user left it (cookie), closed by default', async () => {
     const open = (page: Awaited<ReturnType<typeof visit>>) =>
-      (
-        page.props.children as {
-          props: { filtersOpen?: boolean };
-        }[]
-      ).find((c) => c.props.filtersOpen !== undefined)?.props.filtersOpen;
+      (page.props.children as { props: { filtersOpen?: boolean } }).props
+        .filtersOpen;
     expect(open(await visit({}))).toBe(false);
     filtersCookie = '1';
     expect(open(await visit({}))).toBe(true);

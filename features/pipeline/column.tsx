@@ -4,6 +4,7 @@ import Inbox from 'lucide-react/icons/inbox';
 import { useEffect, useRef, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { footerBar } from '@/components/shell/footer-bar';
 import { EmptyState } from '@/components/ui/empty-state';
 import type { ContactRow } from '@/lib/contracts/contact';
 import { STATUS_LABEL } from '@/lib/contracts/enums';
@@ -133,26 +134,28 @@ export function Column({
           </ul>
         )}
       </div>
-      {/* Outside the scroller: what is left stays in view however far the cards go. */}
-      {failed && (
-        <p
-          role="alert"
-          className="text-overdue text-13 m-0 px-1 text-center font-medium"
-        >
-          Couldn&apos;t load more.
-        </p>
-      )}
+      {/* Outside the scroller: what is left stays in view however far the cards go. On a phone it is the sticky footer. */}
       {left > 0 && !exhausted && (
-        <Button
-          variant="ghost"
-          pending={loading}
-          pendingLabel="Loading…"
-          onClick={() => void loadMore()}
-          className="border-lead-border text-ink-2 tnum h-8 shrink-0 border-dashed bg-transparent"
-        >
-          {failed ? 'Retry' : `Show ${Math.min(PAGE_SIZE, left)} more`} ·{' '}
-          {fmt(left)} left
-        </Button>
+        <div className={cn(footerBar, 'max-md:gap-3 md:contents')}>
+          {failed && (
+            <p
+              role="alert"
+              className="text-overdue text-13 m-0 px-1 text-center font-medium max-md:shrink-0"
+            >
+              Couldn&apos;t load more.
+            </p>
+          )}
+          <Button
+            variant="ghost"
+            pending={loading}
+            pendingLabel="Loading…"
+            onClick={() => void loadMore()}
+            className="border-lead-border text-ink-2 tnum h-8 shrink-0 border-dashed bg-transparent max-md:h-9 max-md:flex-1"
+          >
+            {failed ? 'Retry' : `Show ${Math.min(PAGE_SIZE, left)} more`} ·{' '}
+            {fmt(left)} left
+          </Button>
+        </div>
       )}
       <p role="status" className="sr-only">
         {announce}

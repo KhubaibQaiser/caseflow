@@ -2,6 +2,7 @@
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, lazy, useLayoutEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 
 import type { ContactRow } from '@/lib/contracts/contact';
 import { STATUSES } from '@/lib/contracts/enums';
@@ -9,6 +10,7 @@ import type { Status } from '@/lib/contracts/enums';
 import type { ContactFacets } from '@/lib/contracts/facets';
 import type { Filters } from '@/lib/contracts/filters';
 import type { Result } from '@/lib/contracts/result';
+import { Headroom } from '@/components/shell/headroom';
 import { usePermission } from '@/lib/auth/permissions-context';
 
 import { useFiltersPanel } from '../contacts/filters/use-filters-panel';
@@ -36,6 +38,8 @@ type BoardProps = {
   /** The filters these columns were loaded under; "Show 50 more" repeats them. */
   filters: Filters;
   facets: ContactFacets;
+  /** The page title row; on a phone it hides on scroll while the status tabs stay. */
+  header?: ReactNode;
   /** The `filters_open` cookie, read on the server. */
   filtersOpen: boolean;
   onMove(id: string, to: Status): Promise<Result<ContactRow>>;
@@ -58,6 +62,7 @@ function Results({
   columns: initial,
   filters,
   facets,
+  header,
   filtersOpen,
   onMove,
   onLoadMore,
@@ -117,9 +122,11 @@ function Results({
   return (
     <>
       {/* First on a phone, straight under the title; the toolbar's search and filters follow. */}
-      {showBoard && (
-        <MobileTabs columns={columns} value={tab} onChange={setTab} />
-      )}
+      <Headroom title={header} pin={showBoard}>
+        {showBoard && (
+          <MobileTabs columns={columns} value={tab} onChange={setTab} />
+        )}
+      </Headroom>
       {!none && (
         <Toolbar
           facets={facets}
