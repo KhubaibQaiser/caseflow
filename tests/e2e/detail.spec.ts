@@ -54,8 +54,8 @@ test('detail shows the contact, its follow-up, notes and activity', async ({
     main.getByRole('link', { name: withNotes.email! }),
   ).toHaveAttribute('href', `mailto:${withNotes.email}`);
   await expect(
-    main.getByRole('link', { name: withNotes.phone! }),
-  ).toHaveAttribute('href', /^tel:\d+$/);
+    main.getByRole('link', { name: '(212) 555-0199' }),
+  ).toHaveAttribute('href', `tel:${withNotes.phone}`);
   await expect(main.getByRole('article')).toHaveCount(2);
   const activity = main.getByRole('region', { name: 'Activity' });
   await expect(
