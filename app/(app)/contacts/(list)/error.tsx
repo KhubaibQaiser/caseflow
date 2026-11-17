@@ -40,10 +40,7 @@ export default function ContactsError({
   return (
     <div className="flex flex-col gap-3">
       <title>Contacts didn&apos;t load · Caseflow</title>
-      <PageHeader
-        title="Contacts"
-        actions={<NewContactLink className="max-md:hidden" />}
-      />
+      <PageHeader title="Contacts" actions={<NewContactLink />} />
       {/* min-h holds the toolbar's row while its code loads. */}
       <div className="md:min-h-[34px]">
         <Suspense fallback={null}>

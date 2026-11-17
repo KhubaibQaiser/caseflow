@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
 import { Can, usePermission } from '@/lib/auth/permissions-context';
 import type { Note } from '@/lib/contracts/contact';
-import { ROLE_LABEL } from '@/lib/contracts/permissions';
 import type { Result } from '@/lib/contracts/result';
 import { NOTE_MAX_CHARS, type RichDoc } from '@/lib/contracts/rich-text-core';
 import { formatTimestamp, formatTimestampFull } from '@/lib/dates/labels';
@@ -32,16 +31,18 @@ function readDraft(): unknown {
 // The placeholder holds the editor's height, so nothing shifts when it lands.
 const NoteEditor = dynamic(() => import('./note-editor'), {
   ssr: false,
-  loading: () => <div aria-hidden className="h-[122px]" />,
+  loading: () => <div aria-hidden className="h-[113px]" />,
 });
 
-type Failure = { message: string; retry: boolean };
+const FAILED = 'Note not saved. Check your connection and save again.';
+
+type Failure = { message: string };
 
 function NoteItem({ note, tz }: { note: Note; tz: string }) {
   return (
     <article className="border-line-soft border-t py-2.5 first:border-t-0 first:pt-0">
       <p className="text-ink-2 m-0 text-xs">
-        {note.author.name} · {ROLE_LABEL[note.author.role]} ·{' '}
+        {note.author.name} ·{' '}
         <time
           dateTime={note.createdAt}
           title={formatTimestampFull(note.createdAt, tz)}
@@ -129,14 +130,12 @@ export function Notes({
       markReturn(pathname);
       expired();
     } else if (code === 'forbidden') {
-      setFailure({
-        message: "You don't have permission to add notes.",
-        retry: false,
-      });
+      setFailure({ message: "You don't have permission to add notes." });
     } else if (code === 'validation') {
-      setFailure({ message: fieldErrors?.body ?? message, retry: false });
+      setFailure({ message: fieldErrors?.body ?? message });
     } else {
-      setFailure({ message, retry: true });
+      // Whatever the cause, the draft is kept and Save note sends it again.
+      setFailure({ message: FAILED });
     }
   }
 
@@ -151,70 +150,67 @@ export function Notes({
         }
       >
         <div className="mb-3 flex flex-col gap-2">
-          <NoteEditor
-            handle={editor}
-            label="Add a note"
-            placeholder="Add a note…"
-            describedBy={
-              [failure && errorId, showCounter && counterId]
-                .filter(Boolean)
-                .join(' ') || undefined
-            }
-            invalid={failure !== null}
-            readOnly={pending}
-            restored={restored}
-            onChange={(d) => {
-              setDraft(d);
-              setFailure(null); // editing again retires the last error
-              // Typing retires the message; the editor's own clear after a save must not.
-              if (d.text) setAnnounce('');
-            }}
-            onSubmit={() => void submit()}
-          />
-          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
-            <span className="text-ink-2 text-xs">
-              Visible to the whole team. Ctrl or Cmd+Enter saves.
-              {showCounter && (
-                <span
-                  id={counterId}
-                  className={
-                    length >= NOTE_MAX_CHARS
-                      ? 'tnum text-ink ms-2 font-semibold'
-                      : 'tnum ms-2'
-                  }
-                >
-                  {length.toLocaleString('en-US')} /{' '}
-                  {NOTE_MAX_CHARS.toLocaleString('en-US')}
+          {/* One frame: toolbar, editor and footer. Focus anywhere inside lights all of it. */}
+          <div
+            data-note-composer
+            className="border-control-border bg-surface rounded-ctl focus-within:border-accent focus-within:outline-accent has-[[aria-invalid=true]]:border-overdue border transition-colors duration-150 focus-within:shadow-[0_0_0_3px_var(--ring)] focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-solid has-[[aria-invalid=true]]:shadow-[0_0_0_3px_var(--error-ring)]"
+          >
+            <NoteEditor
+              handle={editor}
+              label="Add a note"
+              placeholder="Add a note…"
+              describedBy={
+                [failure && errorId, showCounter && counterId]
+                  .filter(Boolean)
+                  .join(' ') || undefined
+              }
+              invalid={failure !== null}
+              readOnly={pending}
+              restored={restored}
+              onChange={(d) => {
+                setDraft(d);
+                setFailure(null); // editing again retires the last error
+                // Typing retires the message; the editor's own clear after a save must not.
+                if (d.text) setAnnounce('');
+              }}
+              onSubmit={() => void submit()}
+            />
+            <div className="border-line-soft flex items-center justify-between gap-3 border-t py-2 ps-3 pe-2">
+              <span className="text-ink-2 text-xs leading-snug">
+                Notes are visible to the whole intake team.
+                <span className="pointer-coarse:hidden">
+                  {' '}
+                  Ctrl or Cmd+Enter saves.
                 </span>
-              )}
-            </span>
-            <Button
-              variant="primary"
-              size="sm"
-              disabled={!text && !pending}
-              pending={pending}
-              pendingLabel="Saving…"
-              onClick={() => void submit()}
-            >
-              Save note
-            </Button>
+                {showCounter && (
+                  <span
+                    id={counterId}
+                    className={
+                      length >= NOTE_MAX_CHARS
+                        ? 'tnum text-ink ms-2 font-semibold'
+                        : 'tnum ms-2'
+                    }
+                  >
+                    {length.toLocaleString('en-US')} /{' '}
+                    {NOTE_MAX_CHARS.toLocaleString('en-US')}
+                  </span>
+                )}
+              </span>
+              <Button
+                variant="primary"
+                size="sm"
+                disabled={!text && !pending}
+                pending={pending}
+                pendingLabel="Saving…"
+                onClick={() => void submit()}
+              >
+                Save note
+              </Button>
+            </div>
           </div>
           {failure && (
-            <div
-              role="alert"
-              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2"
-            >
+            <div role="alert">
               <ErrorText id={errorId}>{failure.message}</ErrorText>
-              {failure.retry && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  pending={pending}
-                  onClick={() => void submit()}
-                >
-                  Retry
-                </Button>
-              )}
             </div>
           )}
         </div>

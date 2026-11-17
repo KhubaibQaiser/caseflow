@@ -26,7 +26,7 @@ function inline(node: RichInline, key: number): ReactNode {
           href={mark.attrs.href}
           target="_blank"
           rel="noopener noreferrer nofollow"
-          className="text-accent underline-offset-3 hover:underline"
+          className="text-accent underline decoration-1 underline-offset-3 hover:decoration-2"
         >
           {out}
         </a>

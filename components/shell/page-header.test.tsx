@@ -9,13 +9,13 @@ describe('PageHeader', () => {
       <PageHeader
         title="Contacts"
         meta="1,284 of 2,437"
-        actions={<a href="/contacts/new">New contact</a>}
+        actions={<button type="button">New contact</button>}
       />,
     );
     const h1 = screen.getByRole('heading', { name: 'Contacts' });
     expect(h1.className).toContain('truncate');
     expect(h1.className).toContain('min-w-0');
-    const action = screen.getByRole('link', {
+    const action = screen.getByRole('button', {
       name: 'New contact',
     }).parentElement!;
     expect(action.className).toContain('shrink-0');

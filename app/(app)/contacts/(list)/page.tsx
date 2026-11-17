@@ -42,7 +42,7 @@ export default async function ContactsPage({
       <PageHeader
         title="Contacts"
         meta={`${fmt(result.matching)} of ${fmt(result.total)}`}
-        actions={<NewContactLink className="max-md:hidden" />}
+        actions={<NewContactLink />}
       />
       <ContactsView
         rows={toListRows(result.rows, todayIn(tz), tz)}

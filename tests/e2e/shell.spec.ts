@@ -89,11 +89,25 @@ test('an admin opens the write-only page', async ({ page }) => {
   expect(response?.status()).toBe(200);
 });
 
-test('@mobile admins get the New tab', async ({ page }) => {
+test('@mobile the top bar is the mark only; New contact sits in the page header row', async ({
+  page,
+}) => {
   await page.goto('/no-such-page');
   await expect(
     page.getByRole('link', { name: 'New', exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+
+  await page.goto('/contacts');
+  const title = page.getByRole('heading', { level: 1, name: 'Contacts' });
+  const add = page.getByRole('link', { name: 'New contact' });
+  await expect(add).toBeVisible();
+  const [t, a] = [(await title.boundingBox())!, (await add.boundingBox())!];
+  // Same row, the button to the right of the title.
+  expect(Math.abs(t.y + t.height / 2 - (a.y + a.height / 2))).toBeLessThan(
+    t.height,
+  );
+  expect(a.x).toBeGreaterThan(t.x + t.width);
+  expect(a.y + a.height).toBeLessThan(t.y + t.height + 20);
 });
 
 test('@mobile a toast clears the tab bar and the safe area', async ({

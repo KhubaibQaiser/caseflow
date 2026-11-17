@@ -27,7 +27,7 @@ import type { LucideIcon } from 'lucide-react/types';
 
 import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
-import { Input, controlClass } from '@/components/ui/input';
+import { Input } from '@/components/ui/input';
 import { Tooltip } from '@/components/ui/tooltip';
 import { safeParseRichDoc } from '@/lib/contracts/rich-text';
 import {
@@ -143,7 +143,7 @@ const TOOLS: Tool[] = [
 ];
 
 const toolClass =
-  'grid size-8 shrink-0 cursor-pointer place-items-center rounded-ctl text-ink-2 transition-colors duration-150 hover:bg-track hover:text-ink aria-pressed:bg-accent-soft aria-pressed:text-accent forced-colors:aria-pressed:bg-[Highlight] forced-colors:aria-pressed:text-[HighlightText] forced-colors:aria-pressed:forced-color-adjust-none';
+  'grid size-8 shrink-0 cursor-pointer max-md:size-10 place-items-center rounded-ctl text-ink-2 transition-colors duration-150 hover:bg-track hover:text-ink aria-pressed:bg-accent-soft aria-pressed:text-accent forced-colors:aria-pressed:bg-[Highlight] forced-colors:aria-pressed:text-[HighlightText] forced-colors:aria-pressed:forced-color-adjust-none';
 
 type NoteEditorProps = {
   label: string;
@@ -196,8 +196,8 @@ export default function NoteEditor({
         'aria-label': label,
         'aria-keyshortcuts': 'Control+Enter Meta+Enter',
         class: cn(
-          controlClass,
-          'min-h-[82px] cursor-text py-2 leading-relaxed wrap-anywhere',
+          // Borderless: the composer's frame carries the border and the focus ring.
+          'text-ink min-h-[72px] cursor-text px-3 py-2.5 text-base leading-relaxed wrap-anywhere outline-none sm:text-13 focus-visible:shadow-none focus-visible:outline-none',
           '[&_p]:m-0 [&_li>p]:m-0 [&_ul]:m-0 [&_ol]:m-0 [&_ul]:list-disc [&_ol]:list-decimal [&_ul]:ps-5 [&_ol]:ps-5',
           '[&_a]:text-accent [&_a]:underline [&_a]:underline-offset-3',
         ),
@@ -276,15 +276,16 @@ export default function NoteEditor({
 
   if (!editor)
     // Between the code landing and the editor existing: hold the space so nothing shifts.
-    return <div aria-hidden className="h-[122px]" />;
+    return <div aria-hidden className="h-[113px]" />;
 
+  // Toolbar, link form and body; the frame (border, ring, footer) belongs to the composer around it.
   return (
-    <div className="flex flex-col gap-1.5">
+    <>
       <div
         role="toolbar"
         id={toolbarId}
         aria-label="Formatting"
-        className="flex flex-wrap items-center gap-0.5"
+        className="border-line-soft flex flex-wrap items-center gap-0.5 border-b px-1.5 py-1 max-md:gap-1"
       >
         {TOOLS.map((t, i) => (
           <Tooltip key={t.name} content={`${t.label} (${t.shortcut})`}>
@@ -334,13 +335,13 @@ export default function NoteEditor({
         {state?.empty && (
           <span
             aria-hidden
-            className="text-ink-2 sm:text-13 pointer-events-none absolute start-2.5 top-2 text-base"
+            className="text-ink-2 sm:text-13 pointer-events-none absolute start-3 top-2.5 text-base leading-relaxed"
           >
             {placeholder}
           </span>
         )}
       </div>
-    </div>
+    </>
   );
 }
 

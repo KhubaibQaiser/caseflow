@@ -42,7 +42,11 @@ export function ContactHeader({
   return (
     <header className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between md:gap-4">
       <div className="min-w-0">
-        <PageHeading className="text-ink m-0 mb-1.5 text-xl font-semibold tracking-tight wrap-anywhere md:text-2xl">
+        <PageHeading
+          // Two lines, then an ellipsis, so a very long name never pushes the action row around.
+          title={fullName}
+          className="text-ink m-0 mb-1.5 line-clamp-2 text-xl font-semibold tracking-tight wrap-anywhere md:text-2xl"
+        >
           {fullName}
         </PageHeading>
         <div className="text-13 text-ink-2 flex flex-wrap items-center gap-x-2 gap-y-1">

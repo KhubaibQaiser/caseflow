@@ -83,8 +83,8 @@ export function Timeline({
                 )}
               />
               <div className="min-w-0">
-                <p className="text-ink m-0 font-medium wrap-anywhere">
-                  {a.actor.name} {text}
+                <p className="text-ink m-0 font-normal wrap-anywhere">
+                  <span className="font-semibold">{a.actor.name}</span> {text}
                 </p>
                 <time
                   dateTime={a.createdAt}

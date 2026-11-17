@@ -40,10 +40,7 @@ export default function PipelineError({
   return (
     <div className="flex flex-col gap-3">
       <title>Pipeline didn&apos;t load · Caseflow</title>
-      <PageHeader
-        title="Pipeline"
-        actions={<NewContactLink className="max-md:hidden" />}
-      />
+      <PageHeader title="Pipeline" actions={<NewContactLink />} />
       <div className="md:min-h-[34px]">
         <Suspense fallback={null}>
           <ErrorToolbar hideSort />

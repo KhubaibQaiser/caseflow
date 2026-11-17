@@ -256,7 +256,7 @@ test('adding a note clears the composer, lists it first and announces it', async
   await expect(page.getByRole('article')).toHaveCount(3);
 });
 
-test('a failed note save keeps the text and Retry saves it', async ({
+test('a failed note save keeps the text, rings the frame, and Save note sends it again', async ({
   page,
   context,
   baseURL,
@@ -277,12 +277,21 @@ test('a failed note save keeps the text and Retry saves it', async ({
 
   const alert = page
     .getByRole('alert')
-    .filter({ hasText: 'Something went wrong.' });
+    .filter({
+      hasText: 'Note not saved. Check your connection and save again.',
+    });
   await expect(alert).toBeVisible();
   await expect(box).toHaveText('Called back');
+  await expect(box).toHaveAttribute('aria-invalid', 'true');
+  // One button: the separate Retry is gone, and the error sits below the frame.
+  await expect(page.getByRole('button', { name: 'Retry' })).toHaveCount(0);
+  const frame = box.locator('xpath=ancestor::*[@data-note-composer]');
+  expect((await alert.boundingBox())!.y).toBeGreaterThan(
+    (await frame.boundingBox())!.y + (await frame.boundingBox())!.height - 1,
+  );
   expect((await axe(page)).violations).toEqual([]);
 
-  await alert.getByRole('button', { name: 'Retry' }).click();
+  await page.getByRole('button', { name: 'Save note' }).click();
   await expect(box).toHaveText('');
   await expect(alert).toHaveCount(0);
   await expect(page.getByRole('article').first()).toContainText('Called back');
@@ -373,6 +382,19 @@ test('keyboard: Enter opens the move menu on its first item', async ({
 test.describe('as a viewer', () => {
   test.use({ storageState: storage.viewer });
 
+  test('@mobile a viewer title row has no New contact', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await setup(context, baseURL);
+    await page.goto('/contacts');
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Contacts' }),
+    ).toBeVisible();
+    await expect(page.getByRole('link', { name: /New/ })).toHaveCount(0);
+  });
+
   test('a viewer reads everything and every write control says why it is off', async ({
     page,
     context,
@@ -402,6 +424,28 @@ test.describe('as a viewer', () => {
     await page.keyboard.press('Enter');
     await expect(page.getByRole('menu')).toHaveCount(0);
     expect((await axe(page)).violations).toEqual([]);
+  });
+});
+
+test.describe('mobile list header', () => {
+  test('@mobile New contact keeps its width and the count drops at 320px', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await setup(context, baseURL);
+    await page.setViewportSize({ width: 320, height: 700 });
+    await page.goto('/contacts');
+    await expect(page.getByRole('link', { name: 'New contact' })).toBeVisible();
+    await expect(
+      page.getByRole('heading', { level: 1, name: 'Contacts' }),
+    ).toBeVisible();
+    await expect(page.getByText(/ of /).first()).toBeHidden();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -440,6 +484,20 @@ test('@mobile one column with a large Call button', async ({
   const call = page.getByRole('link', { name: `Call ${withNotes.fullName}` });
   await expect(call).toHaveAttribute('href', /^tel:\d+$/);
   expect((await call.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  // The top bar is the mark only; the way back is a 32px "Contacts" link above the name.
+  await expect(
+    page.getByRole('link', { name: 'New', exact: true }),
+  ).toHaveCount(0);
+  const back = page
+    .getByRole('navigation', { name: 'Breadcrumb' })
+    .getByRole('link', { name: 'Contacts' });
+  await expect(back).toHaveAttribute('href', '/contacts');
+  const [b, h] = [
+    (await back.boundingBox())!,
+    (await page.getByRole('heading', { level: 1 }).boundingBox())!,
+  ];
+  expect(b.height).toBeGreaterThanOrEqual(32);
+  expect(b.y + b.height).toBeLessThanOrEqual(h.y + 2);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
