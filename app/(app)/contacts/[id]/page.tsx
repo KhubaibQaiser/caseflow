@@ -1,4 +1,6 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 
 import { Breadcrumb } from '@/components/shell/breadcrumb';
 import {
@@ -12,19 +14,28 @@ import { getContact } from '@/lib/data';
 import { todayIn } from '@/lib/dates/date-only';
 import { getRequestTimeZone } from '@/lib/dates/server';
 
+// One read serves the title and the page.
+const loadContact = cache(getContact);
+
+export async function generateMetadata({
+  params,
+}: PageProps<'/contacts/[id]'>): Promise<Metadata> {
+  const contact = await loadContact((await params).id);
+  return { title: `${contact?.fullName ?? 'Contact'} · Caseflow` };
+}
+
 export default async function ContactPage({
   params,
 }: PageProps<'/contacts/[id]'>) {
   const { id } = await params;
   const [contact, tz] = await Promise.all([
-    getContact(id),
+    loadContact(id),
     getRequestTimeZone(),
   ]);
   if (!contact) notFound();
   const today = todayIn(tz);
   return (
     <div className="flex flex-col gap-3.5">
-      <title>{`${contact.fullName} · Caseflow`}</title>
       <Breadcrumb
         crumbs={[
           { label: 'Contacts', href: '/contacts' },

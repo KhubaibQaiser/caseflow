@@ -35,7 +35,7 @@ export function DetailsList({
   const { phone, email, matterType, referralSource, summary } = contact;
   return (
     <Panel title="Details">
-      <dl className="text-13 m-0 grid grid-cols-[104px_1fr] gap-x-4 gap-y-2 sm:grid-cols-[140px_1fr]">
+      <dl className="text-13 m-0 grid grid-cols-[92px_1fr] gap-x-3 gap-y-2 sm:grid-cols-[140px_1fr] sm:gap-x-4">
         <Row label="Phone">
           {phone ? (
             <a href={telHref(phone)} className={`${link} tnum`}>
