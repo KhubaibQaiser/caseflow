@@ -11,7 +11,8 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-baseline gap-x-2.5 gap-y-2">
+    // min-h: the same height with or without the 34px action, so roles and the skeleton line up.
+    <header className="flex min-h-[34px] flex-wrap items-baseline gap-x-2.5 gap-y-2">
       <h1 className="text-ink m-0 text-xl font-semibold tracking-tight md:text-[22px]">
         {title}
       </h1>
