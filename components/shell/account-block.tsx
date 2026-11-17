@@ -2,6 +2,7 @@
 
 import LogOut from 'lucide-react/icons/log-out';
 import Lock from 'lucide-react/icons/lock';
+import ShieldCheck from 'lucide-react/icons/shield-check';
 
 import { Button } from '@/components/ui/button';
 import { LazyTooltip } from '@/components/ui/lazy-tooltip';
@@ -11,27 +12,33 @@ import { cn } from '@/utils/cn';
 
 export type SignOut = () => Promise<void>;
 
-/** `rail` collapses to icons below lg (the tablet rail); elsewhere it is always full. */
+/** `rail` collapses to an icon pill below lg (the tablet rail), with a tooltip; elsewhere it is always full. */
 function RoleBadge({ rail = false }: { rail?: boolean }) {
   const { role } = useViewer();
   const viewer = role === 'viewer';
-  return (
+  const label = `${ROLE_LABEL[role]}${viewer ? ' · read-only' : ''}`;
+  const badge = (
     <span
       className={cn(
-        'text-ink-2 border-lead-border inline-flex items-center gap-1 self-start border px-1.75 text-xs leading-4.5 font-semibold',
-        'rounded-pill',
+        'text-ink-2 border-lead-border rounded-pill inline-flex items-center gap-1 self-start border px-1.75 text-xs leading-4.5 font-semibold',
+        // A 24px circle: one glyph, even padding all round.
         rail &&
-          'max-lg:rounded-ctl max-lg:flex-col max-lg:gap-0 max-lg:self-center max-lg:px-1.5',
+          'max-lg:size-6 max-lg:justify-center max-lg:gap-0 max-lg:self-center max-lg:px-0',
       )}
     >
-      {viewer && <Lock aria-hidden className="size-2.75" />}
-      <span>
-        {ROLE_LABEL[role]}
-        {viewer && (
-          <span className={cn(rail && 'max-lg:hidden')}> · read-only</span>
-        )}
-      </span>
+      {viewer ? (
+        <Lock aria-hidden className="size-2.75 max-lg:size-3" />
+      ) : (
+        rail && <ShieldCheck aria-hidden className="size-3 lg:hidden" />
+      )}
+      <span className={cn(rail && 'max-lg:sr-only')}>{label}</span>
     </span>
+  );
+  if (!rail) return badge;
+  return (
+    <LazyTooltip content={label} side="right" contentClassName="lg:hidden">
+      {badge}
+    </LazyTooltip>
   );
 }
 
