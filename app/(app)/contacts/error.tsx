@@ -1,12 +1,12 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { Suspense, lazy, useEffect, useRef, useTransition } from 'react';
+import { Suspense, lazy, useTransition } from 'react';
 
 import { PageHeader } from '@/components/shell/page-header';
 import { ErrorState } from '@/components/ui/error-state';
 import { NewContactLink } from '@/features/contacts/list/new-contact-link';
 import { listFrame } from '@/features/contacts/list/frame';
+import { ResetOnNavigate } from '@/features/contacts/list/reset-on-navigate';
 
 import { reasonClass, useOffline } from '../../error-content';
 import type { ReasonClass } from '../../error-content';
@@ -23,19 +23,6 @@ const REASON: Record<ReasonClass, string> = {
   server: "The server didn't respond.",
   unexpected: 'Something went wrong showing them.',
 };
-
-// Next only resets this boundary on a new pathname. When the committed URL moves to a new list
-// (not the typed, still-debounced one), the navigation has already fetched it: reset() just shows it.
-function ResetOnNavigate({ reset }: { reset: () => void }) {
-  const url = useSearchParams()?.toString() ?? '';
-  const last = useRef(url);
-  useEffect(() => {
-    if (url === last.current) return;
-    last.current = url;
-    reset();
-  }, [url, reset]);
-  return null;
-}
 
 // The page keeps its header and toolbar (with the applied chips), so the filters visibly survive.
 // Never error.message: it can carry server detail.

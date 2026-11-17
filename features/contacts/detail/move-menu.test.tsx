@@ -174,4 +174,17 @@ describe('MoveMenu', () => {
     });
     expect(onMove).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    [undefined, 'end'],
+    ['start', 'start'],
+  ] as const)('places the menu by align=%s (%s)', async (align, placed) => {
+    const user = userEvent.setup();
+    render(<MoveMenu current="lead" onMove={vi.fn()} align={align} />);
+    await user.click(trigger());
+    expect(await screen.findByRole('menu')).toHaveAttribute(
+      'data-align',
+      placed,
+    );
+  });
 });
