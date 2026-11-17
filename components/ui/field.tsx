@@ -124,7 +124,7 @@ export function ErrorSummary({ errors, attempt }: ErrorSummaryProps) {
               <a
                 href={`#${error.id}`}
                 onClick={(event) => jump(event, error.id)}
-                className="text-overdue underline underline-offset-2"
+                className="text-overdue inline-flex min-h-6 items-center underline underline-offset-2"
               >
                 {error.label}: {error.message}
               </a>

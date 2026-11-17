@@ -6,10 +6,12 @@ import { EmptyState } from '@/components/ui/empty-state';
 /** The whole page, for a Viewer who reached a write screen. Rendered by the server, not hidden by the UI. */
 export function ForbiddenState({
   action,
+  description = 'Your role is Viewer, which is read-only. An admin can change your role or make this edit for you.',
   backHref,
   backLabel,
 }: {
   action: string;
+  description?: string;
   backHref: string;
   backLabel: string;
 }) {
@@ -20,7 +22,7 @@ export function ForbiddenState({
         page
         icon={Lock}
         title={`You can't ${action}.`}
-        description="Your role is Viewer, which is read-only. An admin can change your role or make this edit for you."
+        description={description}
         action={
           <ButtonLink href={backHref} variant="ghost">
             {backLabel}
