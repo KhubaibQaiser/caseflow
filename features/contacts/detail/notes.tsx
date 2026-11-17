@@ -153,7 +153,7 @@ export function Notes({
           {/* One frame: toolbar, editor and footer. Focus anywhere inside lights all of it. */}
           <div
             data-note-composer
-            className="border-control-border bg-surface rounded-ctl focus-within:border-accent focus-within:outline-accent has-[[aria-invalid=true]]:border-overdue has-[[aria-invalid=true]]:focus-within:outline-overdue border transition-colors duration-150 focus-within:outline-1 focus-within:outline-offset-0 focus-within:outline-solid"
+            className="border-control-border bg-surface rounded-ctl focus-within:border-accent focus-within:outline-accent has-[[aria-invalid=true]]:border-overdue has-[[aria-invalid=true]]:focus-within:outline-overdue max-w-2xl border transition-colors duration-150 focus-within:outline-1 focus-within:outline-offset-0 focus-within:outline-solid"
           >
             <NoteEditor
               handle={editor}
@@ -219,20 +219,10 @@ export function Notes({
         {announce}
       </p>
       {shown.length === 0 ? (
-        <div className="text-13 text-ink-2 flex flex-wrap items-center gap-x-3 gap-y-2">
-          <p className="m-0">No notes yet.</p>
-          {canWrite && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => editor.current?.focus()}
-            >
-              Add note
-            </Button>
-          )}
-        </div>
+        // Writers get the composer above as the invitation; only readers need telling.
+        !canWrite && <p className="text-13 text-ink-2 m-0">No notes yet.</p>
       ) : (
-        <div>
+        <div className="max-w-2xl">
           {shown.map((n) => (
             <NoteItem key={n.id} note={n} tz={tz} />
           ))}

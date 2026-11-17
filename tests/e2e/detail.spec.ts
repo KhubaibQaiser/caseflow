@@ -73,13 +73,15 @@ test('detail shows the contact, its follow-up, notes and activity', async ({
   expect((await axe(page)).violations).toEqual([]);
 });
 
-test('a contact with no notes says so', async ({ page, context, baseURL }) => {
+test('a contact with no notes shows the composer only', async ({
+  page,
+  context,
+  baseURL,
+}) => {
   await setup(context, baseURL);
   const noNotes = await newContact();
   await page.goto(`/contacts/${noNotes.id}`);
-  await expect(
-    page.getByRole('region', { name: /^Notes/ }).getByText('No notes yet.'),
-  ).toBeVisible();
+  await expect(page.getByText('No notes yet.')).toHaveCount(0);
   await expect(page.getByRole('textbox', { name: 'Add a note' })).toBeVisible();
 });
 
