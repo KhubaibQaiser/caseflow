@@ -55,7 +55,7 @@ const columns = helper.columns([
         prefetch={false}
         title={r.fullName}
         // Inset ring: the truncating (and pinned) cell clips anything drawn outside it.
-        className="text-ink rounded-ctl -mx-1 block truncate px-1 py-0.5 font-semibold no-underline hover:underline focus-visible:shadow-none focus-visible:-outline-offset-2"
+        className="text-ink rounded-ctl block truncate py-0.5 font-semibold no-underline hover:underline focus-visible:shadow-none focus-visible:-outline-offset-2"
       >
         {r.fullName}
       </Link>
