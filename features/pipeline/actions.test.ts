@@ -10,9 +10,24 @@ vi.mock('@/lib/data', () => ({
 vi.mock('@/lib/dates/server', () => ({
   getRequestTimeZone: async () => 'UTC',
 }));
-let permissions: string[] = [...ROLE_PERMISSIONS.admin];
-vi.mock('@/lib/auth/viewer', () => ({
-  getViewer: async () => ({ displayName: 'A', role: 'admin', permissions }),
+import { fail, ok } from '@/lib/contracts/result';
+
+type Gate = 'ok' | 'forbidden' | 'unauthorized';
+let gate: Gate = 'ok';
+const assertPermission = vi.fn(async (p: string) => {
+  void p;
+  return gate === 'ok'
+    ? ok({
+        id: 'u',
+        email: '',
+        displayName: 'A',
+        role: 'admin',
+        permissions: [...ROLE_PERMISSIONS.admin],
+      })
+    : fail(gate, 'no');
+});
+vi.mock('@/lib/auth/viewer-supabase', () => ({
+  assertPermission: (p: string) => assertPermission(p),
 }));
 
 const { loadMoreColumnAction } = await import('./actions');
@@ -34,7 +49,7 @@ const row = (id: string): ContactRow => ({
 
 beforeEach(() => {
   vi.clearAllMocks();
-  permissions = [...ROLE_PERMISSIONS.admin];
+  gate = 'ok';
   getPipelineColumn.mockImplementation(async (_s, _f, offset: number) => ({
     rows: [row(`r${offset}`)],
     matching: 642,
@@ -64,13 +79,17 @@ describe('loadMoreColumnAction', () => {
     expect(getPipelineColumn).not.toHaveBeenCalled();
   });
 
-  it('is closed to a role that cannot read', async () => {
-    permissions = [];
-    const r = await loadMoreColumnAction({
-      status: 'lead',
-      filters: {},
-      page: 1,
-    });
-    expect(!r.ok && r.error.code).toBe('forbidden');
+  it('is closed to a role that cannot read, and says when the session ended', async () => {
+    for (const g of ['forbidden', 'unauthorized'] as const) {
+      gate = g;
+      const r = await loadMoreColumnAction({
+        status: 'lead',
+        filters: {},
+        page: 1,
+      });
+      expect(!r.ok && r.error.code).toBe(g);
+    }
+    expect(assertPermission).toHaveBeenCalledWith('contacts.read');
+    expect(getPipelineColumn).not.toHaveBeenCalled();
   });
 });

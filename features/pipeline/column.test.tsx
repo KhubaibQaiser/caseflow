@@ -59,3 +59,28 @@ describe('Column', () => {
     );
   });
 });
+
+describe('Column layout', () => {
+  it('pins Show more and its failure outside the scrolling cards', async () => {
+    const onLoadMore = vi.fn().mockResolvedValue(false);
+    render(<Column {...props} onLoadMore={onLoadMore} />);
+    const more = screen.getByRole('button', { name: /Show 50 more/ });
+    expect(more.closest('[data-scroller]')).toBeNull();
+    await userEvent.click(more);
+    expect(
+      (await screen.findByRole('alert')).closest('[data-scroller]'),
+    ).toBeNull();
+    expect(
+      screen
+        .getByRole('list', { name: 'Lead contacts' })
+        .closest('[data-scroller]'),
+    ).not.toBeNull();
+  });
+
+  it('keeps the heading for the tabs on a phone: named, but only read out', () => {
+    render(<Column {...props} />);
+    const h = screen.getByRole('heading', { name: /Lead/ });
+    expect(h.parentElement).toHaveClass('max-md:sr-only');
+    expect(screen.getByRole('region', { name: /Lead/ })).toBeInTheDocument();
+  });
+});

@@ -55,10 +55,31 @@ describe('applyMove', () => {
 });
 
 describe('hasMore', () => {
-  it('needs rows left and a page left', () => {
+  it('is decided by the rows still missing', () => {
     const c = { rows: [pipelineRow('a', 'lead')], matching: 120, pages: 1 };
     expect(hasMore(c)).toBe(true);
-    expect(hasMore({ ...c, pages: 3 })).toBe(false);
     expect(hasMore({ ...c, matching: 1 })).toBe(false);
+  });
+
+  it('still offers a page when moves left rows behind the last one fetched', () => {
+    // 55 in the column, page 1 fetched (50 rows), then 6 cards moved out: 49 match, 5 slid up a page.
+    const rows = Array.from({ length: 44 }, (_, i) =>
+      pipelineRow(`r${i}`, 'lead'),
+    );
+    expect(hasMore({ rows, matching: 49, pages: 1 })).toBe(true);
+  });
+});
+
+describe('urgency ties', () => {
+  it('compares updated time as an instant, not as text', () => {
+    const cols = board();
+    // 14:00Z written with an offset sorts as text after 12:00Z, but it is the later instant.
+    cols.active.rows = [
+      pipelineRow('later', 'active', {
+        updatedAt: '2026-11-17T09:00:00-05:00',
+      }),
+    ];
+    const next = applyMove(cols, 'a', 'active', '2026-11-17T12:00:00.000Z');
+    expect(ids(next.active.rows)).toEqual(['later', 'a']);
   });
 });
