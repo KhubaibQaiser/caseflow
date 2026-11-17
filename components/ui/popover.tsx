@@ -5,9 +5,7 @@ import type { ComponentProps } from 'react';
 
 import { cn } from '@/utils/cn';
 
-/** Shared by popovers and menus: a floating surface. The 1px border keeps its edge in forced colours. */
-export const floatingClass =
-  'z-50 rounded-surface border border-line bg-surface shadow-raised data-[state=open]:animate-pop-in data-[state=closed]:animate-pop-out';
+import { floatingClass } from './floating';
 
 export const Popover = RadixPopover.Root;
 export const PopoverTrigger = RadixPopover.Trigger;
