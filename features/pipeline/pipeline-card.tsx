@@ -60,6 +60,7 @@ export function PipelineCard({
         current={row.status}
         onMove={(to) => onMove(row.id, to)}
         disabledReason={disabledReason}
+        align="start"
         className="relative z-[1] mt-1 h-7 self-start px-2 text-xs max-md:h-9"
       />
     </li>

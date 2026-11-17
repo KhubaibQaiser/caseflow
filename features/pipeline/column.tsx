@@ -81,14 +81,18 @@ export function Column({
     <section
       aria-labelledby={`column-${status}`}
       className={cn(
-        'bg-track rounded-surface flex min-h-0 flex-col gap-2 p-2.5 md:overflow-hidden',
+        // The track frame is for the three-up board; on a phone the tabs name the column and the cards sit on the page.
+        'md:bg-track md:rounded-surface flex min-h-0 min-w-0 flex-col gap-2 md:overflow-hidden md:p-2.5',
         className,
       )}
     >
-      <header className="px-1 py-0.5">
+      {/* Still the section's name; on a phone the tabs already show it with the count. */}
+      <header className="px-1 py-0.5 max-md:sr-only">
         <h2
           id={`column-${status}`}
-          className="text-ink text-13 m-0 flex items-baseline gap-2 font-semibold"
+          tabIndex={-1}
+          data-column={status}
+          className="text-ink text-13 m-0 flex items-baseline gap-2 font-semibold outline-offset-2"
         >
           {label}{' '}
           <span className="text-ink-2 tnum font-normal">
@@ -97,9 +101,14 @@ export function Column({
           </span>
         </h2>
       </header>
-      <div className="flex min-h-0 flex-1 flex-col gap-2 md:overflow-y-auto">
+      <div
+        data-scroller
+        className="flex min-h-0 flex-1 flex-col gap-2 md:overflow-y-auto"
+      >
         {rows.length === 0 ? (
-          <EmptyState icon={Inbox} title={`No ${label} contacts.`} />
+          <div className="max-md:border-line max-md:bg-surface rounded-surface max-md:border">
+            <EmptyState icon={Inbox} title={`No ${label} contacts.`} />
+          </div>
         ) : (
           <ul
             ref={list}
@@ -116,27 +125,28 @@ export function Column({
             ))}
           </ul>
         )}
-        {failed && (
-          <p
-            role="alert"
-            className="text-overdue text-13 m-0 px-1 text-center font-medium"
-          >
-            Couldn&apos;t load more.
-          </p>
-        )}
-        {left > 0 && !exhausted && (
-          <Button
-            variant="ghost"
-            pending={loading}
-            pendingLabel="Loading…"
-            onClick={() => void loadMore()}
-            className="border-lead-border text-ink-2 tnum mt-auto h-8 shrink-0 border-dashed bg-transparent"
-          >
-            {failed ? 'Retry' : `Show ${Math.min(PAGE_SIZE, left)} more`} ·{' '}
-            {fmt(left)} left
-          </Button>
-        )}
       </div>
+      {/* Outside the scroller: what is left stays in view however far the cards go. */}
+      {failed && (
+        <p
+          role="alert"
+          className="text-overdue text-13 m-0 px-1 text-center font-medium"
+        >
+          Couldn&apos;t load more.
+        </p>
+      )}
+      {left > 0 && !exhausted && (
+        <Button
+          variant="ghost"
+          pending={loading}
+          pendingLabel="Loading…"
+          onClick={() => void loadMore()}
+          className="border-lead-border text-ink-2 tnum h-8 shrink-0 border-dashed bg-transparent"
+        >
+          {failed ? 'Retry' : `Show ${Math.min(PAGE_SIZE, left)} more`} ·{' '}
+          {fmt(left)} left
+        </Button>
+      )}
       <p role="status" className="sr-only">
         {announce}
       </p>

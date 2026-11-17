@@ -84,3 +84,21 @@ describe('Column layout', () => {
     expect(screen.getByRole('region', { name: /Lead/ })).toBeInTheDocument();
   });
 });
+
+describe('Column empty reason', () => {
+  it('says why when a filter explains the empty column', () => {
+    render(
+      <Column
+        {...props}
+        status="closed"
+        rows={[]}
+        matching={0}
+        emptyReason="Closed contacts can't be overdue."
+      />,
+    );
+    expect(screen.getByText('No Closed contacts.')).toBeInTheDocument();
+    expect(
+      screen.getByText("Closed contacts can't be overdue."),
+    ).toBeInTheDocument();
+  });
+});

@@ -34,7 +34,8 @@ function before(a: PipelineRow, b: PipelineRow): boolean {
   if (ra !== rb) return ra < rb;
   if (a.followUpOn && b.followUpOn && a.followUpOn !== b.followUpOn)
     return a.followUpOn < b.followUpOn;
-  return a.updatedAt > b.updatedAt;
+  // Instants, not text: the server's offsets and precision differ from our own clock's.
+  return Date.parse(a.updatedAt) > Date.parse(b.updatedAt);
 }
 
 /** Where a column has this id, if anywhere. */
@@ -104,6 +105,8 @@ export function appendRows(
   };
 }
 
-/** Is there a page left to ask for? (Rows can be missing from a stale count; the page number is the truth.) */
-export const hasMore = (c: ColumnData) =>
-  c.rows.length < c.matching && c.pages * PAGE_SIZE < c.matching;
+/**
+ * Is anything still missing? Rows decide alone: moves pull later rows up a page, so a column can
+ * have rows left after its last page number (the next load also fetches the page before).
+ */
+export const hasMore = (c: ColumnData) => c.rows.length < c.matching;

@@ -70,44 +70,55 @@ function Results({
   const canMove = usePermission('contacts.write');
   const [tab, setTab] = useState<Status>('lead');
 
-  const { columns, move, append } = useBoardMoves(initial, onMove, () =>
+  const expire = () =>
     router.push(
       `/login?reason=expired&next=${encodeURIComponent(pathname + (search ? `?${search}` : ''))}`,
-    ),
-  );
+    );
+  const { columns, move, append } = useBoardMoves(initial, onMove, expire);
 
-  // A card that leaves takes the keyboard's place with it: focus its neighbour, or the card that came back.
-  const focus = useRef<{ id: string; to: 'card' | 'button' } | null>(null);
-  useLayoutEffect(() => {
-    const f = focus.current;
-    if (!f) return;
-    const el = document.querySelector<HTMLElement>(
-      `[data-card="${CSS.escape(f.id)}"] ${f.to === 'button' ? 'button' : '[data-card-link]'}`,
-    );
-    if (el) {
-      focus.current = null;
-      el.focus();
-    }
-  });
+  // A card that leaves takes the keyboard's place with it: focus its neighbour (or the column's heading
+  // when it was the only card), or the card that came back. The target is dropped once used.
+  const focus = useRef<string | null>(null);
+  const tryFocus = () => {
+    if (!focus.current) return;
+    const el = document.querySelector<HTMLElement>(focus.current);
+    if (!el) return;
+    focus.current = null;
+    el.focus();
+  };
+  useLayoutEffect(tryFocus);
   const moveAndKeepFocus = async (id: string, to: Status) => {
-    const list = STATUSES.flatMap((s) => columns[s].rows).find(
-      (r) => r.id === id,
-    );
-    const column = list && columns[list.status].rows;
-    const i = column?.findIndex((r) => r.id === id) ?? -1;
-    const next = column?.[i + 1] ?? column?.[i - 1];
-    if (next) focus.current = { id: next.id, to: 'card' };
+    const from = STATUSES.find((s) => columns[s].rows.some((r) => r.id === id));
+    const rows = from ? columns[from].rows : [];
+    const i = rows.findIndex((r) => r.id === id);
+    const next = rows[i + 1] ?? rows[i - 1];
+    if (from)
+      focus.current = next
+        ? `[data-card="${CSS.escape(next.id)}"] [data-card-link]`
+        : `[data-column="${from}"]`;
     const result = await move(id, to);
-    // Back where it was, and the keyboard is back with it.
-    if (!result.ok) focus.current = { id, to: 'button' };
+    if (!result.ok)
+      // Back where it was: the rollback render is next, and its layout effect returns the keyboard to the card.
+      focus.current = `[data-card="${CSS.escape(id)}"] button`;
+    else
+      // Whatever is unused cannot appear (a card counted but not shown): don't hold it.
+      requestAnimationFrame(() => {
+        focus.current = null;
+      });
     return result;
   };
 
   const matching = STATUSES.reduce((n, s) => n + columns[s].matching, 0);
   const none = facets.total === 0;
 
+  const showBoard = !none && matching > 0;
+
   return (
     <>
+      {/* First on a phone, straight under the title; the toolbar's search and filters follow. */}
+      {showBoard && (
+        <MobileTabs columns={columns} value={tab} onChange={setTab} />
+      )}
       {!none && (
         <Toolbar
           facets={facets}
@@ -129,34 +140,32 @@ function Results({
           {matching === 0 ? (
             <Filtered />
           ) : (
-            <>
-              <MobileTabs columns={columns} value={tab} onChange={setTab} />
-              <BusyRegion busy={isPending}>
-                <div className="grid min-h-0 flex-1 gap-3.5 md:grid-cols-3 lg:gap-3.5">
-                  {STATUSES.map((s) => (
-                    <Column
-                      key={s}
-                      status={s}
-                      rows={columns[s].rows}
-                      matching={columns[s].matching}
-                      exhausted={!hasMore(columns[s])}
-                      onMove={moveAndKeepFocus}
-                      disabledReason={canMove ? undefined : VIEWER_REASON}
-                      className={s === tab ? undefined : 'max-md:hidden'}
-                      onLoadMore={async () => {
-                        const r = await onLoadMore({
-                          status: s,
-                          filters,
-                          page: columns[s].pages,
-                        });
-                        if (r.ok) append(s, r.data.rows, r.data.matching);
-                        return r.ok;
-                      }}
-                    />
-                  ))}
-                </div>
-              </BusyRegion>
-            </>
+            <BusyRegion busy={isPending}>
+              <div className="grid min-h-0 flex-1 grid-cols-1 gap-3.5 md:grid-cols-3">
+                {STATUSES.map((s) => (
+                  <Column
+                    key={s}
+                    status={s}
+                    rows={columns[s].rows}
+                    matching={columns[s].matching}
+                    exhausted={!hasMore(columns[s])}
+                    onMove={moveAndKeepFocus}
+                    disabledReason={canMove ? undefined : VIEWER_REASON}
+                    className={s === tab ? undefined : 'max-md:hidden'}
+                    onLoadMore={async () => {
+                      const r = await onLoadMore({
+                        status: s,
+                        filters,
+                        page: columns[s].pages,
+                      });
+                      if (r.ok) append(s, r.data.rows, r.data.matching);
+                      else if (r.error.code === 'unauthorized') expire();
+                      return r.ok;
+                    }}
+                  />
+                ))}
+              </div>
+            </BusyRegion>
           )}
           {panel.mounted && (
             <Suspense fallback={null}>

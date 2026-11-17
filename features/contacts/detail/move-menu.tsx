@@ -22,6 +22,8 @@ type MoveMenuProps = {
   /** Blocks the menu (still focusable) and says why. */
   disabledReason?: string;
   className?: string;
+  /** Which edge of the trigger the menu lines up with. */
+  align?: 'start' | 'end';
 };
 
 /** "Move to…": the other two statuses as pills. The keyboard and menu alternative to dragging (WCAG 2.5.7). */
@@ -30,6 +32,7 @@ export function MoveMenu({
   onMove,
   disabledReason,
   className,
+  align = 'end',
 }: MoveMenuProps) {
   const [pending, setPending] = useState(false);
   // How the first click happened; null until then, and the menu code isn't loaded.
@@ -103,6 +106,7 @@ export function MoveMenu({
       trigger={trigger(pending, 'Moving…')}
       onSelect={(to) => void move(to)}
       keyboard={opened === 'keyboard'}
+      align={align}
     />
   );
 }

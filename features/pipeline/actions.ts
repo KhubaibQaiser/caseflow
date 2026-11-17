@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-import { getViewer } from '@/lib/auth/viewer';
+import { assertPermission } from '@/lib/auth/viewer-supabase';
 import { STATUSES } from '@/lib/contracts/enums';
 import { FiltersSchema } from '@/lib/contracts/filters';
 import { fail, ok } from '@/lib/contracts/result';
@@ -29,9 +29,8 @@ const Input = z.object({
 export async function loadMoreColumnAction(
   raw: unknown,
 ): Promise<Result<Omit<ColumnData, 'pages'>>> {
-  const viewer = await getViewer();
-  if (!viewer.permissions.includes('contacts.read'))
-    return fail('forbidden', "You don't have permission to view contacts.");
+  const g = await assertPermission('contacts.read');
+  if (!g.ok) return g;
   const p = Input.safeParse(raw);
   if (!p.success) return fail('validation', 'Reload the board and try again.');
   const { status, filters, page } = p.data;
