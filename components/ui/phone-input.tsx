@@ -95,7 +95,7 @@ export function PhoneInput({ value, onChange, onBlur, ...rest }: Props) {
   const [s, setS] = useState(() => init(value));
   if (value !== s.sent) setS(init(value));
 
-  // The examples file loads on demand, so it stays out of the first-load JS.
+  // The examples file loads on demand, so it stays out of the first-load JS. No example: no placeholder, never a wrong country's.
   const [examples, setExamples] = useState<Examples>();
   useEffect(() => {
     void import('libphonenumber-js/mobile/examples').then((m) =>
@@ -103,7 +103,7 @@ export function PhoneInput({ value, onChange, onBlur, ...rest }: Props) {
     );
   }, []);
   const placeholder = examples
-    ? (getExampleNumber(s.country, examples)?.formatNational() ?? US_EXAMPLE)
+    ? (getExampleNumber(s.country, examples)?.formatNational() ?? '')
     : US_EXAMPLE;
 
   const edit = (raw: string) => {
