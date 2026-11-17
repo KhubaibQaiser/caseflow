@@ -10,7 +10,7 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 - FE: the contacts list at `/contacts` (T14), on the fake data layer until T22. The filters panel is T15 (done).
 - FE: the pipeline board at `/pipeline` (T18), also on the fake data layer: optimistic Move to…, per-column paging, mobile tabs.
 - Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` in T22. `/dev/auth` shows every state with canned results (404 in production).
-- Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
+- Next: T22b (real data layer and e2e), T22c (security headers), T22d (concurrency, ADR-0011), then T23-T26 (deploy, hardening, README, hygiene audit).
 - Live URL: not deployed yet.
 
 ## Stack
