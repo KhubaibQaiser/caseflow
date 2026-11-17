@@ -6,6 +6,36 @@ A client-intake CRM for a law firm. Each prospective client is a **contact** wit
 
 **Reviewing in 10 minutes:** [`docs/REVIEWER-GUIDE.md`](docs/REVIEWER-GUIDE.md) has a guided tour, the architecture and why, and where to look in the code.
 
+## Screens
+
+<details open>
+<summary><b>Light</b>: every screen at desktop and mobile width</summary>
+
+| Screen         | Desktop (1440)                                                                                                                                                                 | Mobile (375)                                                                                                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign in        | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/1-login-1440-light.png" width="480" alt="Sign in, desktop, light">           | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/1-login-375-light.png" width="160" alt="Sign in, mobile, light">           |
+| Contacts list  | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/2-contacts-1440-light.png" width="480" alt="Contacts list, desktop, light">  | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/2-contacts-375-light.png" width="160" alt="Contacts list, mobile, light">  |
+| Filters        | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/3-filters-1440-light.png" width="480" alt="Filters, desktop, light">         | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/3-filters-375-light.png" width="160" alt="Filters, mobile, light">         |
+| Contact detail | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/4-detail-1440-light.png" width="480" alt="Contact detail, desktop, light">   | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/4-detail-375-light.png" width="160" alt="Contact detail, mobile, light">   |
+| New contact    | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/5-new-contact-1440-light.png" width="480" alt="New contact, desktop, light"> | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/5-new-contact-375-light.png" width="160" alt="New contact, mobile, light"> |
+| Pipeline       | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/6-pipeline-1440-light.png" width="480" alt="Pipeline, desktop, light">       | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/6-pipeline-375-light.png" width="160" alt="Pipeline, mobile, light">       |
+
+</details>
+
+<details>
+<summary><b>Dark</b></summary>
+
+| Screen         | Desktop (1440)                                                                                                                                                               | Mobile (375)                                                                                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sign in        | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/1-login-1440-dark.png" width="480" alt="Sign in, desktop, dark">           | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/1-login-375-dark.png" width="160" alt="Sign in, mobile, dark">           |
+| Contacts list  | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/2-contacts-1440-dark.png" width="480" alt="Contacts list, desktop, dark">  | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/2-contacts-375-dark.png" width="160" alt="Contacts list, mobile, dark">  |
+| Filters        | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/3-filters-1440-dark.png" width="480" alt="Filters, desktop, dark">         | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/3-filters-375-dark.png" width="160" alt="Filters, mobile, dark">         |
+| Contact detail | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/4-detail-1440-dark.png" width="480" alt="Contact detail, desktop, dark">   | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/4-detail-375-dark.png" width="160" alt="Contact detail, mobile, dark">   |
+| New contact    | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/5-new-contact-1440-dark.png" width="480" alt="New contact, desktop, dark"> | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/5-new-contact-375-dark.png" width="160" alt="New contact, mobile, dark"> |
+| Pipeline       | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/6-pipeline-1440-dark.png" width="480" alt="Pipeline, desktop, dark">       | <img src="https://raw.githubusercontent.com/KhubaibQaiser/caseflow/screenshots/screenshots/readme/6-pipeline-375-dark.png" width="160" alt="Pipeline, mobile, dark">       |
+
+</details>
+
 ## Component structure and state
 
 - **Layers:** `app → features → components → lib → utils`; nothing imports upward. `app/` holds routes and boundaries, `features/<domain>` owns screens (contacts, pipeline, auth), `components/ui` holds shared primitives on Radix, and `lib/` holds data access, Zod contracts, auth and dates.
