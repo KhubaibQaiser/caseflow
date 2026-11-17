@@ -85,6 +85,23 @@ test('a contact edit form loads clean', async ({ page }) => {
   expect(problems).toEqual([]);
 });
 
+test('/pipeline opens a Move menu and loads 50 more', async ({ page }) => {
+  const problems = await watch(page);
+  await open(page, '/pipeline');
+  await page
+    .getByRole('button', { name: /Move to/ })
+    .first()
+    .click();
+  await expect(page.getByRole('menuitem').first()).toBeVisible();
+  await page.keyboard.press('Escape');
+  const lead = page.getByRole('region', { name: /^Lead/ });
+  await lead.getByRole('button', { name: /Show 50 more/ }).click();
+  await expect(
+    lead.getByRole('list', { name: 'Lead contacts' }).getByRole('listitem'),
+  ).toHaveCount(100);
+  expect(problems).toEqual([]);
+});
+
 test('/no-such-page (the static-by-default 404) is nonced and clean', async ({
   page,
 }) => {
