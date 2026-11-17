@@ -1,0 +1,103 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Caseflow · Profile + notes v1</title><link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet"><style>
+.t{--canvas:#f4f6f3;--surface:#fff;--panel:#fafbf9;--line:#e3e8e2;--line-soft:#eef1ed;--ink:#1e2a26;--ink-2:#56645e;--accent:#07557c;--accent-soft:#ebf5fa;--ring:#07557c}
+.t.dark{--canvas:#0f1512;--surface:#161e1a;--panel:#121915;--line:#2a3631;--line-soft:#202a26;--ink:#e6ece8;--ink-2:#9fada6;--accent:#82cff6;--accent-soft:#133b4b;--ring:#82cff6}
+*{box-sizing:border-box}
+body{margin:0;padding:28px;background:#dfe4df;font:14px 'Figtree',system-ui,sans-serif;color:#1e2a26;display:flex;flex-direction:column;gap:28px}
+h1{margin:0;font-size:20px}h2{margin:0 0 4px;font-size:16px}
+.cap{font-size:13px;color:#3d4a44;max-width:1100px;line-height:1.5}.cap b{color:#1e2a26}
+.rec{display:inline-block;background:#07557c;color:#fff;border-radius:999px;padding:0 8px;font-size:11px;font-weight:700;line-height:18px;margin-left:6px;vertical-align:2px}
+.row{display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start}
+.card{display:flex;flex-direction:column;gap:8px}
+.lbl{font-size:12px;font-weight:600;color:#3d4a44}
+svg.i{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+/* sidebar */
+.side{background:var(--surface);border:1px solid var(--line);border-radius:10px;height:300px;display:flex;flex-direction:column;padding:14px 10px;color:var(--ink)}
+.side.wide{width:196px}.side.rail{width:64px;padding:14px 8px;align-items:center}
+.brand{display:flex;align-items:center;gap:8px;font-weight:700;color:var(--accent);padding:4px 10px 18px}
+.brand i{width:18px;height:18px;border-radius:5px;background:var(--accent);display:block}
+.nav a{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;border-radius:6px;color:var(--ink-2);font-weight:500;text-decoration:none;font-size:14px}
+.nav a.on{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.rail .nav a{justify-content:center;padding:0;width:40px}
+.acct{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:6px}
+.rail .acct{align-items:center;width:100%}
+.oneline{display:flex;align-items:center;gap:8px;min-width:0;font-size:13px}
+.nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.dot{color:var(--ink-2)}
+.role{color:var(--ink-2);font-weight:500;white-space:nowrap;display:inline-flex;align-items:center;gap:3px}
+.role svg{width:12px;height:12px}
+.so{margin-left:auto;width:28px;height:28px;display:grid;place-items:center;border-radius:6px;color:var(--ink-2);flex:none}
+.so:hover{background:var(--canvas)}
+.link{font-size:13px;color:var(--ink-2);font-weight:500;padding-left:0}
+.av{width:28px;height:28px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:11.5px;font-weight:700;flex:none;position:relative;letter-spacing:.02em}
+.av.sm{width:24px;height:24px;font-size:10.5px}
+.btnrow{padding:4px 6px;margin:0 -6px;border-radius:6px;gap:7px}.btnrow:hover{background:var(--canvas)}.chev{margin-left:auto;width:14px;height:14px;color:var(--ink-2)}
+.av.lg{width:32px;height:32px;font-size:12px}
+.av .b{position:absolute;right:-3px;bottom:-3px;width:16px;height:16px;border-radius:50%;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center;color:var(--ink-2)}
+.av .b svg{width:10px;height:10px}
+.av.focus{outline:2px solid var(--ring);outline-offset:2px}
+.tag{font-size:10px;font-weight:700;color:var(--ink-2);letter-spacing:.04em;text-transform:uppercase}
+.tip{position:relative}
+.tip .pop{position:absolute;left:46px;bottom:-4px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.14);padding:10px 12px;width:200px;display:flex;flex-direction:column;gap:8px;z-index:2;color:var(--ink)}
+.pop .nm{font-size:13px}.pop .r{font-size:12px;color:var(--ink-2);display:flex;gap:4px;align-items:center}
+.pop hr{border:0;border-top:1px solid var(--line);margin:0}
+.pop .mi{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--ink);height:28px}
+/* notes */
+.notes{background:var(--surface);border:1px solid var(--line);border-radius:10px;width:760px;padding:16px;color:var(--ink);display:flex;flex-direction:column;gap:14px}
+.notes h3{margin:0;font-size:14px;font-weight:600}
+.comp{border:1px solid var(--line);border-radius:6px;background:var(--surface);display:flex;flex-direction:column}
+.comp.narrow{max-width:672px}
+.tb{display:flex;gap:4px;padding:6px 8px;border-bottom:1px solid var(--line-soft);color:var(--ink-2)}
+.tb span{width:26px;height:26px;display:grid;place-items:center;border-radius:5px;font-weight:700;font-size:13px}
+.ed{min-height:64px;padding:10px 12px;color:var(--ink-2);font-size:14px}
+.ft{display:flex;justify-content:flex-end;gap:8px;padding:8px;border-top:1px solid var(--line-soft);align-items:center}
+.ft .cnt{margin-right:auto;font-size:12px;color:var(--ink-2)}
+.btn{height:30px;padding:0 12px;border-radius:6px;font:600 13px 'Figtree';border:1px solid var(--line);background:var(--surface);color:var(--ink);display:inline-flex;align-items:center}
+.btn.p{background:var(--accent);color:var(--surface);border-color:var(--accent)}
+.note{border-top:1px solid var(--line-soft);padding:10px 0;font-size:14px;line-height:1.5}
+.note .m{font-size:12px;color:var(--ink-2);margin-bottom:2px}
+.empty{font-size:13px;color:var(--ink-2);margin:0}
+.strike{outline:2px dashed #c0392b;outline-offset:4px;border-radius:4px;position:relative}
+.strike::after{content:'removed';position:absolute;right:-6px;top:-22px;font-size:11px;font-weight:700;color:#c0392b}
+</style></head><body>
+<symbol style="display:none"></symbol>
+<svg style="display:none"><defs>
+<symbol id="chev" viewBox="0 0 24 24"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></symbol>
+<symbol id="out" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></symbol>
+<symbol id="lock" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+<symbol id="shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></symbol>
+<symbol id="users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></symbol>
+<symbol id="cols" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18"/><path d="M15 3v18"/></symbol>
+</defs></svg>
+
+<div><h1>Profile in sidebar + notes composer · v1</h1>
+<p class="cap">Findings 2, 7, 8. Sidebar is ≥1024px (wide) and 768–1023px (condensed rail). Light and dark shown for each. Tokens are the live ones from <code>app/globals.css</code>.</p></div>
+
+<section><h2>1 · Wide sidebar: "Name · Role" on one row</h2>
+<p class="cap"><b>A</b>: text only, sign-out as an icon at the end of the row (tooltip "Sign out"). <b>B</b><span class="rec">recommended</span>: "Name · Role" with no extra icon; the whole row is one button that opens the same account menu as the rail (full name, role, Sign out). Without a sign-out icon or avatar on the row, "Khubaib Qaiser · Admin" fits at 196px (measured); the avatar is used only on the rail, where it replaces the icon. Both widths open the same menu. Long names truncate with "…"; the menu shows the full name. In A the sign-out icon squeezes the name. Viewer gets the lock glyph before "Viewer" so read-only is not colour-only. Saves ~30px of height vs today's two lines + badge + text link.</p>
+<div class="row">
+<div class="card"><span class="lbl">Today</span><div class="t side wide"><div class="brand"><i></i>Caseflow</div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg>Contacts</a><a><svg class="i"><use href="#cols"/></svg>Pipeline</a></nav><div class="acct"><span class="nm" style="font-size:13px">Khubaib Qaiser</span><span style="align-self:flex-start;border:1px solid var(--line);border-radius:999px;padding:0 7px;font-size:12px;font-weight:600;color:var(--ink-2);line-height:18px">Admin</span><span class="link">Sign out</span></div></div></div>
+<div class="card"><span class="lbl">A · light</span><div class="t side wide"><div class="brand"><i></i>Caseflow</div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg>Contacts</a><a><svg class="i"><use href="#cols"/></svg>Pipeline</a></nav><div class="acct"><div class="oneline"><span class="nm">Khubaib Qaiser</span><span class="dot">·</span><span class="role">Admin</span><span class="so"><svg class="i"><use href="#out"/></svg></span></div></div></div></div>
+<div class="card"><span class="lbl">B · light, admin</span><div class="t side wide"><div class="brand"><i></i>Caseflow</div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg>Contacts</a><a><svg class="i"><use href="#cols"/></svg>Pipeline</a></nav><div class="acct"><div class="oneline btnrow"><span class="nm">Khubaib Qaiser</span><span class="dot">·</span><span class="role">Admin</span><svg class="i chev"><use href="#chev"/></svg></div></div></div></div>
+<div class="card"><span class="lbl">B · light, viewer, long name</span><div class="t side wide"><div class="brand"><i></i>Caseflow</div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg>Contacts</a><a><svg class="i"><use href="#cols"/></svg>Pipeline</a></nav><div class="acct"><div class="oneline btnrow"><span class="nm">Valentina Abernathy</span><span class="dot">·</span><span class="role"><svg class="i"><use href="#lock"/></svg>Viewer</span><svg class="i chev"><use href="#chev"/></svg></div></div></div></div>
+<div class="card"><span class="lbl">B · dark</span><div class="t dark side wide"><div class="brand"><i></i>Caseflow</div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg>Contacts</a><a><svg class="i"><use href="#cols"/></svg>Pipeline</a></nav><div class="acct"><div class="oneline btnrow"><span class="nm">Khubaib Qaiser</span><span class="dot">·</span><span class="role">Admin</span><svg class="i chev"><use href="#chev"/></svg></div></div></div></div>
+</div></section>
+
+<section><h2>2 · Condensed rail (768–1023px)</h2>
+<p class="cap"><b>X</b><span class="rec">recommended</span>: the initials avatar replaces the anonymous shield icon. A small corner badge (shield = Admin, lock = Viewer) carries the role by shape, not colour. The avatar is a button: it opens a small account menu with full name, role and Sign out, so the separate sign-out icon goes away and the rail ends in one clear target (32px). Tooltip "Khubaib Qaiser · Admin" on hover/focus. <b>Y</b>: avatar plus a tiny "ADMIN"/"VIEWER" word under it, sign-out icon kept below. More literal, but the word is 10px and the rail gets busier.</p>
+<div class="row">
+<div class="card"><span class="lbl">Today</span><div class="t side rail"><div class="brand" style="padding:4px 0 18px"><i></i></div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg></a><a><svg class="i"><use href="#cols"/></svg></a></nav><div class="acct"><span style="width:24px;height:24px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;color:var(--ink-2)"><svg class="i" style="width:12px;height:12px"><use href="#shield"/></svg></span><span class="so" style="margin:0"><svg class="i"><use href="#out"/></svg></span></div></div></div>
+<div class="card"><span class="lbl">X · light, admin</span><div class="t side rail"><div class="brand" style="padding:4px 0 18px"><i></i></div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg></a><a><svg class="i"><use href="#cols"/></svg></a></nav><div class="acct"><span class="av lg">KQ<span class="b"><svg class="i"><use href="#shield"/></svg></span></span></div></div></div>
+<div class="card"><span class="lbl">X · light, viewer, menu open</span><div class="t side rail" style="overflow:visible"><div class="brand" style="padding:4px 0 18px"><i></i></div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg></a><a><svg class="i"><use href="#cols"/></svg></a></nav><div class="acct"><span class="tip"><span class="av lg focus">VA<span class="b"><svg class="i"><use href="#lock"/></svg></span></span><span class="pop"><span class="nm">Valentina Abernathy</span><span class="r"><svg class="i" style="width:12px;height:12px"><use href="#lock"/></svg>Viewer · read-only</span><hr><span class="mi"><svg class="i"><use href="#out"/></svg>Sign out</span></span></span></div></div></div>
+<div class="card" style="margin-left:170px"><span class="lbl">X · dark</span><div class="t dark side rail"><div class="brand" style="padding:4px 0 18px"><i></i></div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg></a><a><svg class="i"><use href="#cols"/></svg></a></nav><div class="acct"><span class="av lg">KQ<span class="b"><svg class="i"><use href="#shield"/></svg></span></span></div></div></div>
+<div class="card"><span class="lbl">Y · light</span><div class="t side rail"><div class="brand" style="padding:4px 0 18px"><i></i></div><nav class="nav"><a class="on"><svg class="i"><use href="#users"/></svg></a><a><svg class="i"><use href="#cols"/></svg></a></nav><div class="acct"><span class="av lg">KQ</span><span class="tag">Admin</span><span class="so" style="margin:0"><svg class="i"><use href="#out"/></svg></span></div></div></div>
+</div></section>
+
+<section><h2>3 · Notes: composer width and empty state</h2>
+<p class="cap">The open composer caps at <b>672px</b> (Tailwind <code>max-w-2xl</code>, ~75 characters per line), left-aligned, so it no longer stretches across the full panel; note text below keeps the same measure. Admin with no notes: the "No notes yet. Add note" row is removed (the composer above already invites). Viewer with no notes still sees "No notes yet." because there is no composer for them.</p>
+<div class="row">
+<div class="card"><span class="lbl">Today · admin, no notes</span><div class="t notes"><h3>Notes</h3><div class="comp"><div class="tb"><span>B</span><span><i>I</i></span><span>•</span></div><div class="ed">Write a note…</div><div class="ft"><span class="cnt">0 / 5,000</span><span class="btn">Cancel</span><span class="btn p">Save note</span></div></div><div class="strike" style="display:flex;gap:12px;align-items:center"><p class="empty">No notes yet.</p><span class="btn" style="border-color:transparent">Add note</span></div></div></div>
+<div class="card"><span class="lbl">Proposed · admin, light</span><div class="t notes"><h3>Notes</h3><div class="comp narrow"><div class="tb"><span>B</span><span><i>I</i></span><span>•</span></div><div class="ed">Write a note…</div><div class="ft"><span class="cnt">0 / 5,000</span><span class="btn">Cancel</span><span class="btn p">Save note</span></div></div><div class="note" style="max-width:672px"><div class="m">Khubaib Qaiser · 14 Nov</div>Called about the lease review; sending the draft engagement letter Monday.</div></div></div>
+<div class="card"><span class="lbl">Proposed · admin, dark</span><div class="t dark notes"><h3>Notes</h3><div class="comp narrow"><div class="tb"><span>B</span><span><i>I</i></span><span>•</span></div><div class="ed">Write a note…</div><div class="ft"><span class="cnt">0 / 5,000</span><span class="btn">Cancel</span><span class="btn p">Save note</span></div></div></div></div>
+<div class="card"><span class="lbl">Proposed · viewer, no notes</span><div class="t notes"><h3>Notes</h3><p class="empty">No notes yet.</p></div></div>
+</div></section>
+</body></html>
