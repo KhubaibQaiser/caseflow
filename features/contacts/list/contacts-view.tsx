@@ -3,6 +3,7 @@
 import { Suspense, lazy, useRef } from 'react';
 import type { ReactNode } from 'react';
 
+import { useDelayedFlag } from '@/components/use-delayed-flag';
 import { Headroom } from '@/components/shell/headroom';
 
 import type { ContactFacets } from '@/lib/contracts/facets';
@@ -13,6 +14,7 @@ import { ListTransition, useListQuery } from '../url-state';
 import { nextSort } from './columns';
 import { BusyRegion } from './busy-region';
 import { ContactCards } from './contact-cards';
+import { CardsSkeleton } from './table-skeleton';
 import { ContactsTable } from './contacts-table';
 import { Filtered, FirstRun } from './empty-states';
 import type { ListRow } from './list-rows';
@@ -42,6 +44,9 @@ type ContactsViewProps = {
 
 export { BusyRegion };
 
+/** A screenful: a longer skeleton would only scroll. */
+const SKELETON_ROWS = 12;
+
 export function ContactsView(props: ContactsViewProps) {
   return (
     <ListTransition>
@@ -64,6 +69,9 @@ function Results({
   const filtersButton = useRef<HTMLButtonElement>(null);
   const panel = useFiltersPanel(filtersOpen, filtersButton);
   const offset = (page - 1) * pageSize;
+  // Skeleton rows stand in for the old ones, but only once the wait is long enough to notice.
+  const skeleton = useDelayedFlag(isPending);
+  const skeletonRows = Math.min(rows.length, SKELETON_ROWS);
   return (
     <>
       {/* With no contacts at all there is nothing to search or filter. */}
@@ -71,7 +79,6 @@ function Results({
         {total > 0 && (
           <Toolbar
             facets={facets}
-            isPending={isPending}
             panel={panel}
             filtersButton={filtersButton}
             onFiltersIntent={() => void loadPanel()}
@@ -99,17 +106,22 @@ function Results({
                   rows={rows}
                   matching={matching}
                   offset={offset}
+                  skeletonRows={skeleton ? skeletonRows : undefined}
                   sort={query.sort}
                   dir={query.dir}
                   onSort={(key) => setQuery(nextSort(query, key))}
                   scrollKey={serializeListQuery({ ...query, page: null })}
                 />
-                <ContactCards
-                  className="md:hidden"
-                  rows={rows}
-                  offset={offset}
-                  matching={matching}
-                />
+                {skeleton ? (
+                  <CardsSkeleton rows={skeletonRows} className="md:hidden" />
+                ) : (
+                  <ContactCards
+                    className="md:hidden"
+                    rows={rows}
+                    offset={offset}
+                    matching={matching}
+                  />
+                )}
               </BusyRegion>
               <Pagination
                 page={query.page}

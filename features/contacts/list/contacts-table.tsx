@@ -25,6 +25,7 @@ import {
 } from './columns';
 import type { SortDir, SortKey } from './columns';
 import type { ListRow } from './list-rows';
+import { TableSkeletonRows } from './table-skeleton';
 
 const ROW_HEIGHT = 36;
 const features = tableFeatures({ rowSortingFeature });
@@ -131,6 +132,8 @@ type ContactsTableProps = {
   onSort(key: SortKey): void;
   /** Changes when the sort or filters change; the table then scrolls back to the top. */
   scrollKey?: string;
+  /** Shows this many skeleton rows under the header in place of the rows (filters are loading). */
+  skeletonRows?: number;
   className?: string;
 };
 
@@ -142,6 +145,7 @@ export function ContactsTable({
   dir,
   onSort,
   scrollKey,
+  skeletonRows,
   className,
 }: ContactsTableProps) {
   const sortedColumn = Object.keys(SORT_BY_COLUMN).find(
@@ -255,31 +259,35 @@ export function ContactsTable({
           ))}
         </thead>
         <tbody>
-          {spacer(before)}
-          {items.map((item) => {
-            const r = tableRows[item.index];
-            if (!r) return null;
-            return (
-              <tr
-                key={r.id}
-                aria-rowindex={offset + item.index + 2}
-                className="group"
-              >
-                {r.getAllCells().map((cell) => (
-                  <td
-                    key={cell.id}
-                    className={cn(
-                      'border-line-soft bg-surface group-hover:bg-panel h-9 truncate border-b px-2.5',
-                      cell.column.id === 'name' && pinned,
-                    )}
-                  >
-                    <table.FlexRender cell={cell} />
-                  </td>
-                ))}
-              </tr>
-            );
-          })}
-          {spacer(after)}
+          {skeletonRows !== undefined && (
+            <TableSkeletonRows rows={skeletonRows} />
+          )}
+          {skeletonRows === undefined && spacer(before)}
+          {skeletonRows === undefined &&
+            items.map((item) => {
+              const r = tableRows[item.index];
+              if (!r) return null;
+              return (
+                <tr
+                  key={r.id}
+                  aria-rowindex={offset + item.index + 2}
+                  className="group"
+                >
+                  {r.getAllCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        'border-line-soft bg-surface group-hover:bg-panel h-9 truncate border-b px-2.5',
+                        cell.column.id === 'name' && pinned,
+                      )}
+                    >
+                      <table.FlexRender cell={cell} />
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
+          {skeletonRows === undefined && spacer(after)}
         </tbody>
       </table>
     </div>

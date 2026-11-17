@@ -1,7 +1,6 @@
 'use client';
 
 import ListFilter from 'lucide-react/icons/list-filter';
-import LoaderCircle from 'lucide-react/icons/loader-circle';
 import Search from 'lucide-react/icons/search';
 import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
@@ -27,7 +26,6 @@ export const SEARCH_ID = 'contacts-search';
 
 export function Toolbar({
   facets,
-  isPending,
   panel,
   filtersButton,
   onFiltersIntent,
@@ -35,7 +33,6 @@ export function Toolbar({
 }: {
   /** Omitted on the error screen, where the counts are unknown. */
   facets?: ContactFacets;
-  isPending: boolean;
   /** Omitted on the error screen: the panel needs the facets that failed to load. */
   panel?: FiltersPanelState;
   filtersButton: RefObject<HTMLButtonElement | null>;
@@ -98,14 +95,8 @@ export function Toolbar({
             setText('');
             commit('');
           }}
-          className="h-10 pr-8 pl-8 md:h-8.5 [&::-webkit-search-cancel-button]:appearance-none"
+          className="h-10 pr-2.5 pl-8 md:h-8.5 [&::-webkit-search-cancel-button]:appearance-none"
         />
-        {isPending && (
-          <LoaderCircle
-            aria-hidden
-            className="text-ink-2 absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin motion-reduce:animate-none"
-          />
-        )}
       </div>
       <div className="flex gap-2">
         <Button
