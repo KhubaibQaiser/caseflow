@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import type { ChevronProps } from 'react-day-picker';
 import CalendarDays from 'lucide-react/icons/calendar-days';
+import ChevronDown from 'lucide-react/icons/chevron-down';
 import ChevronLeft from 'lucide-react/icons/chevron-left';
 import ChevronRight from 'lucide-react/icons/chevron-right';
 
@@ -35,7 +36,12 @@ const navButton =
   'grid size-8 cursor-pointer place-items-center rounded-ctl text-ink-2 transition-colors duration-150 hover:bg-track hover:text-ink aria-disabled:cursor-not-allowed aria-disabled:opacity-45 aria-disabled:hover:bg-transparent';
 
 function Chevron({ orientation }: ChevronProps) {
-  const Icon = orientation === 'left' ? ChevronLeft : ChevronRight;
+  const Icon =
+    orientation === 'left'
+      ? ChevronLeft
+      : orientation === 'down'
+        ? ChevronDown
+        : ChevronRight;
   return <Icon aria-hidden className="size-4" />;
 }
 
