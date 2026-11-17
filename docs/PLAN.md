@@ -34,9 +34,9 @@
 ## Review Focus
 
 1. **Long content** (120-character names, long emails, a 1,000-character summary) must truncate with a `title` tooltip in the table, cards and detail header, and must never widen the layout. Test: T14 Step 1.
-2. **Typing fast in search, or pressing back and forward through URL states,** must leave the screen showing results for the latest query only. Test: T22 `contacts.spec.ts` "rapid typing shows results for the final query".
+2. **Typing fast in search, or pressing back and forward through URL states,** must leave the screen showing results for the latest query only. Test: T22b `contacts.spec.ts` "rapid typing shows results for the final query".
 3. **Double-clicking Save, Apply, Move or Save note** must send exactly one request. Tests: T17 Step 1, T18 Step 1, T16 Step 1.
-4. **A session that dies mid-action** must redirect to `/login?reason=expired&next=…` and keep the form input in the browser history. Test: T22 `auth.spec.ts` "expired session on save redirects with next".
+4. **A session that dies mid-action** must redirect to `/login?reason=expired&next=…` and keep the form input in the browser history. Test: T22b `auth.spec.ts` "expired session on save redirects with next".
 5. **The page falls out of range after filtering** (on page 5, then a filter leaves one page): any change to filters, search, sort or page size resets `page` to 1, and an out-of-range `page` clamps to the last page on the server. Tests: T2 `clampPage`, T14 Step 1.
 
 ---
@@ -49,11 +49,11 @@ then in parallel worktrees:
   BE:  T5 → T6 → T7 → T8 → T9 → T10
   FE:  T11 → T12 → T12b → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
   OPS: T20 → T21
-then: T22 (integration and e2e) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission)
+then: T22a (auth go-live, done) → T22b (real data layer and e2e) → T22c (security headers) → T22d (concurrency, ADR-0011) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission) → T26 (hygiene audit, recommend only)
 stretch: S1 dark mode · S2 Attorney role + staging previews
 ```
 
-The FE track builds against `lib/data/fake.ts` (same signatures as the real data layer) and against actions passed in as props. T22 deletes the fake and wires the real implementations.
+The FE track builds against `lib/data/fake.ts` (same signatures as the real data layer) and against actions passed in as props. T22b deletes the fake and wires the real implementations.
 
 ## File map
 
@@ -706,7 +706,7 @@ it('viewer sees no New contact button', () => {})
 **Interfaces:**
 - **Consumes:** `getContact` (T4), the action signatures from T10 (passed as props: `onMove`, `onReschedule`, `onAddNote`), `<Can>` and `usePermission` (T13).
 - **Produces:**
-  - `MoveMenu` `{current: Status; onMove(s): Promise<Result<ContactRow>>; disabledReason?: string}`. It's a DropdownMenu listing the other two statuses as pills. Reused by the pipeline.
+  - `MoveMenu` (shipped as its own PR, #24, so detail and pipeline could run in parallel) `{current: Status; onMove(s): Promise<Result<ContactRow>>; disabledReason?: string}`. It's a DropdownMenu listing the other two statuses as pills. Reused by the pipeline.
   - `Notes` `{notes: Note[]; onAdd(body): Promise<Result<Note>>}`:
     - The composer's Save is disabled while the text is empty or a save is pending. Cmd/Ctrl+Enter submits.
     - **On failure the text is kept**, with an inline error and Retry. On success the field clears and the new note is announced.
@@ -857,7 +857,17 @@ it('viewer sees no New contact button', () => {})
 
 ## Integration, deploy, hardening and submission
 
-### Task 22: Wire the real data layer and the e2e suite
+### Task 22a: Auth go-live (done, PR #23)
+
+Shipped:
+- The real viewer, and `forbidden()` for a signed-in user without permission.
+- The "No access" screen for a user with no profile.
+- Auth on by default.
+- A POST-only next-action passthrough in the proxy.
+- Back after session expiry, with the return marker.
+- The real client IP for the sign-in throttle.
+
+### Task 22b: Wire the real data layer and the full e2e suite
 
 **Files:**
 - Modify: `lib/data/index.ts` (re-export from `./supabase`); the pages and layouts that pass the T10 actions as props; `app/(app)/layout.tsx` (`getViewer()` instead of the fake viewer)
@@ -891,6 +901,49 @@ it('viewer sees no New contact button', () => {})
 - [ ] **Step 4: Run** `pnpm test && pnpm test:integration && pnpm e2e`. Expected: all PASS, including the axe checks.
 - [ ] **Step 5: Commit** in two parts: the specs (`"Add end-to-end and accessibility specs"`), then `"Wire Supabase data layer and Server Actions into the screens"`. Merge with a merge commit.
 
+### Task 22c: Security headers (in progress)
+
+**Files:**
+- Modify: `proxy.ts`, `next.config.ts`
+- Create: `tests/e2e/csp.spec.ts`
+
+**Interfaces (produces):**
+- A nonce-based Content-Security-Policy set in `proxy.ts`, with `strict-dynamic`.
+- `style-src 'unsafe-inline'` is accepted, because sonner and Radix inject styles at runtime.
+- Zod runs in `jitless` mode in the browser only, so it needs no `unsafe-eval`.
+- Static headers (frame, referrer, content-type, permissions) in `next.config.ts`.
+
+- [ ] **Step 1: Write the failing e2e** `csp.spec.ts`: load every screen and fail on any CSP violation report in the console.
+- [ ] **Step 2: Add** the nonce CSP in `proxy.ts` and the static headers in `next.config.ts`.
+- [ ] **Step 3: Run** `pnpm e2e`. Expected: PASS, with no violations.
+- [ ] **Step 4: Commit** `"Add nonce CSP and static security headers"`. Merge with a merge commit.
+
+### Task 22d: Concurrency per ADR-0011 (after T22b, its own PR)
+
+Needs ADR-0011 accepted by Khubaib. Read it first. Spec: §7.5, §8.9, §8.14.
+
+**Files:**
+- Create: `supabase/migrations/<ts>_change_log.sql`, `lib/changes/feed.ts` (`ChangeFeed` interface), `lib/changes/postgres.ts`, `app/api/changes/route.ts`, `features/changes/use-changes.ts`
+- Modify: `lib/data/mutations.ts`, `features/contacts/actions.ts` (expected values), the list, detail, pipeline and edit-form screens
+- Test: `tests/integration/changes.test.ts`, `tests/e2e/concurrency.spec.ts`
+
+**Interfaces (produces):**
+- `setStatus(db, id, status, expectedStatus)` and `setFollowUp(db, id, followUpOn, expectedFollowUp)` return `conflict` when stale. `moveContactAction` and `rescheduleAction` take the same extra argument.
+- A change log table: monotonic sequence id, contact id, what changed, actor, new version. Each write inserts its row in the same transaction.
+- `ChangeFeed`: `since(cursor)` and `subscribe(onWake)`. LISTEN/NOTIFY is only the wake-up. Rows are always read from the log.
+- `GET /api/changes`: Server-Sent Events, catch-up from `Last-Event-ID`.
+
+- [ ] **Step 1: Write the failing tests.**
+  - A stale move, reschedule and edit each return `conflict`.
+  - Reconnecting with `Last-Event-ID` delivers every missed change once.
+  - A dropped NOTIFY still delivers on the next wake-up.
+  - e2e with two sessions: a move shows on the other board, an in-flight optimistic move reconciles, the list shows "N updates · Refresh" while the user types, and the edit form shows "Changed by X · Reload latest".
+- [ ] **Step 2: Run them.** Expected: FAIL.
+- [ ] **Step 3: Add** the migration, the expected-value checks, the feed and the route.
+- [ ] **Step 4: Wire** the client hook into the pipeline, list, detail, edit form and facet counts.
+- [ ] **Step 5: Run** `pnpm test && pnpm test:integration && pnpm e2e`. Expected: PASS.
+- [ ] **Step 6: Commit** in small steps (migration, checks, feed, route, screens). Merge with a merge commit.
+
 ### Task 23: First production deploy
 
 - [ ] **Step 1:** Merge to `main`. Expected: `deploy.yml` runs migrate, then deploy, then the smoke test, and passes. Record the production URL.
@@ -921,6 +974,19 @@ it('viewer sees no New contact button', () => {})
   - The history is meaningful (`git log --oneline | wc -l` is more than 30, with no squashes).
   - The ADR statuses have been reviewed by Khubaib.
 - [ ] **Step 4: Commit** `"Add README"`. Push. Hand the live URL and repo URL to Khubaib.
+
+### Task 26: Hygiene audit (last task)
+
+Runs after T25 and every feature. **Recommend only.** Change nothing without Khubaib's answer.
+
+- [ ] **Step 1: Scan** for:
+  - non-standard Tailwind: arbitrary values such as `h-[48px]` where a scale step or a token exists
+  - dead code
+  - duplicate code
+  - security concerns
+  - performance improvements
+- [ ] **Step 2: Present every finding to Khubaib** with its file, the evidence and a recommendation.
+- [ ] **Step 3: Apply only the findings he approves**, one small commit each. Skip the rest.
 
 ### Stretch
 
