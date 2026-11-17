@@ -246,7 +246,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - `proxy.ts` sends anyone without a session to `/login?next=…`, and adds `reason=expired` when a session cookie existed but has died.
 
 ### 8.2 App shell
-- **Desktop (≥ 1024px):** a left sidebar 196px wide with the Caseflow mark, Contacts and Pipeline (`aria-current`), and an account block at the bottom: display name, a **role badge** ("Admin", or "Viewer · read-only" with a lock icon) and Sign out.
+- **Desktop (≥ 1024px):** a left sidebar 196px wide with the Caseflow mark, Contacts and Pipeline (`aria-current`), and an account row at the bottom: "Name · Role" on one line (a lock before "Viewer") with a chevrons icon. It is a menu button; the menu shows the full name, the role ("Viewer · read-only" for Viewers) and Sign out. On the tablet rail it is a 32px initials avatar with a shield (Admin) or lock (Viewer) corner badge, opening the same menu. The mobile Account sheet keeps the name, role badge and Sign out button.
 - **Tablet (768–1023px):** the sidebar collapses to an icon rail with tooltips.
 - **Mobile (< 768px):** a top bar with the mark only (no "+ New") and a **sticky bottom tab bar** (Contacts, Pipeline, Account), respecting the safe-area inset.
 - **Theme:** one icon button top-right on every screen (the mobile top bar below 768px, the corner on `/login`). It opens a System / Light / Dark radio menu; the choice is a per-device `theme` cookie, rendered as `<html data-theme>` (ADR-0012).
