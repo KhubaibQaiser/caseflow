@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@/utils/cn';
 
+import { headroomLayout } from './headroom-layout';
 import { useHeadroom } from './use-headroom';
 
 /**
@@ -41,8 +42,7 @@ export function Headroom({
       data-headroom
       {...(pin ? {} : off)}
       className={cn(
-        'flex flex-col gap-3 md:contents',
-        'max-md:bg-canvas max-md:sticky max-md:top-13 max-md:z-20 max-md:-mx-4 max-md:-mt-2 max-md:-mb-2 max-md:px-4 max-md:pt-2 max-md:pb-2',
+        headroomLayout,
         animated &&
           'max-md:transition-[transform,box-shadow] max-md:duration-200 max-md:ease-out',
         hidden && 'max-md:[transform:translateY(calc(var(--reveal)*-1))]',
