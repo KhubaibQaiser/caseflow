@@ -130,6 +130,51 @@ describe('Toolbar search', () => {
     }
   });
 
+  it('an outside q change cancels a keystroke still waiting to be written', () => {
+    vi.useFakeTimers();
+    try {
+      const onUrlUpdate = vi.fn();
+      function Outside() {
+        const [, setQuery] = useListQuery();
+        return (
+          <button type="button" onClick={() => setQuery({ q: null })}>
+            Remove chip
+          </button>
+        );
+      }
+      renderToolbar({ searchParams: '?q=smith', onUrlUpdate }, <Outside />);
+      const box = screen.getByRole('searchbox');
+      fireEvent.change(box, { target: { value: 'smithe' } });
+      act(() => void vi.advanceTimersByTime(100));
+      fireEvent.click(screen.getByRole('button', { name: 'Remove chip' }));
+      expect(box).toHaveValue('');
+      onUrlUpdate.mockClear();
+      act(() => void vi.advanceTimersByTime(400));
+      // The removed q stays removed: "smithe" never lands.
+      expect(onUrlUpdate).not.toHaveBeenCalled();
+      expect(box).toHaveValue('');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('a URL echo that arrives after a newer keystroke does not clobber it', () => {
+    vi.useFakeTimers();
+    try {
+      renderToolbar({ rateLimitFactor: 1 });
+      const box = screen.getByRole('searchbox');
+      fireEvent.change(box, { target: { value: 'ab' } });
+      // The commit and the next key land before React renders the echo of q=ab.
+      act(() => {
+        vi.advanceTimersByTime(250);
+        fireEvent.change(box, { target: { value: 'abc' } });
+      });
+      expect(box).toHaveValue('abc');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('the box follows q when the URL changes from outside', async () => {
     const user = userEvent.setup();
     function Outside() {
