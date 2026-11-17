@@ -7,10 +7,10 @@ Caseflow is a legal-intake mini CRM. It tracks every prospective client, a conta
 - M0 is done: scaffold, contracts, date helpers, design tokens and a fake data layer.
 - App-level 404 and error pages are done (T12b): unknown URLs return 404 inside the `(app)` segment, and `app/error.tsx` shows the reason class, Retry and the error digest. `app/global-error.tsx` catches root-layout crashes with its own document, tokens and a Reload button.
 - FE: UI primitives in `components/ui` (base controls, Radix-based overlays, date picker, toaster), shown in every state at `/dev/components` (dev only; 404 in production).
-- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22. The filters panel is T15 (done).
+- FE: the contacts list at `/contacts` (T14), on the fake data layer until T22b. The filters panel is T15 (done).
 - FE: the pipeline board at `/pipeline` (T18), also on the fake data layer: optimistic Move to…, per-column paging, mobile tabs.
-- Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` in T22. `/dev/auth` shows every state with canned results (404 in production).
-- Next: the BE (Supabase), FE (screens) and OPS (CI and deploy) tracks.
+- Login page is done (T19): `/login` (`app/(auth)/login`, `features/auth/login-form.tsx`) wires `signInAction`. Validates with `SignInSchema` on submit and focuses the first bad field. One alert for `invalid_credentials`, `rate_limited` (Sign in stays disabled for `retryAfter`) and `server`. `?reason=expired` shows the session-ended banner, and `?next=` round-trips through a hidden field (the action runs `safeNext`). `components/shell/no-access-state.tsx` is the presentational No access screen; the `(app)` layout renders it on `NoProfileError` (since T22a, PR #23). `/dev/auth` shows every state with canned results (404 in production).
+- Next: T22b (real data layer and e2e), T22c (security headers), T22d (concurrency, ADR-0011), then T23-T26 (deploy, hardening, README, hygiene audit).
 - Live URL: not deployed yet.
 
 ## Stack
@@ -66,7 +66,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
   - `DatePicker` (react-day-picker in a popover, opened by a field or your own button via `trigger`) reads and writes `'YYYY-MM-DD'` via `lib/dates`
   - `Toaster` (sonner) is mounted in the root layout; call `toast.success('Contact saved')`; `toast.error(msg, { action: { label: 'Retry', onClick } })` stays until acted on or dismissed
 - `components/shell`: the app shell (`Sidebar` 196px on desktop, icon rail 768-1023px, `TabBar` plus `MobileTopBar` below 768px, `PageHeader`, `ForbiddenState`, `TimezoneSync`); `app/(app)/layout.tsx` renders it around every screen, 404 and error boundary
-- `lib/auth`: `PermissionsProvider`, `usePermission(p)`, `<Can p>`; `viewer.ts` is a fake viewer until T22 (`fake-role` cookie picks admin or viewer; production is always admin)
+- `lib/auth`: `PermissionsProvider`, `usePermission(p)`, `<Can p>`; `viewer.ts` resolves the real viewer since T22a (PR #23)
 - `lib/data/mutations.ts`: server-only writes returning `Result<T>`; PostgREST codes map to `forbidden`, `validation`, `unauthorized`, `not_found`; `updateContact` is `where updated_at = expected` and returns `conflict` when the row moved
 - `features/contacts/actions.ts`: Server Actions (create, update, move, reschedule, add note). Each runs `assertPermission`, then Zod with today in the `tz` cookie, then the write, then `revalidatePath`; Zod issues become `fieldErrors` (`contactMethod` for the email/phone rule); an expired session returns `unauthorized`. No delete or undo in v1
 - `features/auth/actions.ts`: `signInAction` validates, signs in through the secret-key client with `Sb-Forwarded-For` (ADR 0004), sets the session and `tz` cookie, redirects to `safeNext(next)` or `/contacts`; a 429 returns `rate_limited` (`retryAfter` in seconds, default 300). `signOutAction` clears this session only
@@ -175,7 +175,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 
 ## Data layer, viewer and proxy
 
-- `lib/data/supabase.ts` has the same signatures as `lib/data/fake.ts`; T22 flips `lib/data/index.ts`. It runs on the request-scoped client, so RLS applies.
+- `lib/data/supabase.ts` has the same signatures as `lib/data/fake.ts`; T22b flips `lib/data/index.ts`. It runs on the request-scoped client, so RLS applies.
 - RPC replies are snake_case. They are mapped to camelCase and parsed with the contract schemas. A bad row throws `DataError` (message only, no row data).
 - `getContact` returns `null` when the contact is missing or deleted. Notes and activities are newest first (ties by `id`); the timeline hides `deleted` and `restored`.
 - `getPipelineColumn` offsets must be multiples of the page size; the RPC pages by number.
@@ -195,7 +195,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 
 ## Contact form (T17)
 
-- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`); T22 only swaps the data source.
+- `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`); T22b only swaps the data source.
 - The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 220 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
 - Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
