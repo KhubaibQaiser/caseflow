@@ -114,6 +114,20 @@ describe('ContactDetailView', () => {
     expect(toast.success).toHaveBeenCalledWith('Follow-up set to Fri, Nov 20.');
   });
 
+  it('shows how long an open contact has waited, and nothing for a closed one', () => {
+    const { unmount } = renderAs('admin', <ContactDetailView {...props()} />);
+    expect(screen.getByText(/waiting 5d/)).toBeVisible();
+    unmount();
+    renderAs(
+      'admin',
+      <ContactDetailView
+        {...props({ contact: contact({ status: 'closed' }) })}
+      />,
+    );
+    expect(screen.getByText(/Enquired Nov 12/)).toBeVisible();
+    expect(screen.queryByText(/waiting/)).not.toBeInTheDocument();
+  });
+
   it('lets a viewer read everything and write nothing', () => {
     renderAs('viewer', <ContactDetailView {...props()} />);
     for (const name of ['Move to…', 'Edit', 'Reschedule'])

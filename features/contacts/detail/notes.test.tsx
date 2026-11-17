@@ -166,6 +166,27 @@ describe('Notes composer', () => {
     expect(screen.getByText('No notes yet.')).toBeInTheDocument();
   });
 
+  it('moves focus to the composer only when the user picks Add note', async () => {
+    const user = userEvent.setup();
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    expect(composer()).not.toHaveFocus();
+
+    await user.click(screen.getByRole('button', { name: 'Add note' }));
+    expect(composer()).toHaveFocus();
+  });
+
+  it('offers no Add note button once there are notes, or to a viewer', () => {
+    const { unmount } = renderAs(
+      'admin',
+      <Notes tz="UTC" notes={[note()]} onAdd={vi.fn()} />,
+    );
+    expect(screen.queryByRole('button', { name: 'Add note' })).toBeNull();
+    unmount();
+    renderAs('viewer', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
+    expect(screen.getByText('No notes yet.')).toBeVisible();
+    expect(screen.queryByRole('button', { name: 'Add note' })).toBeNull();
+  });
+
   it('caps the note at 2,000 characters', () => {
     renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
     expect(composer()).toHaveAttribute('maxlength', '2000');
