@@ -141,12 +141,13 @@ describe('data layer against the local stack', () => {
     expect(fallback?.bodyJson).toEqual(docFromText('Plain fallback'));
   });
 
-  it('getContact still opens a contact whose stored note is 5,000 lists deep', async () => {
+  it('getContact still opens a contact whose stored note is 3,000 lists deep', async () => {
     const id = await seed({ full_name: 'Deep Read' });
     const { url, anon } = localConfig();
     const { data: sess } = await (current as SupabaseClient).auth.getSession();
     // Built as a string: a nested object this deep would overflow JSON.stringify before it was sent.
-    const n = 5_000;
+    // Postgres refuses much deeper (its own stack limit, near 4,000); Zod's recursion gives out from about 500.
+    const n = 3_000;
     const open =
       '{"type":"bulletList","content":[{"type":"listItem","content":[{"type":"paragraph"},';
     const json =

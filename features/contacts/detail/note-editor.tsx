@@ -29,7 +29,7 @@ import { Button } from '@/components/ui/button';
 import { ErrorText } from '@/components/ui/error-text';
 import { Input, controlClass } from '@/components/ui/input';
 import { Tooltip } from '@/components/ui/tooltip';
-import { RichDocSchema } from '@/lib/contracts/rich-text';
+import { safeParseRichDoc } from '@/lib/contracts/rich-text';
 import {
   NOTE_MAX_CHARS,
   isAllowedHref,
@@ -178,7 +178,7 @@ export default function NoteEditor({
     latest.current = { onChange, onSubmit };
   });
   const initialDoc = useMemo(() => {
-    const p = RichDocSchema.safeParse(restored);
+    const p = safeParseRichDoc(restored);
     return p.success ? p.data : undefined;
   }, [restored]);
   const [linkOpen, setLinkOpen] = useState(false);

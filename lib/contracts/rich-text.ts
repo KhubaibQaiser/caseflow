@@ -157,6 +157,22 @@ function withinLimits(raw: unknown): boolean {
   return true;
 }
 
+/**
+ * RichDocSchema.safeParse behind the same pre-walk and a catch: for every document that did not come
+ * from our own editor (a form post, a stored row, a restored draft). Never throws.
+ */
+export function safeParseRichDoc(
+  raw: unknown,
+): { success: true; data: RichDoc } | { success: false } {
+  try {
+    if (!withinLimits(raw)) return { success: false };
+    const p = RichDocSchema.safeParse(raw);
+    return p.success ? { success: true, data: p.data } : { success: false };
+  } catch {
+    return { success: false };
+  }
+}
+
 export type RichNoteResult =
   { ok: true; doc: RichDoc; text: string } | { ok: false; message: string };
 
@@ -168,8 +184,7 @@ const NOT_ALLOWED: RichNoteResult = {
 /** Validates a note from the browser and derives the plain text stored beside it. Messages never echo the input; nothing thrown escapes. */
 export function parseRichNote(raw: unknown): RichNoteResult {
   try {
-    if (!withinLimits(raw)) return NOT_ALLOWED;
-    const p = RichDocSchema.safeParse(raw);
+    const p = safeParseRichDoc(raw);
     if (!p.success) return NOT_ALLOWED;
     const text = richPlainText(p.data).trim();
     if (text === '') return { ok: false, message: 'Write a note.' };
