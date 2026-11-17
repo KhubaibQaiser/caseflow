@@ -249,6 +249,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - **Desktop (≥ 1024px):** a left sidebar 196px wide with the Caseflow mark, Contacts and Pipeline (`aria-current`), and an account block at the bottom: display name, a **role badge** ("Admin", or "Viewer · read-only" with a lock icon) and Sign out.
 - **Tablet (768–1023px):** the sidebar collapses to an icon rail with tooltips.
 - **Mobile (< 768px):** a top bar with the mark only (no "+ New") and a **sticky bottom tab bar** (Contacts, Pipeline, Account), respecting the safe-area inset.
+- **Theme:** one icon button top-right on every screen (the mobile top bar below 768px, the corner on `/login`). It opens a System / Light / Dark radio menu; the choice is a per-device `theme` cookie, rendered as `<html data-theme>` (ADR-0012).
 - **Accessibility:** a skip link ("Skip to content"); landmarks (`nav`, `main`, `aside`); and route changes are announced by **Next.js's built-in route announcer**, so we add no second announcer and screen readers don't hear each navigation twice. Every page sets a distinct `<title>`.
 
 ### 8.3 Contacts list (`/contacts`)
@@ -387,7 +388,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - Accent `#1F5C4A`, accent-soft `#E6F0EB`
   - Urgency: overdue `#9E3426` on `#FCE8E4`, today `#7A4B00` on `#FFF1D6`
   - Status pills: Lead outline `#C3CEC8`, Active `accent-soft`, Closed `#ECEFED`
-- **Dark theme: a nice-to-have, not in the first iteration.** v1 ships **light only**. All colours are CSS variables from day one, and no component uses a literal colour, so dark mode is just a second token set plus a theme switch (stretch milestone S1). Proposed values: canvas `#0F1513`, surface `#161D1A`, panel `#131A17`, line `#27312D`, ink `#E4EBE7`, ink-2 `#A3B3AB`, accent `#6FC3A0`, overdue `#FFB4A6` on `#3A1D18`, today `#F5C46B` on `#3A2A0E`. Every pair is re-checked for 4.5:1 contrast. Theme choice (system, light, dark) is stored in a cookie so there's no flash.
+- **Dark theme: a nice-to-have, not in the first iteration.** v1 shipped light only; dark landed with ADR-0012 (accent is now blue, `#07557C`). All colours are CSS variables from day one, and no component uses a literal colour, so dark mode is just a second token set plus a theme switch (stretch milestone S1). Proposed values: canvas `#0F1513`, surface `#161D1A`, panel `#131A17`, line `#27312D`, ink `#E4EBE7`, ink-2 `#A3B3AB`, accent `#6FC3A0`, overdue `#FFB4A6` on `#3A1D18`, today `#F5C46B` on `#3A2A0E`. Every pair is re-checked for 4.5:1 contrast. Theme choice (system, light, dark) is stored in a cookie so there's no flash.
 - **Radii:** 6 (controls), 10 (surfaces), 999 (pills). **Shadows:** only on floating layers (menus, panel, toast). **Spacing:** a 4px base.
 - **States per component:** default, hover, focus-visible, active, disabled, loading, error, all built in M2 and shown in the dev gallery at `/dev/components` (guarded so it isn't reachable in production).
 - **Browser surfaces:** `::selection`, caret colour, scrollbars, focus rings and underline offset are all themed from the tokens.

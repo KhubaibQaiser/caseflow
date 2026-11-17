@@ -16,6 +16,7 @@ Index of every ADR in this repo. One row per record, newest at the bottom. Each 
 | 0009 | [Build the UI on Radix, React Hook Form with Zod, and nuqs](0009-ui-foundation.md)           | accepted | 2026-11-16 |
 | 0010 | [Handle follow-up dates in the user's time zone](0010-dates-and-timezones.md)                | accepted | 2026-11-16 |
 | 0011 | [Handle concurrent edits with version checks and a server change feed](0011-concurrent-edits-and-change-feed.md) | proposed | 2026-11-17 |
+| 0012 | [Theme: System default, per-device cookie, server-rendered data-theme](0012-theme-system-default-cookie.md) | proposed | 2026-11-17 |
 
 ## Conventions
 

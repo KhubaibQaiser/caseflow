@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { MobileTopBar } from '@/components/shell/mobile-top-bar';
 import { Sidebar } from '@/components/shell/sidebar';
+import { ThemeToggle } from '@/components/shell/theme-toggle';
 import { TabBar } from '@/components/shell/tab-bar';
 import { TimezoneSync } from '@/components/shell/timezone-sync';
 import { NoAccessState } from '@/components/shell/no-access-state';
@@ -47,8 +48,12 @@ export default async function AppLayout({ children }: LayoutProps<'/'>) {
           <main
             id="main"
             tabIndex={-1}
-            className="flex flex-1 flex-col px-4 pt-3.5 pb-4 outline-none md:px-6 md:pt-4.5"
+            className="relative flex flex-1 flex-col px-4 pt-3.5 pb-4 outline-none md:px-6 md:pt-4.5"
           >
+            {/* One button for every screen; page header rows reserve md:pe-11 for it. */}
+            <div className="absolute end-6 top-4.5 z-10 max-md:hidden">
+              <ThemeToggle />
+            </div>
             {children}
           </main>
           <TabBar signOut={signOut} />

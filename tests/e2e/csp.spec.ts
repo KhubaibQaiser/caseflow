@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { storage } from './helpers';
+import { storage, openThemeMenu } from './helpers';
 
 // Collects every CSP violation (event) and console error while a page loads and is used.
 async function watch(page: Page) {
@@ -55,6 +55,19 @@ test('/contacts hydrates, and the filters panel opens', async ({ page }) => {
   const panel = page.getByRole('complementary', { name: 'Filters' });
   await expect(panel.or(page.getByRole('dialog'))).toBeVisible();
   await page.keyboard.press('Escape');
+  expect(problems).toEqual([]);
+});
+
+test('the theme toggle is CSP-clean, and the choice still shows after a reload', async ({
+  page,
+}) => {
+  const problems = await watch(page);
+  await open(page, '/contacts');
+  await openThemeMenu(page);
+  await page.getByRole('menuitemradio', { name: 'Dark' }).click();
+  await page.reload();
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
   expect(problems).toEqual([]);
 });
 
