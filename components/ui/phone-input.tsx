@@ -1,14 +1,15 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import {
   AsYouType,
   getCountries,
   getCountryCallingCode,
+  getExampleNumber,
   parsePhoneNumberFromString,
 } from 'libphonenumber-js/min';
-import type { CountryCode } from 'libphonenumber-js/min';
+import type { CountryCode, Examples } from 'libphonenumber-js/min';
 import ChevronDown from 'lucide-react/icons/chevron-down';
 import TriangleAlert from 'lucide-react/icons/triangle-alert';
 
@@ -41,6 +42,8 @@ function localeCountry(): CountryCode {
   }
   return 'US';
 }
+
+const US_EXAMPLE = '(201) 555-0123';
 
 type State = {
   country: CountryCode;
@@ -92,6 +95,17 @@ export function PhoneInput({ value, onChange, onBlur, ...rest }: Props) {
   const [s, setS] = useState(() => init(value));
   if (value !== s.sent) setS(init(value));
 
+  // The examples file loads on demand, so it stays out of the first-load JS.
+  const [examples, setExamples] = useState<Examples>();
+  useEffect(() => {
+    void import('libphonenumber-js/mobile/examples').then((m) =>
+      setExamples(m.default),
+    );
+  }, []);
+  const placeholder = examples
+    ? (getExampleNumber(s.country, examples)?.formatNational() ?? US_EXAMPLE)
+    : US_EXAMPLE;
+
   const edit = (raw: string) => {
     let { country } = s;
     let text = raw;
@@ -127,7 +141,7 @@ export function PhoneInput({ value, onChange, onBlur, ...rest }: Props) {
           type="tel"
           inputMode="tel"
           autoComplete="tel-national"
-          placeholder="(512) 555-0100"
+          placeholder={placeholder}
           value={s.text}
           onChange={(e) => edit(e.target.value)}
           onBlur={onBlur}
