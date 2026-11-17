@@ -46,7 +46,6 @@ beforeEach(() => {
   claims = null;
   refresh = false;
   vi.unstubAllEnvs();
-  vi.stubEnv('AUTH_ENFORCED', 'true');
   vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:54321');
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'test-key');
 });
@@ -84,6 +83,27 @@ describe('proxy', () => {
     expect(loc(r)).toBe(
       'http://localhost:3000/login?next=%2Fpipeline&reason=expired',
     );
+  });
+
+  it('lets an anonymous Server Action through so it can answer unauthorized', async () => {
+    const r = await proxy(
+      new NextRequest('http://localhost:3000/contacts/new', {
+        method: 'POST',
+        headers: { 'next-action': 'abc', cookie: 'sb-x-auth-token=dead' },
+      }),
+    );
+    expect(r.status).toBe(200);
+    expect(loc(r)).toBeNull();
+  });
+
+  it('still redirects a GET that merely carries a next-action header', async () => {
+    const r = await proxy(
+      new NextRequest('http://localhost:3000/dev/auth', {
+        headers: { 'next-action': 'abc', cookie: 'sb-x-auth-token=dead' },
+      }),
+    );
+    expect(r.status).toBe(307);
+    expect(loc(r)).toContain('/login?next=%2Fdev%2Fauth');
   });
 
   it('lets anonymous users reach /login', async () => {
@@ -140,9 +160,9 @@ describe('proxy', () => {
   });
 });
 
-describe('proxy with AUTH_ENFORCED off (until T22)', () => {
+describe('proxy with AUTH_ENFORCED=false', () => {
   beforeEach(() => {
-    vi.stubEnv('AUTH_ENFORCED', '');
+    vi.stubEnv('AUTH_ENFORCED', 'false');
     vi.stubEnv('SUPABASE_URL', '');
     vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', '');
   });

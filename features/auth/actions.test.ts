@@ -106,17 +106,89 @@ describe('signInAction', () => {
     expect(r).toMatchObject({ ok: false, error: { code: 'server' } });
   });
 
-  it('forwards the first x-forwarded-for entry and sends the normalised email', async () => {
+  it('forwards the rightmost x-forwarded-for entry and sends the normalised email', async () => {
     m.signInWithPassword.mockResolvedValue({
       data: { session: null },
       error: authError(400, 'invalid_credentials'),
     });
     await signInAction(null, form(good));
-    expect(m.createSignInClient).toHaveBeenCalledWith('203.0.113.9');
+    expect(m.createSignInClient).toHaveBeenCalledWith('10.0.0.1');
     expect(m.signInWithPassword).toHaveBeenCalledWith({
       email: 'ana@firm.test',
       password: 'pw',
     });
+  });
+
+  it.each(['999.1.1.1', 'not-an-ip', '', '1.2.3.4:80'])(
+    'does not forward x-forwarded-for=%j (not an IP)',
+    async (xff) => {
+      m.headers = new Headers({ 'x-forwarded-for': xff });
+      m.signInWithPassword.mockResolvedValue({
+        data: { session: null },
+        error: authError(400, 'invalid_credentials'),
+      });
+      await signInAction(null, form(good));
+      expect(m.createSignInClient).toHaveBeenCalledWith(null);
+    },
+  );
+
+  it('prefers x-vercel-forwarded-for over a spoofed x-forwarded-for', async () => {
+    m.headers = new Headers({
+      'x-vercel-forwarded-for': '198.51.100.7',
+      'x-forwarded-for': '1.1.1.1, 198.51.100.7',
+    });
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(400, 'invalid_credentials'),
+    });
+    await signInAction(null, form(good));
+    expect(m.createSignInClient).toHaveBeenCalledWith('198.51.100.7');
+  });
+
+  it('ignores spoofed leading x-forwarded-for entries', async () => {
+    m.headers = new Headers({
+      'x-forwarded-for': '9.9.9.9, 8.8.8.8, 203.0.113.5',
+    });
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(400, 'invalid_credentials'),
+    });
+    await signInAction(null, form(good));
+    expect(m.createSignInClient).toHaveBeenCalledWith('203.0.113.5');
+  });
+
+  it('falls back to x-forwarded-for when x-vercel-forwarded-for is not an IP', async () => {
+    m.headers = new Headers({
+      'x-vercel-forwarded-for': 'garbage',
+      'x-forwarded-for': '203.0.113.5',
+    });
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(400, 'invalid_credentials'),
+    });
+    await signInAction(null, form(good));
+    expect(m.createSignInClient).toHaveBeenCalledWith('203.0.113.5');
+  });
+
+  it('forwards an IPv6 address', async () => {
+    m.headers = new Headers({ 'x-forwarded-for': '2001:db8::1' });
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: authError(400, 'invalid_credentials'),
+    });
+    await signInAction(null, form(good));
+    expect(m.createSignInClient).toHaveBeenCalledWith('2001:db8::1');
+  });
+
+  it('returns ok instead of redirecting when the browser will go back', async () => {
+    m.signInWithPassword.mockResolvedValue({
+      data: { session: { access_token: 'a', refresh_token: 'r' } },
+      error: null,
+    });
+    expect(
+      await signInAction(null, form({ ...good, back: '1', next: '/x' })),
+    ).toEqual({ ok: true, data: null });
+    expect(m.setSession).toHaveBeenCalled();
   });
 
   it('sets the session and tz cookie, then redirects to a safe next', async () => {
