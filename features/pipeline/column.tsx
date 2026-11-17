@@ -19,6 +19,8 @@ type ColumnProps = {
   status: Status;
   rows: PipelineRow[];
   matching: number;
+  /** A filter that explains why the column is empty. */
+  emptyReason?: string;
   /** No page left to ask for. */
   exhausted?: boolean;
   onMove(id: string, to: Status): Promise<Result<ContactRow>>;
@@ -35,6 +37,7 @@ export function Column({
   rows,
   matching,
   exhausted = false,
+  emptyReason,
   onMove,
   onLoadMore,
   disabledReason,
@@ -107,7 +110,11 @@ export function Column({
       >
         {rows.length === 0 ? (
           <div className="max-md:border-line max-md:bg-surface rounded-surface max-md:border">
-            <EmptyState icon={Inbox} title={`No ${label} contacts.`} />
+            <EmptyState
+              icon={Inbox}
+              title={`No ${label} contacts.`}
+              description={emptyReason}
+            />
           </div>
         ) : (
           <ul

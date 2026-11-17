@@ -46,7 +46,7 @@ export default function PipelineError({
       />
       <div className="md:min-h-[34px]">
         <Suspense fallback={null}>
-          <ErrorToolbar />
+          <ErrorToolbar hideSort />
         </Suspense>
       </div>
       <ResetOnNavigate reset={reset} />

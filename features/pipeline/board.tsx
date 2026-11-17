@@ -18,6 +18,7 @@ import { Toolbar } from '../contacts/list/toolbar';
 import { ListTransition, useListQuery } from '../contacts/url-state';
 import { Column } from './column';
 import { MobileTabs } from './mobile-tabs';
+import { emptyReason } from './empty-reason';
 import { hasMore } from './rows';
 import type { ColumnData, Columns } from './rows';
 import { useBoardMoves } from './use-board-moves';
@@ -149,6 +150,7 @@ function Results({
                     rows={columns[s].rows}
                     matching={columns[s].matching}
                     exhausted={!hasMore(columns[s])}
+                    emptyReason={emptyReason(s, filters)}
                     onMove={moveAndKeepFocus}
                     disabledReason={canMove ? undefined : VIEWER_REASON}
                     className={s === tab ? undefined : 'max-md:hidden'}

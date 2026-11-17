@@ -53,8 +53,9 @@ export default async function PipelinePage({
         actions={<NewContactLink className="max-md:hidden" />}
       />
       <Board
-        // A new filter set is a new board: paged-in rows and moves belong to the old one.
-        key={JSON.stringify(filters)}
+        // A new filter set, a new day or a new time zone is a new board: paged-in rows and moves belong to the old one,
+        // and the follow-up labels (Today, Overdue · 2d) are only right for the day they were worked out (spec 8.7).
+        key={JSON.stringify({ filters, today, tz })}
         columns={{ lead: col(lead), active: col(active), closed: col(closed) }}
         filters={filters}
         facets={facets}

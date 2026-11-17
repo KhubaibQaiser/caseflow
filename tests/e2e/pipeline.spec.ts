@@ -9,6 +9,12 @@ const axe = (page: Page) =>
     .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
     .analyze();
 
+// Taps before hydration do nothing (the menu and tabs are client code), so wait for the page to settle.
+async function board(page: Page, url: string) {
+  await page.goto(url);
+  await page.waitForLoadState('networkidle');
+}
+
 const main = (page: Page) => page.getByRole('main');
 const column = (page: Page, status: string) =>
   main(page).getByRole('region', { name: new RegExp(`^${status}`) });
@@ -50,6 +56,42 @@ async function answerMoves(page: Page, ok: boolean) {
   });
 }
 
+/**
+ * Answers loadMoreColumnAction ([{status, filters, page}]): its permission check needs the database,
+ * which the fake layer has no stand-in for. The rows are made up; the merge and counts are the real client's.
+ */
+async function answerLoadMore(page: Page, matching: number) {
+  await page.route('**/pipeline**', async (route) => {
+    const req = route.request();
+    const body = req.method() === 'POST' ? req.postData() : null;
+    const args: unknown = body ? JSON.parse(body) : null;
+    const input = Array.isArray(args) ? args[0] : null;
+    if (!input || typeof input !== 'object' || !('page' in input))
+      return route.fallback();
+    const rows = Array.from({ length: 50 }, (_, i) => ({
+      id: `x-${i}`,
+      fullName: `Loaded Person ${i}`,
+      email: null,
+      phone: null,
+      matterType: 'family',
+      referralSource: null,
+      status: 'lead',
+      followUpOn: '2027-06-01',
+      createdAt: '2026-11-01T10:00:00.000Z',
+      updatedAt: '2026-11-02T10:00:00.000Z',
+      urgency: 'later',
+      daysOverdue: null,
+      open: { tone: 'later', text: 'Tue, Jun 1', rank: 2 },
+      closed: { tone: 'muted', text: 'Tue, Jun 1', rank: 3 },
+    }));
+    return route.fulfill({
+      status: 200,
+      contentType: 'text/x-component',
+      body: `0:{"a":"$@1","f":"","b":"x"}\n1:${JSON.stringify({ ok: true, data: { rows, matching } })}\n`,
+    });
+  });
+}
+
 const openMove = async (page: Page, status: string, index = 0) => {
   const card = cards(page, status).nth(index);
   await card.getByRole('button', { name: /Move to/ }).click();
@@ -59,7 +101,7 @@ const openMove = async (page: Page, status: string, index = 0) => {
 test('the board shows three columns, counts and passes axe', async ({
   page,
 }) => {
-  await page.goto('/pipeline');
+  await board(page, '/pipeline');
   await expect(page).toHaveTitle('Pipeline · Caseflow');
   await expect(
     page.getByRole('heading', { level: 1, name: 'Pipeline' }),
@@ -79,7 +121,7 @@ test('Move to… moves the card, updates the counts and toasts', async ({
   page,
 }) => {
   await answerMoves(page, true);
-  await page.goto('/pipeline');
+  await board(page, '/pipeline');
   const lead = await count(page, 'Lead');
   const active = await count(page, 'Active');
   const first = cards(page, 'Lead').first();
@@ -110,7 +152,7 @@ test('a failed move puts the card back and Retry moves it', async ({
   page,
 }) => {
   await answerMoves(page, false);
-  await page.goto('/pipeline');
+  await board(page, '/pipeline');
   const lead = await count(page, 'Lead');
   const name = await cards(page, 'Lead')
     .first()
@@ -142,8 +184,9 @@ test('a failed move puts the card back and Retry moves it', async ({
 test('Show 50 more appends the next rows and counts what is left', async ({
   page,
 }) => {
-  await page.goto('/pipeline');
+  await board(page, '/pipeline');
   const lead = await count(page, 'Lead');
+  await answerLoadMore(page, lead);
   const more = column(page, 'Lead').getByRole('button', {
     name: /Show 50 more/,
   });
@@ -164,8 +207,11 @@ test('an empty column says so, and the filters carry over', async ({
   page,
 }) => {
   // Closed contacts are never overdue.
-  await page.goto('/pipeline?fu=overdue');
+  await board(page, '/pipeline?fu=overdue');
   await expect(main(page).getByText('No Closed contacts.')).toBeVisible();
+  await expect(
+    main(page).getByText("Closed contacts can't be overdue."),
+  ).toBeVisible();
   await expect(cards(page, 'Lead').first()).toBeVisible();
   // The columns are the status filter, so the panel has no Status group.
   await page.getByRole('button', { name: /^Filters/ }).click();
@@ -184,7 +230,7 @@ test('an empty column says so, and the filters carry over', async ({
 test('a status in the URL is dropped, not shown as a dead chip', async ({
   page,
 }) => {
-  await page.goto('/pipeline?status=lead&fu=overdue');
+  await board(page, '/pipeline?status=lead&fu=overdue');
   await expect(page).toHaveURL(/\/pipeline\?fu=overdue$/);
 });
 
@@ -196,7 +242,7 @@ test('a viewer sees Move to… disabled with the reason', async ({
   await context.addCookies([
     { name: 'fake-role', value: 'viewer', url: baseURL! },
   ]);
-  await page.goto('/pipeline');
+  await board(page, '/pipeline');
   const move = cards(page, 'Lead')
     .first()
     .getByRole('button', { name: /Move to/ });
@@ -213,7 +259,7 @@ test('a viewer sees Move to… disabled with the reason', async ({
 test('@mobile one column at a time, chosen by tabs with counts', async ({
   page,
 }) => {
-  await page.goto('/pipeline');
+  await board(page, '/pipeline');
   const tabs = page.getByRole('radiogroup', { name: 'Status' });
   await expect(tabs.getByText('Lead', { exact: false })).toBeVisible();
   await expect(column(page, 'Lead')).toBeVisible();
@@ -226,16 +272,39 @@ test('@mobile one column at a time, chosen by tabs with counts', async ({
       () => document.documentElement.scrollWidth <= window.innerWidth,
     ),
   ).toBe(true);
-  // The fixed tab bar overlaps whatever card sits at the viewport edge, which axe reads as an obscured
-  // target. Targets are checked by size below; everything else runs.
-  const results = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .disableRules(['target-size'])
-    .analyze();
-  expect(results.violations).toEqual([]);
+  // At the end of the page the sticky tab bar sits below the last card, covering nothing; mid-scroll it
+  // overlaps the edge card, which axe reads as an obscured target, so check where nothing is overlapped.
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  const last = cards(page, 'Active').last();
+  await last.scrollIntoViewIfNeeded();
+  const [end, bar] = await Promise.all([
+    last.boundingBox(),
+    page.locator('[data-tab-bar]').boundingBox(),
+  ]);
+  expect(end!.y + end!.height).toBeLessThanOrEqual(bar!.y);
+  expect((await axe(page)).violations).toEqual([]);
   const move = await cards(page, 'Active')
     .first()
     .getByRole('button', { name: /Move to/ })
     .boundingBox();
   expect(move?.height).toBeGreaterThanOrEqual(24);
+});
+
+test('@mobile a 120-character name never widens the page, in any column', async ({
+  page,
+}) => {
+  await board(page, '/pipeline?q=Worthington');
+  const tabs = page.getByRole('radiogroup', { name: 'Status' });
+  let seen = 0;
+  for (const s of ['Lead', 'Active', 'Closed']) {
+    await tabs.getByText(s).click();
+    await expect(column(page, s)).toBeVisible();
+    seen += await cards(page, s).count();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+  }
+  expect(seen).toBeGreaterThan(0);
 });
