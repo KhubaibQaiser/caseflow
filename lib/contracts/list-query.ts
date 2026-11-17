@@ -80,6 +80,10 @@ export const listQueryParsers = {
   dir: parseAsStringLiteral(['asc', 'desc'] as const).withDefault('asc'),
   page,
   size: parseAsNumberLiteral(PAGE_SIZES).withDefault(DEFAULT_PAGE_SIZE),
+  // The pipeline's per-column sorts; a value is checked by parsePipelineSorts, urgency is the omitted default.
+  leadSort: parseAsString,
+  activeSort: parseAsString,
+  closedSort: parseAsString,
 };
 
 const load = createLoader(listQueryParsers);

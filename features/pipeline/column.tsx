@@ -9,17 +9,21 @@ import { EmptyState } from '@/components/ui/empty-state';
 import type { ContactRow } from '@/lib/contracts/contact';
 import { STATUS_LABEL } from '@/lib/contracts/enums';
 import type { Status } from '@/lib/contracts/enums';
+import type { PipelineSort } from '@/lib/contracts/pipeline-sort';
 import type { Result } from '@/lib/contracts/result';
 import { cn } from '@/utils/cn';
 
 import { PipelineCard } from './pipeline-card';
 import { PAGE_SIZE } from './rows';
+import { SortControl } from './sort-control';
 import type { PipelineRow } from './rows';
 
 type ColumnProps = {
   status: Status;
   rows: PipelineRow[];
   matching: number;
+  sort: PipelineSort;
+  onSortChange(sort: PipelineSort): void;
   /** A filter that explains why the column is empty. */
   emptyReason?: string;
   /** No page left to ask for. */
@@ -37,6 +41,8 @@ export function Column({
   status,
   rows,
   matching,
+  sort,
+  onSortChange,
   exhausted = false,
   emptyReason,
   onMove,
@@ -91,7 +97,7 @@ export function Column({
       )}
     >
       {/* Still the section's name; on a phone the tabs already show it with the count. */}
-      <header className="px-1 py-0.5 max-md:sr-only">
+      <header className="flex items-center justify-between gap-2 px-1 py-0.5 max-md:sr-only">
         <h2
           id={`column-${status}`}
           tabIndex={-1}
@@ -104,6 +110,13 @@ export function Column({
             <span className="sr-only"> contacts</span>
           </span>
         </h2>
+        {/* On a phone the one button beside the tabs sorts the visible column. */}
+        <SortControl
+          status={status}
+          sort={sort}
+          onChange={onSortChange}
+          className="max-md:hidden"
+        />
       </header>
       <div
         data-scroller

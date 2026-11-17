@@ -6,6 +6,8 @@ import {
   type ContactRow,
 } from '@/lib/contracts/contact';
 import type { Status } from '@/lib/contracts/enums';
+import { PIPELINE_SORT_RPC } from '@/lib/contracts/pipeline-sort';
+import type { PipelineSort } from '@/lib/contracts/pipeline-sort';
 import {
   ContactFacetsSchema,
   type ContactFacets,
@@ -107,6 +109,7 @@ export async function getPipelineColumn(
   f: Filters,
   offset: number,
   limit = 50,
+  sort: PipelineSort = 'urgency',
 ): Promise<{ rows: ContactRow[]; matching: number }> {
   if (
     !(PAGE_SIZES as readonly number[]).includes(limit) ||
@@ -118,8 +121,7 @@ export async function getPipelineColumn(
   const r = await search(
     { ...f, status: [status] },
     {
-      sort: 'follow_up',
-      dir: 'asc',
+      ...PIPELINE_SORT_RPC[sort],
       page: offset / limit + 1,
       size: limit,
     },

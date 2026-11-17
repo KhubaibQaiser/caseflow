@@ -9,6 +9,14 @@ import { STATUSES } from '@/lib/contracts/enums';
 import type { Status } from '@/lib/contracts/enums';
 import type { ContactFacets } from '@/lib/contracts/facets';
 import type { Filters } from '@/lib/contracts/filters';
+import {
+  PIPELINE_SORT_PARAM,
+  DEFAULT_PIPELINE_SORT,
+} from '@/lib/contracts/pipeline-sort';
+import type {
+  PipelineSort,
+  PipelineSorts,
+} from '@/lib/contracts/pipeline-sort';
 import type { Result } from '@/lib/contracts/result';
 import { Headroom } from '@/components/shell/headroom';
 import { usePermission } from '@/lib/auth/permissions-context';
@@ -37,6 +45,8 @@ type BoardProps = {
   columns: Columns;
   /** The filters these columns were loaded under; "Show 50 more" repeats them. */
   filters: Filters;
+  /** Each column's sort, as the URL asks for it; the columns were loaded in these orders. */
+  sorts: PipelineSorts;
   facets: ContactFacets;
   /** The page title row; on a phone it hides on scroll while the status tabs stay. */
   header?: ReactNode;
@@ -46,6 +56,7 @@ type BoardProps = {
   onLoadMore(input: {
     status: Status;
     filters: Filters;
+    sort: PipelineSort;
     page: number;
   }): Promise<Result<Pick<ColumnData, 'rows' | 'matching'>>>;
 };
@@ -61,6 +72,7 @@ export function Board(props: BoardProps) {
 function Results({
   columns: initial,
   filters,
+  sorts,
   facets,
   header,
   filtersOpen,
@@ -70,7 +82,7 @@ function Results({
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams()?.toString();
-  const [, , isPending] = useListQuery();
+  const [, setQuery, isPending] = useListQuery();
   const filtersButton = useRef<HTMLButtonElement>(null);
   const panel = useFiltersPanel(filtersOpen, filtersButton);
   const canMove = usePermission('contacts.write');
@@ -80,7 +92,17 @@ function Results({
     router.push(
       `/login?reason=expired&next=${encodeURIComponent(pathname + (search ? `?${search}` : ''))}`,
     );
-  const { columns, move, append } = useBoardMoves(initial, onMove, expire);
+  const { columns, move, append } = useBoardMoves(
+    initial,
+    onMove,
+    expire,
+    sorts,
+  );
+  // One URL param per column; urgency is the default and leaves the URL.
+  const setSort = (s: Status, sort: PipelineSort) =>
+    void setQuery({
+      [PIPELINE_SORT_PARAM[s]]: sort === DEFAULT_PIPELINE_SORT ? null : sort,
+    });
 
   // A card that leaves takes the keyboard's place with it: focus its neighbour (or the column's heading
   // when it was the only card), or the card that came back. The target is dropped once used.
@@ -124,7 +146,13 @@ function Results({
       {/* First on a phone, straight under the title; the toolbar's search and filters follow. */}
       <Headroom title={header} pin={showBoard}>
         {showBoard && (
-          <MobileTabs columns={columns} value={tab} onChange={setTab} />
+          <MobileTabs
+            columns={columns}
+            value={tab}
+            onChange={setTab}
+            sorts={sorts}
+            onSortChange={setSort}
+          />
         )}
       </Headroom>
       {!none && (
@@ -156,18 +184,22 @@ function Results({
                     status={s}
                     rows={columns[s].rows}
                     matching={columns[s].matching}
+                    sort={sorts[s]}
+                    onSortChange={(sort) => setSort(s, sort)}
                     exhausted={!hasMore(columns[s])}
                     emptyReason={emptyReason(s, filters)}
                     onMove={moveAndKeepFocus}
                     disabledReason={canMove ? undefined : VIEWER_REASON}
                     className={s === tab ? undefined : 'max-md:hidden'}
                     onLoadMore={async () => {
+                      const sort = sorts[s];
                       const r = await onLoadMore({
                         status: s,
                         filters,
+                        sort,
                         page: columns[s].pages,
                       });
-                      if (r.ok) append(s, r.data.rows, r.data.matching);
+                      if (r.ok) append(s, r.data.rows, r.data.matching, sort);
                       else if (r.error.code === 'unauthorized') expire();
                       return r.ok;
                     }}

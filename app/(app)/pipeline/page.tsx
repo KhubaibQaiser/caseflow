@@ -14,6 +14,7 @@ import {
   serializeListQuery,
   toFilters,
 } from '@/lib/contracts/list-query';
+import { parsePipelineSorts } from '@/lib/contracts/pipeline-sort-schema';
 import { getContactFacets, getPipelineColumn } from '@/lib/data';
 import { todayIn } from '@/lib/dates/date-only';
 import { getRequestTimeZone } from '@/lib/dates/server';
@@ -30,10 +31,11 @@ export default async function PipelinePage({
   if (query.status)
     redirect(serializeListQuery('/pipeline', { ...query, status: null }));
   const filters = toFilters(query);
+  const sorts = parsePipelineSorts(query);
   const [lead, active, closed, facets, tz, jar] = await Promise.all([
-    getPipelineColumn('lead', filters, 0),
-    getPipelineColumn('active', filters, 0),
-    getPipelineColumn('closed', filters, 0),
+    getPipelineColumn('lead', filters, 0, 50, sorts.lead),
+    getPipelineColumn('active', filters, 0, 50, sorts.active),
+    getPipelineColumn('closed', filters, 0, 50, sorts.closed),
     getContactFacets(filters),
     getRequestTimeZone(),
     cookies(),
@@ -61,6 +63,7 @@ export default async function PipelinePage({
         key={JSON.stringify({ filters, today, tz })}
         columns={{ lead: col(lead), active: col(active), closed: col(closed) }}
         filters={filters}
+        sorts={sorts}
         facets={facets}
         filtersOpen={jar.get('filters_open')?.value === '1'}
         onMove={moveContactAction}

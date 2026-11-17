@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { appendRows, applyMove, hasMore } from './rows';
 import { board, pipelineRow } from './test-utils';
+import type { Columns, PipelineRow } from './rows';
 
 const ids = (rows: { id: string }[]) => rows.map((r) => r.id);
 const NOW = '2026-11-17T12:00:00.000Z';
@@ -81,5 +82,60 @@ describe('urgency ties', () => {
     ];
     const next = applyMove(cols, 'a', 'active', '2026-11-17T12:00:00.000Z');
     expect(ids(next.active.rows)).toEqual(['later', 'a']);
+  });
+});
+
+describe('sorted columns', () => {
+  const r = (id: string, over: Partial<PipelineRow>) =>
+    pipelineRow(id, 'lead', over);
+
+  it('appendRows keeps the merged rows in the column sort', () => {
+    const cols: Columns = {
+      ...board(),
+      lead: {
+        rows: [r('b', { fullName: 'Bea' }), r('d', { fullName: 'Dan' })],
+        matching: 4,
+        pages: 1,
+      },
+    };
+    const next = appendRows(
+      cols,
+      'lead',
+      [r('cy', { fullName: 'Cy' }), r('a', { fullName: 'Al' })],
+      4,
+      'name',
+    );
+    expect(next.lead.rows.map((x) => x.id)).toEqual(['a', 'b', 'cy', 'd']);
+  });
+
+  it('applyMove places a card by the target column sort', () => {
+    const cols: Columns = {
+      ...board(),
+      lead: { rows: [r('m', { fullName: 'Mo' })], matching: 1, pages: 1 },
+      active: {
+        rows: [
+          pipelineRow('a1', 'active', { fullName: 'Ann' }),
+          pipelineRow('a2', 'active', { fullName: 'Zoe' }),
+        ],
+        matching: 2,
+        pages: 1,
+      },
+    };
+    const next = applyMove(cols, 'm', 'active', NOW, 'name');
+    expect(next.active.rows.map((x) => x.id)).toEqual(['a1', 'm', 'a2']);
+    // Recently updated: the move itself is the newest change.
+    expect(
+      applyMove(cols, 'm', 'active', NOW, 'updated').active.rows[0]!.id,
+    ).toBe('m');
+  });
+
+  it('breaks a full tie by id, as the RPC does', () => {
+    const same = { updatedAt: '2026-11-02T10:00:00.000Z', fullName: 'Same' };
+    const cols: Columns = {
+      ...board(),
+      lead: { rows: [r('m', same), r('z', same)], matching: 3, pages: 1 },
+    };
+    const next = appendRows(cols, 'lead', [r('b2', same)], 3, 'updated');
+    expect(ids(next.lead.rows)).toEqual(['b2', 'm', 'z']);
   });
 });
