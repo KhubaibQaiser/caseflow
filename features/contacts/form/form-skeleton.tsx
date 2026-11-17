@@ -28,8 +28,11 @@ function FieldSkeleton({
   );
 }
 
-// Same footprint as the form, so nothing jumps when the contact arrives.
-export function FormSkeleton() {
+/**
+ * Same footprint as the form, so nothing jumps when the contact arrives.
+ * `header={false}` for the lazy form's placeholder: the real breadcrumb and heading are already above it.
+ */
+export function FormSkeleton({ header = true }: { header?: boolean }) {
   return (
     <div
       role="status"
@@ -37,14 +40,16 @@ export function FormSkeleton() {
       aria-label="Loading contact"
       className="flex flex-col gap-3.5"
     >
-      <div className={`flex flex-col gap-1.5 ${stickyTop}`}>
-        <div className="flex min-h-8.5 items-center max-md:h-[19.5px] max-md:min-h-0">
-          <Skeleton className="h-3.5 w-56" />
+      {header && (
+        <div className={`flex flex-col gap-1.5 ${stickyTop}`}>
+          <div className="flex min-h-8.5 items-center max-md:h-[19.5px] max-md:min-h-0">
+            <Skeleton className="h-3.5 w-56" />
+          </div>
+          <div className="flex h-7 items-center md:h-8">
+            <Skeleton className="h-5 w-44" />
+          </div>
         </div>
-        <div className="flex h-7 items-center md:h-8">
-          <Skeleton className="h-5 w-44" />
-        </div>
-      </div>
+      )}
       <div className="flex max-w-3xl flex-col gap-3.5">
         <div className={fieldset}>
           <FieldSkeleton />

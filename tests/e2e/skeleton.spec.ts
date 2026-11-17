@@ -215,3 +215,47 @@ test.describe('layout shift on a fresh load', () => {
     });
   }
 });
+
+// The form's code loads after the page. Its placeholder sits under the real breadcrumb and heading,
+// so it must hold only the fields: a second header there pushed the form down until the code landed.
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 375, height: 812 },
+]) {
+  test.describe(`form placeholder at ${size.width}`, () => {
+    test.use({ viewport: size });
+
+    for (const name of ['new', 'edit'] as const) {
+      test(`${name}: the placeholder starts where the form does`, async ({
+        page,
+      }) => {
+        const to =
+          name === 'new'
+            ? '/contacts/new'
+            : `${await firstContactPath(page)}/edit`;
+        const top = (sel: string) =>
+          page.evaluate((s) => {
+            const el = document.querySelector(s);
+            return el
+              ? Math.round(el.getBoundingClientRect().y * 10) / 10
+              : null;
+          }, sel);
+        // Slow, not held: the page needs some JS to swap the header in; the lazy form arrives seconds later.
+        await page.route('**/_next/static/chunks/**', async (r) => {
+          await new Promise((f) => setTimeout(f, 2500));
+          await r.continue();
+        });
+        await page.goto(to, { waitUntil: 'commit' });
+        await page.locator('main#main h1').waitFor();
+        const placeholder = await top('main#main [aria-busy="true"] > *');
+        await page.locator('main#main form fieldset').first().waitFor();
+        expect(placeholder, 'placeholder rendered').not.toBeNull();
+        expect(
+          Math.abs(
+            (placeholder ?? 0) - ((await top('main#main form fieldset')) ?? 0),
+          ),
+        ).toBeLessThanOrEqual(1);
+      });
+    }
+  });
+}
