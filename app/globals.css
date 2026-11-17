@@ -168,10 +168,14 @@
     text-underline-offset: 3px;
   }
 
+  /* Rest colour matches focus, so transition-colors never fades the outline in from white. */
+  * {
+    outline-color: var(--accent);
+  }
+
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
-    box-shadow: 0 0 0 3px var(--ring);
   }
 }
 
