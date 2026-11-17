@@ -113,17 +113,22 @@ export function Toolbar({
           aria-controls={panel?.open ? 'filters-panel' : undefined}
           onPointerEnter={onFiltersIntent}
           onFocus={onFiltersIntent}
-          // One name in every browser; a flex badge would read "Filters , 2 applied".
-          aria-label={applied > 0 ? `Filters, ${applied} applied` : undefined}
           onClick={() => panel?.setOpen(!panel.open)}
           className="max-md:h-9 max-md:flex-1"
         >
           <ListFilter aria-hidden className="size-4" />
           Filters
           {applied > 0 && (
-            <span className="bg-accent text-on-accent rounded-pill tnum px-[7px] text-xs leading-[18px]">
-              {applied}
-            </span>
+            <>
+              <span
+                aria-hidden
+                className="bg-accent text-on-accent rounded-pill tnum px-[7px] text-xs leading-[18px]"
+              >
+                {applied}
+              </span>
+              {/* The name starts with the visible word (WCAG 2.5.3); the badge's number is read here. */}
+              <span className="sr-only">, {applied} applied</span>
+            </>
           )}
         </Button>
         <Suspense

@@ -5,6 +5,8 @@ import X from 'lucide-react/icons/x';
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, RefObject } from 'react';
 
+import { cn } from '@/utils/cn';
+
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { optionMark, optionRow } from '@/components/ui/checkbox';
@@ -198,7 +200,8 @@ function Aside({
       tabIndex={-1}
       aria-hidden={closing || undefined}
       data-closing={closing || undefined}
-      className="bg-panel border-line rounded-tl-surface shadow-raised absolute inset-y-0 right-0 z-20 flex w-64 flex-col border-t border-l transition-opacity duration-150 outline-none data-closing:opacity-0 motion-reduce:transition-none max-lg:hidden"
+      // Docked to the window edge: -right-6 and -bottom-4 undo main's gutter (px-6, pb-4). The entrance slides in (tokens go to none under reduced motion).
+      className="bg-panel border-line rounded-tl-surface shadow-raised animate-sheet-in absolute top-0 -right-6 -bottom-4 z-20 flex w-64 flex-col border-t border-l transition-opacity duration-150 outline-none data-closing:opacity-0 motion-reduce:transition-none max-lg:hidden"
     >
       <header className="border-line bg-panel flex items-center justify-between gap-3 border-b py-2.5 pr-2.5 pl-4">
         <h2 className="text-ink m-0 text-sm font-semibold">{title}</h2>
@@ -215,7 +218,7 @@ function Aside({
           </Button>
         </div>
       </header>
-      <div className="flex flex-1 flex-col gap-4 overflow-y-auto overscroll-contain p-4">
+      <div className="flex-1 overflow-y-auto overscroll-contain p-4">
         {children}
       </div>
       <footer className="border-line bg-surface flex gap-2 border-t px-4 py-3">
@@ -240,8 +243,8 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
     return {
       status: true,
       fu: true,
-      matter: desktop || set(v.matter),
-      source: desktop || set(v.source),
+      matter: set(v.matter),
+      source: set(v.source),
       created: set(v.createdFrom, v.createdTo),
     };
   });
@@ -293,6 +296,7 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
       <Group
         title="Matter type"
         selected={d.draft.matter?.length}
+        collapsible={!desktop}
         defaultOpen={initial.matter}
       >
         {checks(
@@ -305,6 +309,7 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
       <Group
         title="Referral source"
         selected={d.draft.source?.length}
+        collapsible={!desktop}
         defaultOpen={initial.source}
       >
         {checks(
@@ -317,6 +322,7 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
       <Group
         title="Created date"
         selected={d.draft.createdFrom || d.draft.createdTo ? 1 : 0}
+        collapsible
         defaultOpen={initial.created}
       >
         <DateRange
@@ -333,39 +339,60 @@ function Groups({ draft: d, facets, hideStatus }: GroupsProps) {
 }
 
 let groupSeq = 0;
+const headingClass = 'text-ink-2 text-xs font-semibold';
+/**
+ * One filter group. Open groups are plain headings; a collapsible one (the comp's "more" rows) is a
+ * details with a chevron. The title carries the selected count so a collapsed group still shows it.
+ * The 18px gap below lives here, so the side panel and the sheet space groups alike.
+ */
 function Group({
   title,
   selected = 0,
-  defaultOpen,
+  collapsible = false,
+  defaultOpen = true,
   children,
 }: {
   title: string;
-  /** Shown beside the title, so a collapsed group still says it holds a selection. */
   selected?: number;
-  defaultOpen: boolean;
+  collapsible?: boolean;
+  defaultOpen?: boolean;
   children: ReactNode;
 }) {
   const [id] = useState(() => `filters-group-${++groupSeq}`);
+  const label = selected > 0 ? `${title} · ${selected}` : title;
+  const body = (
+    <div role="group" aria-labelledby={id} className="flex flex-col">
+      {children}
+    </div>
+  );
+  if (!collapsible)
+    return (
+      <div className="not-last:mb-[18px]">
+        <h3
+          id={id}
+          className={cn(headingClass, 'tnum mb-1 flex min-h-7 items-center')}
+        >
+          {label}
+        </h3>
+        {body}
+      </div>
+    );
   return (
-    <details
-      open={defaultOpen}
-      className="group border-line-soft not-first:border-t not-first:pt-3"
-    >
+    <details open={defaultOpen} className="group not-last:mb-[18px]">
       <summary
         id={id}
-        className="text-ink-2 hover:text-ink rounded-ctl mb-1 flex min-h-7 cursor-pointer list-none items-center justify-between text-xs font-semibold [&::-webkit-details-marker]:hidden"
+        className={cn(
+          headingClass,
+          'hover:text-ink rounded-ctl mb-1 flex min-h-7 cursor-pointer list-none items-center justify-between [&::-webkit-details-marker]:hidden',
+        )}
       >
-        <span className="tnum">
-          {selected > 0 ? `${title} · ${selected}` : title}
-        </span>
+        <span className="tnum">{label}</span>
         <ChevronDown
           aria-hidden
           className="size-4 transition-transform duration-150 group-open:rotate-180 motion-reduce:transition-none"
         />
       </summary>
-      <div role="group" aria-labelledby={id} className="flex flex-col">
-        {children}
-      </div>
+      {body}
     </details>
   );
 }
@@ -380,7 +407,13 @@ function FollowUp({
   counts: ContactFacets['facets']['followUp'];
 }) {
   const radio = (value: FilterDraft['fu'], label: string, count?: number) => (
-    <label key={label} className={optionRow}>
+    <label
+      key={label}
+      className={cn(
+        optionRow,
+        count === 0 && 'text-ink-2 has-checked:text-ink',
+      )}
+    >
       <input
         type="radio"
         name="filters-follow-up"
