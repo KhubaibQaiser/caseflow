@@ -28,6 +28,12 @@ type LoginFormProps = {
 
 const subscribe = () => () => {};
 const browserTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+// ponytail: the document that first loaded was not /login, so this page came from an in-app
+// push and Back leads to the form. A hard load of /login has nothing to go back to.
+const cameFromApp = () => {
+  const nav = performance.getEntriesByType('navigation')[0];
+  return !!nav && new URL(nav.name).pathname !== '/login';
+};
 
 function Banner({
   tone,
@@ -92,6 +98,15 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
 
   useEffect(() => emailRef.current?.focus(), []);
 
+  const goBack = useSyncExternalStore(
+    subscribe,
+    () => reason === 'expired' && cameFromApp(),
+    () => false,
+  );
+  useEffect(() => {
+    if (state?.ok) window.history.back();
+  }, [state]);
+
   // Put focus where the next action is: the password after a wrong one, the email after a lock.
   useEffect(() => {
     if (!error || error.code === 'validation') return;
@@ -147,6 +162,7 @@ export function LoginForm({ action, reason, next }: LoginFormProps) {
       <form action={submit} noValidate className="flex flex-col gap-4">
         <input type="hidden" name="tz" value={tz} />
         {next && <input type="hidden" name="next" value={next} />}
+        {goBack && <input type="hidden" name="back" value="1" />}
         <Field id="email" label="Email" error={fieldErrors.email}>
           <Input
             ref={emailRef}

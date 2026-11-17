@@ -23,7 +23,15 @@ async function fill(user: ReturnType<typeof userEvent.setup>) {
 const submit = (user: ReturnType<typeof userEvent.setup>) =>
   user.click(screen.getByRole('button', { name: 'Sign in' }));
 
-afterEach(() => vi.useRealTimers());
+const started = (name: string) =>
+  vi
+    .spyOn(performance, 'getEntriesByType')
+    .mockReturnValue([{ name }] as unknown as PerformanceEntryList);
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 describe('LoginForm', () => {
   it('validates on submit, per field, without calling the action', async () => {
@@ -120,48 +128,6 @@ describe('LoginForm', () => {
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
-  describe('after a session expiry', () => {
-    const started = (name: string) =>
-      vi
-        .spyOn(performance, 'getEntriesByType')
-        .mockReturnValue([{ name }] as unknown as PerformanceEntryList);
-    afterEach(() => vi.restoreAllMocks());
-
-    it('asks to go back when the page was reached from inside the app, and goes back on success', async () => {
-      started('http://localhost/contacts/1/edit');
-      const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
-      const action = vi.fn<Action>(async () => ({ ok: true, data: null }));
-      const user = userEvent.setup();
-      render(<LoginForm action={action} reason="expired" next="/x" />);
-      await fill(user);
-      await submit(user);
-      await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
-      expect(action.mock.calls[0]![1].get('back')).toBe('1');
-    });
-
-    it('does not ask to go back on a fresh load of the login page', async () => {
-      started('http://localhost/login?reason=expired');
-      const action = vi.fn<Action>(never);
-      const user = userEvent.setup();
-      render(<LoginForm action={action} reason="expired" />);
-      await fill(user);
-      await submit(user);
-      await waitFor(() => expect(action).toHaveBeenCalled());
-      expect(action.mock.calls[0]![1].has('back')).toBe(false);
-    });
-
-    it('never asks to go back without reason=expired', async () => {
-      started('http://localhost/contacts');
-      const action = vi.fn<Action>(never);
-      const user = userEvent.setup();
-      render(<LoginForm action={action} />);
-      await fill(user);
-      await submit(user);
-      await waitFor(() => expect(action).toHaveBeenCalled());
-      expect(action.mock.calls[0]![1].has('back')).toBe(false);
-    });
-  });
-
   it('shows no banner by default and the invitation footer always', () => {
     render(<LoginForm action={vi.fn<Action>()} />);
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -218,6 +184,18 @@ describe('LoginForm', () => {
     await screen.findByRole('alert');
     expect(screen.getByLabelText('Password', { exact: true })).toHaveValue('');
     expect(screen.getByLabelText('Email')).toHaveValue('Sam@Firm.com');
+  });
+
+  it('asks to go back when the page was reached from inside the app, and goes back on success', async () => {
+    started('http://localhost/contacts/1/edit');
+    const back = vi.spyOn(window.history, 'back').mockImplementation(() => {});
+    const action = vi.fn<Action>(async () => ({ ok: true, data: null }));
+    const user = userEvent.setup();
+    render(<LoginForm action={action} reason="expired" next="/x" />);
+    await fill(user);
+    await submit(user);
+    await waitFor(() => expect(back).toHaveBeenCalledTimes(1));
+    expect(action.mock.calls[0]![1].get('back')).toBe('1');
   });
 
   // Last: their never-resolving actions leave a pending transition that stalls later tests.
@@ -282,5 +260,30 @@ describe('LoginForm', () => {
     await waitFor(() => expect(action).toHaveBeenCalled());
     expect(screen.queryByText('Enter your password.')).not.toBeInTheDocument();
     expect(action.mock.calls[0]![1].get('password')).toBe('pw');
+  });
+
+  // Last, like the other never-resolving tests above.
+  describe('after a session expiry', () => {
+    it('does not ask to go back on a fresh load of the login page', async () => {
+      started('http://localhost/login?reason=expired');
+      const action = vi.fn<Action>(never);
+      const user = userEvent.setup();
+      render(<LoginForm action={action} reason="expired" />);
+      await fill(user);
+      await submit(user);
+      await waitFor(() => expect(action).toHaveBeenCalled());
+      expect(action.mock.calls[0]![1].has('back')).toBe(false);
+    });
+
+    it('never asks to go back without reason=expired', async () => {
+      started('http://localhost/contacts');
+      const action = vi.fn<Action>(never);
+      const user = userEvent.setup();
+      render(<LoginForm action={action} />);
+      await fill(user);
+      await submit(user);
+      await waitFor(() => expect(action).toHaveBeenCalled());
+      expect(action.mock.calls[0]![1].has('back')).toBe(false);
+    });
   });
 });

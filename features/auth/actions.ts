@@ -1,9 +1,10 @@
 'use server';
 
+import { isIP } from 'node:net';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { SignInSchema } from '@/lib/contracts/auth';
-import { fail, zodFieldErrors, type Result } from '@/lib/contracts/result';
+import { fail, ok, zodFieldErrors, type Result } from '@/lib/contracts/result';
 import { resolveTimeZone } from '@/lib/dates/date-only';
 import { createSignInClient } from '@/lib/supabase/admin';
 import { createServerSupabase } from '@/lib/supabase/server';
@@ -26,8 +27,9 @@ export async function signInAction(
       fieldErrors: zodFieldErrors(parsed.error),
     });
 
-  const ip =
-    (await headers()).get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+  // An attacker-controlled header must not pick the throttle bucket: only a real IP counts.
+  const first = (await headers()).get('x-forwarded-for')?.split(',')[0]?.trim();
+  const ip = first && isIP(first) ? first : null;
   const { data, error } = await createSignInClient(ip).auth.signInWithPassword(
     parsed.data,
   );
@@ -63,6 +65,8 @@ export async function signInAction(
       sameSite: 'lax',
     },
   );
+  // After a session expiry the browser goes Back to the form and its saved draft.
+  if (formData.get('back') === '1') return ok(null);
   redirect(safeNext(formData.get('next')) ?? '/contacts');
 }
 
