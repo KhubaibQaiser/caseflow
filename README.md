@@ -34,4 +34,4 @@ Dragging alone fails WCAG 2.2 (2.5.7), is clumsy on phones and impossible by key
 
 Claude Code wrote the code; I made every product and design decision and can explain every line. An interview produced the spec, ADRs and a task plan before any code. Subagents in separate git worktrees built one small PR per task, failing tests first. Every PR got a fresh code review, and every visual change went to a mockup for my approval before it was coded.
 
-**Quality:** WCAG 2.2 AA with axe in e2e · Lighthouse mobile `/contacts` Performance 100, Accessibility 100, CLS 0 · 220 kB JS budget enforced in CI · 600+ unit and 120+ e2e tests. Setup and operations: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+**Quality:** WCAG 2.2 AA with axe in e2e · Lighthouse mobile `/contacts` Performance 100, Accessibility 100, CLS 0 · 220 kB JS budget enforced in CI · 600+ unit and 120+ e2e tests · an e2e test checks every skeleton against the loaded page to within 1px. Setup and operations: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).

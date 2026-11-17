@@ -17,7 +17,12 @@ import { StatusPill, UrgencyPill } from '@/components/ui/pill';
 import { formatPhoneLite } from '@/utils/format-phone';
 import { cn } from '@/utils/cn';
 
-import { SORT_OPTIONS, matterLabel, sourceLabel } from './columns';
+import {
+  COLUMN_WIDTH,
+  SORT_OPTIONS,
+  matterLabel,
+  sourceLabel,
+} from './columns';
 import type { SortDir, SortKey } from './columns';
 import type { ListRow } from './list-rows';
 
@@ -28,16 +33,7 @@ const helper = createColumnHelper<typeof features, ListRow>();
 const muted = (text: string) => <span className="text-ink-2">{text}</span>;
 
 // Fixed widths: with table-layout fixed, virtualized rows can't reflow the columns as they scroll in.
-const WIDTH: Record<string, number> = {
-  name: 220,
-  matter: 140,
-  status: 92,
-  followUp: 128,
-  phone: 132,
-  email: 196,
-  source: 140,
-  waiting: 76,
-};
+const WIDTH: Record<string, number> = COLUMN_WIDTH;
 const SORT_BY_COLUMN: Record<string, SortKey> = {
   name: 'name',
   status: 'status',

@@ -91,6 +91,93 @@ for (const size of [
   });
 }
 
+/** x, y, w, h of every element a selector matches, rounded to a tenth. */
+const boxes = (page: Page, selector: string): Promise<number[][]> =>
+  page.evaluate(
+    (sel) =>
+      [...document.querySelectorAll(sel)].map((el) => {
+        const r = el.getBoundingClientRect();
+        return [r.x, r.y, r.width, r.height].map(
+          (n) => Math.round(n * 10) / 10,
+        );
+      }),
+    selector,
+  );
+
+/** `skip` drops one of x, y, w, h (0-3) from the comparison. */
+function near(a: number[][], b: number[][], skip = -1) {
+  expect(a.length, 'same number of boxes').toBe(b.length);
+  a.forEach((box, i) =>
+    box.forEach((n, k) => {
+      if (k === skip) return;
+      expect(
+        Math.abs(n - (b[i]?.[k] ?? Infinity)),
+        `box ${i} [x,y,w,h][${k}]`,
+      ).toBeLessThanOrEqual(1);
+    }),
+  );
+}
+
+// The skeleton's boxes sit inside the page boxes, so a shift inside a block (not just between blocks) shows up here.
+for (const size of [
+  { width: 1440, height: 900 },
+  { width: 375, height: 812 },
+]) {
+  test.describe(`inside the skeletons at ${size.width}`, () => {
+    test.use({ viewport: size });
+
+    test('new contact: every control block lines up', async ({ page }) => {
+      // Controls are the 34px+ blocks; labels and hints are shorter. The phone's number input shares its row with the country button.
+      const controls = (loaded: boolean) =>
+        loaded
+          ? 'main#main form :is(input:not([type=tel]):not(.sr-only), select, textarea, button, [role=radiogroup])'
+          : 'main#main [aria-busy] span[aria-hidden]';
+      await page.goto('/dev/skeleton/form');
+      await page.locator('main#main [aria-busy="true"]').first().waitFor();
+      const skeleton = (await boxes(page, controls(false))).filter(
+        (b) => (b[3] ?? 0) >= 34,
+      );
+      await page.goto('/contacts/new');
+      await page.waitForLoadState('networkidle');
+      const loaded = (await boxes(page, controls(true))).filter(
+        (b) => (b[3] ?? 0) >= 34,
+      );
+      // Cancel and Save are right-aligned and sized by their text, which renders a few px differently per OS:
+      // pin Save's right edge, and only Cancel's row (its x follows Save's width).
+      const rightEdges = (b: number[][]) =>
+        b.map((box, i) => {
+          if (i === b.length - 1)
+            return [(box[0] ?? 0) + (box[2] ?? 0), ...box.slice(1)];
+          if (i === b.length - 2) return [0, ...box.slice(1)];
+          return box;
+        });
+      // The phone row is one block over a country button and an input, so its width is the one thing that cannot match.
+      near(rightEdges(skeleton), rightEdges(loaded), 2);
+    });
+
+    test('contacts: skeleton rows are the loaded rows', async ({ page }) => {
+      const wide = size.width >= 768;
+      const head = 'main#main table thead th';
+      const rows = (cards: string) =>
+        wide ? `${head}, main#main table tbody tr:first-child td` : cards;
+      await page.goto('/dev/skeleton/list');
+      await page.locator('main#main [aria-busy="true"]').first().waitFor();
+      const loading = (
+        await boxes(page, rows('main#main [aria-busy] ul > li'))
+      ).slice(0, wide ? undefined : 1);
+      await page.goto('/contacts');
+      await page.waitForLoadState('networkidle');
+      await page.waitForTimeout(500);
+      const loaded = (
+        await boxes(page, rows('main#main ul[aria-label="Contacts"] > li'))
+      ).slice(0, wide ? undefined : 1);
+      // On a phone only the first card is pinned: a card is 70 or 72px by what it holds.
+      expect(loading.length, 'skeleton cells found').toBeGreaterThan(0);
+      near(loading, loaded);
+    });
+  });
+}
+
 test.describe('layout shift on a fresh load', () => {
   for (const size of [
     { width: 1440, height: 900 },
