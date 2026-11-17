@@ -12,7 +12,8 @@ const text = (t: string, marks?: unknown[]) => ({
 });
 const p = (...content: unknown[]) => ({ type: 'paragraph', content });
 const html = (d: unknown) =>
-  render(<RichText doc={RichDocSchema.parse(d)} />).container.innerHTML;
+  render(<RichText doc={RichDocSchema.parse(d)} />).container.firstElementChild!
+    .innerHTML;
 
 describe('RichText', () => {
   it('renders a paragraph with bold and italic', () => {
