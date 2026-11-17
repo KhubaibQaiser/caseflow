@@ -16,6 +16,7 @@ export default async function NewContactPage() {
     return (
       <ForbiddenState
         action="add contacts"
+        description="Your role is Viewer, which is read-only. An admin can change your role or add the contact for you."
         backHref="/contacts"
         backLabel="Back to contacts"
       />

@@ -35,10 +35,12 @@ function Banner({
           : 'bg-overdue-bg text-overdue',
       )}
     >
-      <Icon aria-hidden className="size-4 shrink-0 self-start" />
-      <div className="min-w-48 flex-1">
-        <p className="m-0 font-semibold">{title}</p>
-        {detail && <p className="m-0 mt-0.5">{detail}</p>}
+      <div className="flex min-w-48 flex-1 items-start gap-3">
+        <Icon aria-hidden className="mt-0.5 size-4 shrink-0" />
+        <div>
+          <p className="m-0 font-semibold">{title}</p>
+          {detail && <p className="m-0 mt-0.5">{detail}</p>}
+        </div>
       </div>
       <div className="flex gap-2">{children}</div>
     </div>
