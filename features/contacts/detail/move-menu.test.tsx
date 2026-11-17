@@ -1,9 +1,9 @@
-import { screen } from '@testing-library/react';
-import { render } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import { ok } from '@/lib/contracts/result';
+import type { ContactRow } from '@/lib/contracts/contact';
+import { ok, type Result } from '@/lib/contracts/result';
 
 import { MoveMenu } from './move-menu';
 import { contact } from './test-utils';
@@ -47,10 +47,11 @@ describe('MoveMenu', () => {
 
   it('shows a pending trigger and ignores it until the move settles', async () => {
     const user = userEvent.setup();
-    let release: (v: ReturnType<typeof ok>) => void = () => {};
+    type Moved = Result<ContactRow>;
+    let release: (v: Moved) => void = () => {};
     const onMove = vi.fn(
       () =>
-        new Promise<ReturnType<typeof ok>>((r) => {
+        new Promise<Moved>((r) => {
           release = r;
         }),
     );
@@ -76,6 +77,10 @@ describe('MoveMenu', () => {
       <MoveMenu current="lead" onMove={vi.fn()} disabledReason={reason} />,
     );
 
+    // The tooltip loads lazily; focusing before it lands would hand focus to a remounted button.
+    await act(async () => {
+      await vi.dynamicImportSettled();
+    });
     await user.tab();
     expect(trigger()).toHaveFocus();
     expect(trigger()).toHaveAttribute('aria-disabled', 'true');

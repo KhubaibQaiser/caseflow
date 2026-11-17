@@ -21,7 +21,7 @@ beforeEach(() => push.mockReset());
 describe('Notes composer', () => {
   it('disables Save while the body is empty or only whitespace', async () => {
     const user = userEvent.setup();
-    renderAs('admin', <Notes notes={[]} onAdd={vi.fn()} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
     expect(save()).toBeDisabled();
 
     await user.type(composer(), '   ');
@@ -37,7 +37,7 @@ describe('Notes composer', () => {
       .fn()
       .mockResolvedValueOnce(fail('server', 'Something went wrong. Try again.'))
       .mockResolvedValueOnce(ok(note({ id: 'n-2', body: 'Called back' })));
-    renderAs('admin', <Notes notes={[]} onAdd={onAdd} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
     await user.type(composer(), 'Called back');
     await user.click(save());
@@ -57,7 +57,7 @@ describe('Notes composer', () => {
   it('keeps the text when the request itself throws (offline)', async () => {
     const user = userEvent.setup();
     const onAdd = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
-    renderAs('admin', <Notes notes={[]} onAdd={onAdd} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
     await user.type(composer(), 'Called back');
     await user.click(save());
@@ -79,13 +79,16 @@ describe('Notes composer', () => {
           release = r;
         }),
     );
-    renderAs('admin', <Notes notes={[]} onAdd={onAdd} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
     await user.type(composer(), 'Called back');
     await user.keyboard('{Meta>}{Enter}{Enter}{/Meta}');
     expect(onAdd).toHaveBeenCalledTimes(1);
     expect(onAdd).toHaveBeenCalledWith('Called back');
-    expect(save()).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: 'Saving…' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
 
     release(ok(note({ body: 'Called back' })));
     await waitFor(() => expect(composer()).toHaveValue(''));
@@ -94,7 +97,7 @@ describe('Notes composer', () => {
   it('also submits on Ctrl+Enter, and ignores a plain Enter', async () => {
     const user = userEvent.setup();
     const onAdd = vi.fn().mockResolvedValue(ok(note()));
-    renderAs('admin', <Notes notes={[]} onAdd={onAdd} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
     await user.type(composer(), 'One{Enter}two');
     expect(onAdd).not.toHaveBeenCalled();
@@ -109,7 +112,11 @@ describe('Notes composer', () => {
       .mockResolvedValue(ok(note({ id: 'n-9', body: 'Fresh note' })));
     renderAs(
       'admin',
-      <Notes notes={[note({ id: 'n-1', body: 'Older' })]} onAdd={onAdd} />,
+      <Notes
+        tz="UTC"
+        notes={[note({ id: 'n-1', body: 'Older' })]}
+        onAdd={onAdd}
+      />,
     );
 
     await user.type(composer(), 'Fresh note');
@@ -127,19 +134,22 @@ describe('Notes composer', () => {
     const user = userEvent.setup();
     const added = note({ id: 'n-9', body: 'Fresh note' });
     const onAdd = vi.fn().mockResolvedValue(ok(added));
-    const { rerender } = renderAs('admin', <Notes notes={[]} onAdd={onAdd} />);
+    const { rerender } = renderAs(
+      'admin',
+      <Notes tz="UTC" notes={[]} onAdd={onAdd} />,
+    );
     await user.type(composer(), 'Fresh note');
     await user.click(save());
     await screen.findByText('Fresh note');
 
-    rerender(<Notes notes={[added]} onAdd={onAdd} />);
+    rerender(<Notes tz="UTC" notes={[added]} onAdd={onAdd} />);
     expect(screen.getAllByText('Fresh note')).toHaveLength(1);
   });
 
   it('sends the user to sign in when the session ended', async () => {
     const user = userEvent.setup();
     const onAdd = vi.fn().mockResolvedValue(fail('unauthorized', 'Sign in.'));
-    renderAs('admin', <Notes notes={[]} onAdd={onAdd} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={onAdd} />);
 
     await user.type(composer(), 'Called back');
     await user.click(save());
@@ -152,19 +162,23 @@ describe('Notes composer', () => {
   });
 
   it('says so when there are no notes', () => {
-    renderAs('admin', <Notes notes={[]} onAdd={vi.fn()} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
     expect(screen.getByText('No notes yet.')).toBeInTheDocument();
   });
 
   it('caps the note at 2,000 characters', () => {
-    renderAs('admin', <Notes notes={[]} onAdd={vi.fn()} />);
+    renderAs('admin', <Notes tz="UTC" notes={[]} onAdd={vi.fn()} />);
     expect(composer()).toHaveAttribute('maxlength', '2000');
   });
 
   it('replaces the composer for a viewer, who can still read notes', () => {
     renderAs(
       'viewer',
-      <Notes notes={[note({ body: 'Left voicemail.' })]} onAdd={vi.fn()} />,
+      <Notes
+        tz="UTC"
+        notes={[note({ body: 'Left voicemail.' })]}
+        onAdd={vi.fn()}
+      />,
     );
     expect(
       screen.getByText("Viewers can read notes but can't add them."),
@@ -177,9 +191,9 @@ describe('Notes composer', () => {
     renderAs(
       'admin',
       <Notes
+        tz="UTC"
         notes={[note({ createdAt: '2026-11-13T16:12:00.000Z' })]}
         onAdd={vi.fn()}
-        tz="UTC"
       />,
     );
     expect(screen.getByText(/Alex Morgan/)).toHaveTextContent('Admin');

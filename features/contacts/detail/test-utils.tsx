@@ -1,22 +1,25 @@
 import { render } from '@testing-library/react';
-import type { ReactElement } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 import { PermissionsProvider } from '@/lib/auth/permissions-context';
 import type { ContactDetail, Note } from '@/lib/contracts/contact';
 import { ROLE_PERMISSIONS, type Role } from '@/lib/contracts/permissions';
 
+// A wrapper (not a nested element) so rerender() keeps the provider.
 export function renderAs(role: Role, ui: ReactElement) {
-  return render(
-    <PermissionsProvider
-      viewer={{
-        displayName: role === 'admin' ? 'Alex Morgan' : 'Sam Patel',
-        role,
-        permissions: [...ROLE_PERMISSIONS[role]],
-      }}
-    >
-      {ui}
-    </PermissionsProvider>,
-  );
+  return render(ui, {
+    wrapper: ({ children }: { children: ReactNode }) => (
+      <PermissionsProvider
+        viewer={{
+          displayName: role === 'admin' ? 'Alex Morgan' : 'Sam Patel',
+          role,
+          permissions: [...ROLE_PERMISSIONS[role]],
+        }}
+      >
+        {children}
+      </PermissionsProvider>
+    ),
+  });
 }
 
 export const note = (over: Partial<Note> = {}): Note => ({
