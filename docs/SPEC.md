@@ -81,6 +81,7 @@ Every row was decided by Khubaib in the spec interview, unless it is marked *(Cl
 | 18 | Visual direction | **C v5, "Intake Desk", refined:** sage, Figtree only, 36px rows, neutral status pills, warm colours only for urgency, left nav, right filters panel, bottom tab bar on mobile. Critiqued with Impeccable (25/40 before the fixes; contrast findings cleared after). | A "Counsel" (letterhead serif); B "Docket" (Linear-like) | n/a (PRODUCT/DESIGN) |
 | 19 | Test strategy | TDD on critical paths only: Vitest unit tests, integration tests against a local Supabase, Playwright e2e with axe. | Coverage targets | n/a |
 | 20 | RBAC scope | **Two roles: Admin and Viewer.** Four layers: proxy (logged in?) → server `requirePermission` → Postgres RLS (the real enforcement) → client `usePermission` (UI only). The role is read from `profiles`, so changes take effect immediately. | A role claim in the JWT via the custom access token hook (stale for up to 1h; a scaling option); three or four roles | 0003 |
+| 21 | Concurrent edits | **Version checks on every write, plus a server change feed.** Every write is a compare-and-swap (edits on `updated_at`, moves on the status seen, reschedules on the date seen) and returns `conflict` when stale. An append-only change log feeds `GET /api/changes` (Server-Sent Events, resumable with `Last-Event-ID`). LISTEN/NOTIFY is only a wake-up behind a `ChangeFeed` interface, so it works with any backend. See §8.14. | Client polling; Supabase Realtime (vendor-specific); WebSockets (stateful, not for serverless); correctness only (stale screens) | 0011 |
 
 ## 5. Architecture
 
@@ -207,7 +208,8 @@ Quick views are presets that write `followUp`. The pipeline uses the same filter
 ### 7.5 Server Actions (each returns `Result<T> = {ok:true,data:T} | {ok:false,error:{code,message,fieldErrors?}}`; codes include `forbidden`, `unauthorized`, `conflict`, `validation`, `not_found`, `server`)
 - `createContact(input)` and `updateContact(id, input, expectedUpdatedAt)`.
   - `updateContact` uses **optimistic concurrency**: it returns `conflict` if the row changed since the form opened. The firm workspace is shared, and reviewers are signed in as the same admin.
-- `moveContact(id, toStatus)` returns the updated row.
+- `moveContact(id, toStatus, expectedStatus)` returns the updated row. It returns `conflict` if the contact is no longer in `expectedStatus`, for example "Already moved to Closed by Sam". *(ADR-0011; until T22d lands, the check is absent and the last write wins.)*
+- `rescheduleContact(id, followUp, expectedFollowUp)` likewise returns `conflict` if the follow-up date is no longer the one the user saw. *(ADR-0011, same note.)*
 - ~~`deleteContact(id)` (soft) and `restoreContact(id)`, which backs Undo.~~ Out of scope for v1.
 - `addNote(contactId, body)`.
 
@@ -295,7 +297,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - The Save button shows a pending label and can't be pressed twice.
   - The server repeats the same validation and returns field errors, which are mapped back onto the fields.
   - **If the save fails, everything the user typed stays in the form,** with a retryable error.
-  - An **edit conflict** shows "This contact was changed since you opened it." with "Reload latest" and "Overwrite" buttons.
+  - An **edit conflict** shows "This contact was changed since you opened it." with a "Reload latest" button only. There is no Overwrite. The save stamp stays frozen until the user reloads, and a draft keeps its stamp.
 - **Unsaved changes:** a `beforeunload` guard while the form is dirty, and Cancel asks for confirmation when dirty.
 - After saving, the user goes to the detail page and a toast says "Contact saved".
 
@@ -340,7 +342,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - Double-clicking Save, Move or Apply runs once.
 - A stale or invalid URL (`?page=999`, `?status=foo`) clamps to the last page or ignores the bad value.
 - ~~Deleting a contact while on its detail page goes back to the list, with a toast offering Undo.~~ Out of scope for v1.
-- Two reviewers signed in as the admin and editing the same contact triggers the conflict banner. For a move, the last write wins.
+- Two reviewers signed in as the admin and editing the same contact triggers the conflict banner. A concurrent move or reschedule returns `conflict`, shows a toast ("Already moved to Closed by Sam") and refreshes the screen once T22d lands (ADR-0011). Until then, the last write wins.
 - A role or permission that changes mid-session: the next server action returns `forbidden`, the optimistic change is rolled back, and a toast says what wasn't allowed. The next navigation re-renders with the new permissions.
 - A Viewer opening `/contacts/new`, `/contacts/[id]/edit`, or calling an action directly gets the forbidden page or a `forbidden` result, and the database rejects it as well.
 - An edit conflict, then Reload, restores the form from the server values.
@@ -387,6 +389,15 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - **Radii:** 6 (controls), 10 (surfaces), 999 (pills). **Shadows:** only on floating layers (menus, panel, toast). **Spacing:** a 4px base.
 - **States per component:** default, hover, focus-visible, active, disabled, loading, error, all built in M2 and shown in the dev gallery at `/dev/components` (guarded so it isn't reachable in production).
 - **Browser surfaces:** `::selection`, caret colour, scrollbars, focus rings and underline offset are all themed from the tokens.
+
+### 8.14 Live updates (ADR-0011; built in T22d)
+Every screen that shows contact data listens to `GET /api/changes` and applies changes from other users.
+- **Pipeline:** cards move between columns and counts update. An in-flight optimistic move is reconciled with the incoming change.
+- **Contacts list:** rows update in place. While the user is typing or paging, the list holds still and shows "N updates · Refresh".
+- **Detail:** the header, follow-up, notes and timeline update.
+- **Edit form:** a proactive banner says "Changed by X · Reload latest". It never overwrites what the user typed.
+- **Facet counts** update with the rest.
+- The client reconnects with `Last-Event-ID` after a timeout, so no change is missed.
 
 ## 9. Testing (critical paths only, test-first)
 - **Unit (Vitest):**
