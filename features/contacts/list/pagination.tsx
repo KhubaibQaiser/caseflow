@@ -34,8 +34,12 @@ function revealResults() {
     // A hidden (display: none) candidate can't take focus; try the next one.
     el.focus({ preventScroll: true });
     if (document.activeElement !== el) continue;
-    // The cards scroll with the page: back to the top, under the subheader.
-    if (!el.closest('[data-results-scroll]')) window.scrollTo({ top: 0 });
+    if (!el.closest('[data-results-scroll]')) {
+      // Phone: the cards scroll with the page, so back to the very top, under the subheader.
+      if (window.matchMedia('(min-width: 768px)').matches)
+        el.scrollIntoView?.({ block: 'start' });
+      else window.scrollTo({ top: 0 });
+    }
     return;
   }
 }
