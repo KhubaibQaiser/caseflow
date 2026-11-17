@@ -456,3 +456,68 @@ test('@mobile one column with a large Call button', async ({
   // The page scrolled back to the top, where the tab bar covers the composer: audit the menu itself.
   expect((await axe(page, '[role="menu"]')).violations).toEqual([]);
 });
+
+// A segment's loading.tsx wraps every route under it. The list's skeleton must not stand in for
+// the pages beside it: it lives in app/(app)/contacts/(list), so /contacts/new and /contacts/[id]
+// get their own (or none). A prefetched link shows the boundary at once, which is how this shows.
+test.describe('loading boundaries', () => {
+  const slowRsc = (page: Page, pattern: string) =>
+    page.route(pattern, async (route) => {
+      const h = route.request().headers();
+      if (h['rsc'] && !h['next-router-prefetch'])
+        await new Promise((r) => setTimeout(r, 2500));
+      await route.continue();
+    });
+
+  // Next's router is on window in the browser; the app has no typed handle on it.
+  type Router = { prefetch(h: string): Promise<void>; push(h: string): void };
+  const router = (page: Page, call: 'prefetch' | 'push', href: string) =>
+    page.evaluate(
+      ([c, h]) =>
+        (window as unknown as { next: { router: Router } }).next.router[
+          c as 'prefetch' | 'push'
+        ](h as string),
+      [call, href],
+    );
+
+  test('a prefetched New contact page never shows the list skeleton', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await setup(context, baseURL);
+    await page.goto('/contacts');
+    await page.waitForLoadState('networkidle');
+    await router(page, 'prefetch', '/contacts/new');
+    await page.waitForTimeout(1000);
+    await slowRsc(page, '**/contacts/new*');
+
+    await router(page, 'push', '/contacts/new');
+    await page.waitForTimeout(1000); // inside the delay
+    // A one-shot count: a retrying assertion would pass as soon as the delayed page replaced the skeleton.
+    expect(await page.getByText('Loading contacts').count()).toBe(0);
+    await expect(
+      page.getByRole('heading', { name: 'New contact' }),
+    ).toBeVisible();
+  });
+
+  test('a prefetched contact shows the contact skeleton, not the list one', async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await setup(context, baseURL);
+    await page.goto('/contacts');
+    await page.waitForLoadState('networkidle');
+    const href = `/contacts/${withNotes.id}`;
+    await router(page, 'prefetch', href);
+    await page.waitForTimeout(1000);
+    await slowRsc(page, `**${href}*`);
+    await router(page, 'push', href);
+
+    await expect(
+      page.getByText('Loading contact', { exact: true }),
+    ).toBeVisible();
+    expect(await page.getByText('Loading contacts').count()).toBe(0);
+  });
+});
