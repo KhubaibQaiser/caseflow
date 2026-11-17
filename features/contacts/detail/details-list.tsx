@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
 import type { ContactDetail } from '@/lib/contracts/contact';
+import { formatPhone } from '@/lib/phone';
 import {
   MATTER_TYPE_LABEL,
   REFERRAL_SOURCE_LABEL,
@@ -38,7 +39,7 @@ export function DetailsList({
         <Row label="Phone">
           {phone ? (
             <a href={telHref(phone)} className={`${link} tnum`}>
-              {phone}
+              {formatPhone(phone)}
             </a>
           ) : (
             missing
