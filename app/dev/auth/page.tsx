@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
+import { devRoutesEnabled } from '@/lib/env';
+
 import { NoAccessState } from '@/components/shell/no-access-state';
 import { LoginForm } from '@/features/auth/login-form';
 import { fail, type Result } from '@/lib/contracts/result';
@@ -11,7 +13,7 @@ export const metadata: Metadata = { title: 'Auth states · Caseflow' };
 export default async function AuthStates({
   searchParams,
 }: PageProps<'/dev/auth'>) {
-  if (process.env.VERCEL_ENV === 'production') notFound();
+  if (!devRoutesEnabled()) notFound();
   const { stub, reason, view } = await searchParams;
 
   async function signOut() {

@@ -18,6 +18,8 @@ export default defineConfig({
         command: `pnpm build && pnpm start -p ${port}`,
         // `/` redirects to a screen that may 404 (it stalls readiness); a static file is always 200.
         url: `${baseURL}/favicon.ico`,
+        // A production build 404s the /dev fixtures unless this is set (lib/env.ts devRoutesEnabled).
+        env: { E2E_DEV_ROUTES: '1' },
         reuseExistingServer: !process.env.CI,
         timeout: 180_000,
         stdout: 'pipe',

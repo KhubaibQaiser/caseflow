@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { authEnforced, secretKey, supabaseEnv } from './env';
+import { authEnforced, devRoutesEnabled, secretKey, supabaseEnv } from './env';
 
 afterEach(() => vi.unstubAllEnvs());
 
@@ -30,5 +30,18 @@ describe('env', () => {
     expect(authEnforced()).toBe(true);
     vi.stubEnv('AUTH_ENFORCED', 'false');
     expect(authEnforced()).toBe(false);
+  });
+
+  it('opens /dev outside production, or in a production build only with the e2e flag', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(devRoutesEnabled()).toBe(true);
+    // Vercel preview and production are both NODE_ENV=production.
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('E2E_DEV_ROUTES', '');
+    expect(devRoutesEnabled()).toBe(false);
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    expect(devRoutesEnabled()).toBe(false);
+    vi.stubEnv('E2E_DEV_ROUTES', '1');
+    expect(devRoutesEnabled()).toBe(true);
   });
 });

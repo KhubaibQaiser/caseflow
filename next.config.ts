@@ -28,7 +28,11 @@ const nextConfig: NextConfig = {
   // AGENTS.md is hand-written; stop `next dev` from injecting its managed block.
   agentRules: false,
   // Enables forbidden() and forbidden.tsx (experimental in 16.4).
-  experimental: { authInterrupts: true },
+  // Action payloads are a note (2,000 characters) or a contact form, so well under 1mb; the cap is explicit, not the default.
+  experimental: {
+    authInterrupts: true,
+    serverActions: { bodySizeLimit: '1mb' },
+  },
   turbopack: {
     rules: {
       '*.css': {

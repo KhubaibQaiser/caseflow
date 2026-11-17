@@ -123,17 +123,18 @@ describe('proxy', () => {
     expect(loc(await proxy(req('/contacts')))).toBeNull();
   });
 
-  it('404s /dev/* on Vercel production only', async () => {
+  it('404s /dev/* in any production build (preview too) unless the e2e flag is set', async () => {
     claims = { sub: 'u1' };
-    vi.stubEnv('VERCEL_ENV', 'production');
-    expect((await proxy(req('/dev/components'))).status).toBe(404);
+    vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('VERCEL_ENV', 'preview');
+    expect((await proxy(req('/dev/components'))).status).toBe(404);
+    vi.stubEnv('E2E_DEV_ROUTES', '1');
     expect((await proxy(req('/dev/components'))).status).toBe(200);
   });
 
   it('matches /dev exactly, not /devices', async () => {
     claims = { sub: 'u1' };
-    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('NODE_ENV', 'production');
     expect((await proxy(req('/dev'))).status).toBe(404);
     expect((await proxy(req('/devices'))).status).toBe(200);
   });
@@ -179,7 +180,7 @@ describe('proxy with AUTH_ENFORCED=false', () => {
   });
 
   it('still 404s /dev/* in production', async () => {
-    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('NODE_ENV', 'production');
     expect((await proxy(req('/dev/components'))).status).toBe(404);
   });
 });
@@ -207,6 +208,7 @@ describe('Content-Security-Policy', () => {
     expect(csp(await proxy(req('/login')))).toContain("object-src 'none'");
     claims = { sub: 'u1' };
     vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('NODE_ENV', 'production');
     const r = await proxy(req('/dev/components'));
     expect(r.status).toBe(404);
     expect(csp(r)).toContain('upgrade-insecure-requests');

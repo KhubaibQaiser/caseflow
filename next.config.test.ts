@@ -30,3 +30,11 @@ describe('static security headers', () => {
     expect(h['Permissions-Policy']).not.toContain('interest-cohort');
   });
 });
+
+describe('server actions', () => {
+  it('sets an explicit body size limit', async () => {
+    vi.resetModules();
+    const { default: config } = await import('./next.config');
+    expect(config.experimental?.serverActions?.bodySizeLimit).toBe('1mb');
+  });
+});

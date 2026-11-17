@@ -1,5 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
-import { authEnforced, supabaseEnv } from '@/lib/env';
+import { authEnforced, devRoutesEnabled, supabaseEnv } from '@/lib/env';
 import { sessionCookieOptions } from '@/lib/supabase/cookie-options';
 import { buildCsp, createNonce } from '@/lib/security/csp';
 import { NextResponse, type NextRequest } from 'next/server';
@@ -23,7 +23,7 @@ async function route(request: NextRequest) {
 
   if (
     (pathname === '/dev' || pathname.startsWith('/dev/')) &&
-    process.env.VERCEL_ENV === 'production'
+    !devRoutesEnabled()
   )
     return NextResponse.rewrite(here('/__not-found'), { request, status: 404 });
 
