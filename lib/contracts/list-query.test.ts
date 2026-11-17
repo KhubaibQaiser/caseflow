@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   clampPage,
   countActiveFilterGroups,
-  FiltersSchema,
   loadListQuery,
   toFilters,
 } from './list-query';
+import { FiltersSchema } from './filters';
 
 describe('list query', () => {
   it('falls back on invalid params', () => {

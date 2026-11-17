@@ -19,16 +19,23 @@ function subscribe(notify: () => void) {
   };
 }
 
-function reasonFor(error: unknown, offline: boolean) {
+export type ReasonClass = 'network' | 'server' | 'unexpected';
+
+export function reasonClass(error: unknown, offline: boolean): ReasonClass {
   if (
     offline ||
     (error instanceof Error &&
       (error.name === 'ChunkLoadError' || NETWORK.test(error.message)))
   )
-    return 'Network error. Check your connection, then retry.';
-  if (digestOf(error)) return 'Server error. Retry in a moment.';
-  return 'Unexpected error. Retry, or start again from contacts.';
+    return 'network';
+  return digestOf(error) ? 'server' : 'unexpected';
 }
+
+const REASON: Record<ReasonClass, string> = {
+  network: 'Network error. Check your connection, then retry.',
+  server: 'Server error. Retry in a moment.',
+  unexpected: 'Unexpected error. Retry, or start again from contacts.',
+};
 
 // Server Component errors arrive with a digest that matches the server log.
 function digestOf(error: unknown) {
@@ -38,6 +45,13 @@ function digestOf(error: unknown) {
     ? error.digest
     : undefined;
 }
+
+export const useOffline = () =>
+  useSyncExternalStore(
+    subscribe,
+    () => !navigator.onLine,
+    () => false,
+  );
 
 // Shows the reason class and digest only: never error.message or a stack.
 export function ErrorContent({
@@ -50,11 +64,7 @@ export function ErrorContent({
   const router = useRouter();
   const [retrying, startTransition] = useTransition();
   const digest = digestOf(error);
-  const offline = useSyncExternalStore(
-    subscribe,
-    () => !navigator.onLine,
-    () => false,
-  );
+  const offline = useOffline();
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-4 py-10">
@@ -65,7 +75,7 @@ export function ErrorContent({
         title="Something broke on our side."
         description={
           <>
-            {reasonFor(error, offline)}
+            {REASON[reasonClass(error, offline)]}
             {digest && (
               <span className="mt-1 block">
                 Reference{' '}

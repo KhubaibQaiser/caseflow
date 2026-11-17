@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Figtree } from 'next/font/google';
+import { NuqsAdapter } from 'nuqs/adapters/next/app';
 import './globals.css';
 
 import { Toaster } from '@/components/ui/toaster';
@@ -23,7 +24,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={`${figtree.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
-        {children}
+        <NuqsAdapter>{children}</NuqsAdapter>
         <Toaster />
       </body>
     </html>

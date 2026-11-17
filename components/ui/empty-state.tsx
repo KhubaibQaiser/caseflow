@@ -40,7 +40,13 @@ export function EmptyState({
         <p className="text-ink m-0 font-semibold">{title}</p>
       )}
       {description && (
-        <p className={cn('text-ink-2 m-0 mb-1.5', page && 'mb-3 max-w-[46ch]')}>
+        // anywhere: user text (a 100-character search) must wrap rather than widen the page.
+        <p
+          className={cn(
+            'text-ink-2 m-0 mb-1.5 [overflow-wrap:anywhere]',
+            page && 'mb-3 max-w-[46ch]',
+          )}
+        >
           {description}
         </p>
       )}
