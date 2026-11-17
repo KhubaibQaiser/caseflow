@@ -33,12 +33,14 @@ function setup({
   open = true,
   hideStatus,
   facets = FACETS,
+  focusOnOpen,
 }: {
   searchParams?: string;
   desktop?: boolean;
   open?: boolean;
   hideStatus?: boolean;
   facets?: typeof FACETS;
+  focusOnOpen?: boolean;
 } = {}) {
   stubViewport(desktop);
   const onUrlUpdate = vi.fn();
@@ -49,6 +51,7 @@ function setup({
       onOpenChange={onOpenChange}
       facets={facets}
       hideStatus={hideStatus}
+      focusOnOpen={focusOnOpen}
     />
   );
   const view = render(ui(open), {
@@ -223,6 +226,32 @@ describe('FiltersPanel groups and facets', () => {
       expect(collapsible(name)).toBeNull();
     expect(collapsible('Created date')).not.toBeNull();
     expect(collapsible('Created date')).not.toHaveAttribute('open');
+  });
+
+  it("collapsible rows get the comp's .more rule; plain headings do not", () => {
+    setup();
+    const summary = screen
+      .getByRole('group', { name: 'Created date' })
+      .closest('details')!.firstElementChild!;
+    expect(summary.className).toContain('border-t');
+    expect(summary.className).toContain('border-line');
+    expect(
+      screen.getByRole('heading', { name: 'Status' }).className,
+    ).not.toContain('border-t');
+  });
+
+  it('slides in only when the user opens it, not when restored from the cookie', () => {
+    setup({ focusOnOpen: true });
+    expect(screen.getByRole('complementary').className).toContain(
+      'animate-sheet-in',
+    );
+  });
+
+  it('does not slide in when it was open on page load', () => {
+    setup();
+    expect(screen.getByRole('complementary').className).not.toContain(
+      'animate-sheet-in',
+    );
   });
 
   it('on a phone Matter type, Referral source and Created date collapse', () => {
