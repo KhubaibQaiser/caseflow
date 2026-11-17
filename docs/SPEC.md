@@ -268,6 +268,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 - **Narrow viewports:**
   - 1024–1279px: the table scrolls horizontally with the Name column pinned.
   - Below 768px: the table becomes a **card list** (name plus follow-up pill on line 1; matter, status and a `tel:` phone link on line 2), and a **Sort** button opens a menu with the same sort options.
+  - Approved deviation: the card's second line keeps the **status pill** between matter and phone, which the comp omits, so a Closed contact still reads as closed on a phone.
 - **Filters panel:** see decision 11.
   - **Desktop:** fixed under the toolbar, full height, with its own scroll, a sticky header (title · count, Clear all, ✕) and a sticky footer (Cancel, Apply). It is non-modal.
   - **Mobile:** a Radix Dialog sheet from the right, with focus trapped, and closing on the scrim, Esc or ✕. Focus returns to the Filters button.
