@@ -26,8 +26,53 @@ const SIMPLE_HOOKS = new Set(['useState', 'useId', 'useContext', 'useRef']);
 const SMALL_COMPONENT_LINES = 40;
 const SMALL_COMPONENT_HOOKS = 2;
 
-/** A class-like token, split on whitespace, quotes, braces and angle brackets. Parentheses and commas stay, because arbitrary values use them. */
-const TOKEN_SPLIT = /[\s'"`{};<>]+/;
+/**
+ * A class-like token: runs of non-separator characters, where a bracket group stays whole, so
+ * `[&>svg]:text-[11px]` is one token even though `>` separates JSX tags. Parentheses and commas stay,
+ * because arbitrary values use them. Matches the global khubaib-react-practices guard.
+ */
+const CLASS_TOKEN = /(?:\[[^\]\s'"`]*\]|[^\s'"`{};<>[])+/g;
+
+/** A hook call: useX(...), React.useX(...) or useX<T>(...). A `function useX(` declaration is not a call. */
+const HOOK_CALL =
+  /(?<![\w.$])(?<!function\s+)(?:React\.)?(use[A-Z]\w*)\s*(?:<[^>()\n]*>)?\s*\(/g;
+
+/**
+ * Blank out comments with spaces, so offsets and line numbers still match. Quotes are tracked so `//`
+ * and `/*` inside strings stay. A ' or " string ends at the line break, so an apostrophe in JSX text
+ * can't swallow the rest of the file.
+ * @param {string} text @returns {string}
+ */
+function stripComments(text) {
+  let out = '';
+  let quote = null;
+  for (let i = 0; i < text.length;) {
+    const c = text[i];
+    const next = text[i + 1];
+    if (quote) {
+      if (c === '\\') {
+        out += text.slice(i, i + 2);
+        i += 2;
+        continue;
+      }
+      if (c === quote || (c === '\n' && quote !== '`')) quote = null;
+      out += c;
+      i += 1;
+    } else if (c === '/' && (next === '/' || next === '*')) {
+      const close =
+        next === '/' ? text.indexOf('\n', i) : text.indexOf('*/', i + 2);
+      const stop =
+        close === -1 ? text.length : next === '/' ? close : close + 2;
+      out += text.slice(i, stop).replace(/[^\n]/g, ' ');
+      i = stop;
+    } else {
+      if (c === '"' || c === "'" || c === '`') quote = c;
+      out += c;
+      i += 1;
+    }
+  }
+  return out;
+}
 
 /** The utility part of a class: what follows the last variant colon outside brackets. */
 function utilityOf(token) {
@@ -48,13 +93,13 @@ function utilityOf(token) {
  */
 function isArbitrary(token) {
   const utility = utilityOf(token);
-  if (/-\[[^\]]*\]/.test(utility)) return true;
+  if (/-\[[^\]]+\]/.test(utility)) return true;
   return /^!?\[[^\]]*:[^\]]*\]/.test(utility);
 }
 
 /** @param {string} text @returns {string[]} the arbitrary tokens found */
 export function findArbitraryClasses(text) {
-  return text.split(TOKEN_SPLIT).filter((token) => token && isArbitrary(token));
+  return (stripComments(text).match(CLASS_TOKEN) ?? []).filter(isArbitrary);
 }
 
 /** Top-level component declarations: PascalCase functions, or PascalCase consts that wrap JSX-returning code. */
@@ -68,20 +113,28 @@ export function findMultipleComponents(text) {
   return names;
 }
 
-/** Hooks imported from a module whose file name starts with use-. */
+/** Local names of hooks imported from a module whose file name starts with use-: named, aliased or default. */
 function importedUseNames(text) {
   const names = new Set();
   for (const m of text.matchAll(
-    /import\s+(?:type\s+)?\{([^}]*)\}\s+from\s+['"]([^'"]+)['"]/g,
+    /import\s+(?:type\s+)?([^'"]*?)\s+from\s+['"]([^'"]+)['"]/g,
   )) {
     const fileName = m[2].split('/').pop() ?? '';
     if (!fileName.startsWith('use-')) continue;
-    for (const spec of m[1].split(',')) {
-      const name = spec
+    const clause = m[1];
+    const named = clause.match(/\{([^}]*)\}/);
+    const defaultName = clause
+      .replace(/\{[^}]*\}/, '')
+      .replace(/,/g, ' ')
+      .trim();
+    if (/^[A-Za-z_$][\w$]*$/.test(defaultName)) names.add(defaultName);
+    for (const spec of named ? named[1].split(',') : []) {
+      const local = spec
         .trim()
-        .split(/\s+as\s+/)[0]
-        .trim();
-      if (name) names.add(name);
+        .split(/\s+as\s+/)
+        .pop()
+        ?.trim();
+      if (local) names.add(local);
     }
   }
   return names;
@@ -94,11 +147,9 @@ function importedUseNames(text) {
 export function findComponentHookViolations(text) {
   const allowed = importedUseNames(text);
   const found = [];
-  for (const m of text.matchAll(/(?<![\w.])(use[A-Z]\w*)\s*\(/g)) {
+  for (const m of stripComments(text).matchAll(HOOK_CALL)) {
     const name = m[1];
     if (SIMPLE_HOOKS.has(name) || allowed.has(name)) continue;
-    // A hook defined in this file is a declaration, not a call from a component.
-    if (new RegExp(`function\\s+${name}\\s*\\(`).test(text)) continue;
     found.push(name);
   }
   return found;
