@@ -268,7 +268,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - The pager includes first/last pages and an ellipsis. Changing the page scrolls to the top and focuses the table caption.
 - **Narrow viewports:**
   - 1024–1279px: the table scrolls horizontally with the Name column pinned.
-  - Below 768px: the table becomes a **card list** (name plus follow-up pill on line 1; matter, status and a `tel:` phone link on line 2), and a **Sort** button opens a menu with the same sort options.
+  - Below 768px: the table becomes a **card list** (name plus follow-up pill on line 1; matter, status and a `tel:` phone link on line 2), and a **Sort** button opens a menu with the same sort options. The card list is virtualized with the window as the scroll element, like the table, with cards measured after they render ([ADR-0013](adr/0013-mobile-cards-virtualized.md), [spec](specs/mobile-virtualized-cards.md)).
   - Approved deviation: the card's second line keeps the **status pill** between matter and phone, which the comp omits, so a Closed contact still reads as closed on a phone.
 - **Filters panel:** see decision 11.
   - **Desktop:** fixed under the toolbar, full height, with its own scroll, a sticky header (title · count, Clear all, ✕) and a sticky footer (Cancel, Apply). It is non-modal.
@@ -531,7 +531,7 @@ ETAs are focused agent hours. "Wall" is elapsed time with the tracks running in 
 
 ## 14. Left to the builder
 - Exact copy for the seed data generator, and the distribution numbers within the ranges in §6.
-- The internal structure of components, hooks and file names within the layering rules.
+- File and component structure beyond the layering rules: it follows the front-end structure rules in AGENTS.md, which `pnpm lint` enforces.
 - Skeleton shapes, the exact spacing values on the 4px scale, and icon choices from Lucide.
 - How the tablet icon rail is implemented.
 - Default ordering among equal-urgency rows beyond "most recently updated".
