@@ -196,7 +196,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 ## Contact form (T17)
 
 - `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`).
-- The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 250 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
+- The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 182 kB gzipped, budget 250 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
 - Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
 - Conflict: the banner triggers `router.refresh()`; Reload latest resets the form to the refreshed record (the user re-applies their edits). There is no Overwrite. Save keeps sending the `updatedAt` the form opened with, even after the refresh hands it a newer record; only Reload latest moves the stamp.
