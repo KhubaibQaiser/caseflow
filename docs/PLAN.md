@@ -636,7 +636,7 @@ Every component uses tokens only and is shown in `/dev/components` with every st
     - Sortable headers are `<button>`s inside a `<th aria-sort>`.
     - The Name cell is a `<Link>` to `/contacts/{id}`, truncated with a `title` attribute. Email is truncated at `max-w-[180px]`.
     - From 1024–1279px the table scrolls horizontally with Name pinned.
-  - `ContactCards` `{rows}` (below 768px). Line 1 is the name and the urgency pill; line 2 is matter, status pill and a `tel:` link.
+  - `ContactCards` `{rows}` (below 768px). Line 1 is the name and the urgency pill; line 2 is matter, status pill and a `tel:` link. Virtualized with `useWindowVirtualizer` and measured cards (proposed: ADR-0013).
   - `Toolbar` `{facets; isPending}`:
     - search (250ms debounce, a spinner while pending, Esc clears it)
     - the Filters button with `aria-expanded` and a count badge
