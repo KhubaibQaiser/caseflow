@@ -25,9 +25,13 @@ const OVERSCAN = 8;
 
 /**
  * The list's top edge in the document. The window scrolls, so the virtualizer needs this offset.
- * It is read after every render (the toolbar above can change height) and on resize (the breakpoint moves the list).
+ * It is read when the rows change (a new query can change the toolbar above) and on resize (the breakpoint moves the list).
+ * Not on every scroll frame: reading layout each frame would cost the phone the work this list exists to save.
  */
-function useDocumentTop(ref: RefObject<HTMLElement | null>) {
+function useDocumentTop(
+  ref: RefObject<HTMLElement | null>,
+  rows: readonly unknown[],
+) {
   const [top, setTop] = useState(0);
   const read = useCallback(() => {
     const next = Math.round(
@@ -35,7 +39,9 @@ function useDocumentTop(ref: RefObject<HTMLElement | null>) {
     );
     setTop((prev) => (prev === next ? prev : next));
   }, [ref]);
-  useLayoutEffect(read);
+  useLayoutEffect(() => {
+    read();
+  }, [read, rows]);
   useEffect(() => {
     window.addEventListener('resize', read);
     return () => window.removeEventListener('resize', read);
@@ -63,7 +69,7 @@ export function ContactCards({
   className,
 }: ContactCardsProps) {
   const listRef = useRef<HTMLUListElement>(null);
-  const scrollMargin = useDocumentTop(listRef);
+  const scrollMargin = useDocumentTop(listRef, rows);
   const virtualizer = useWindowVirtualizer({
     count: rows.length,
     estimateSize: () => CARD_HEIGHT,
