@@ -40,6 +40,7 @@ A client-intake CRM for a law firm. Each prospective client is a **contact** wit
 
 - **Layers:** `app → features → components → lib → utils`; nothing imports upward. `app/` holds routes and boundaries, `features/<domain>` owns screens (contacts, pipeline, auth), `components/ui` holds shared primitives on Radix, and `lib/` holds data access, Zod contracts, auth and dates.
 - **Server owns data.** Reads are Server Components calling two Postgres RPCs. Writes are Server Actions: permission check, Zod validation, write, revalidate. Postgres row-level security is the real permission boundary; the UI only mirrors it.
+- **One component per file, logic in hooks.** A component file holds UI; logic and effects live in a `use-*.ts` hook beside it, except in very small components. Tailwind uses the theme's scale and tokens, no bracket values. `pnpm lint` enforces both.
 - **No client store.** Search, filters, sort and page live in the URL (`nuqs`), so every view is shareable and Back works. Pipeline moves use `useOptimistic` with rollback. Forms use React Hook Form with the same Zod schema the server runs.
 
 ## UI/UX decisions

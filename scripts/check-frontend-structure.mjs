@@ -2,7 +2,9 @@
 //   1. Native Tailwind classes only: no arbitrary values or properties such as text-[11px].
 //   2. One React component per file.
 //   3. Components hold UI. Logic lives in use-*.ts hooks. Components may keep plain state
-//      (useState, useId, useContext, useRef) and call hooks imported from a use-* module.
+//      (useState, useId, useContext, useRef) and call hooks imported from a use-* module. A file of
+//      40 non-blank lines or fewer may call up to two other hooks itself.
+// Arbitrary variants such as data-[state=open]: pass. The utility after them is still checked.
 //
 // Existing violations are recorded in scripts/frontend-structure-baseline.json. A file may not
 // exceed its recorded count, and a new file with a violation fails. Fixing a violation lets the
@@ -20,14 +22,34 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const SCAN_DIRS = ['app', 'components', 'features'];
 const BASELINE = 'scripts/frontend-structure-baseline.json';
 const SIMPLE_HOOKS = new Set(['useState', 'useId', 'useContext', 'useRef']);
+// A component this small may call a couple of logic hooks itself (Khubaib, 2026-11-27, DECISIONS row 36).
+const SMALL_COMPONENT_LINES = 40;
+const SMALL_COMPONENT_HOOKS = 2;
 
 /** A class-like token, split on whitespace, quotes, braces and angle brackets. Parentheses and commas stay, because arbitrary values use them. */
 const TOKEN_SPLIT = /[\s'"`{};<>]+/;
 
-/** Arbitrary value (`text-[11px]`), or arbitrary property or variant (`[content-visibility:auto]`). */
+/** The utility part of a class: what follows the last variant colon outside brackets. */
+function utilityOf(token) {
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < token.length; i += 1) {
+    if (token[i] === '[') depth += 1;
+    else if (token[i] === ']') depth -= 1;
+    else if (token[i] === ':' && depth === 0) start = i + 1;
+  }
+  return token.slice(start);
+}
+
+/**
+ * Arbitrary value (`text-[11px]`) or arbitrary property (`[content-visibility:auto]`) in the utility.
+ * Arbitrary variants such as `data-[state=open]:` pass, because Radix and ARIA states often have no
+ * built-in variant.
+ */
 function isArbitrary(token) {
-  if (/-\[[^\]]*\]/.test(token)) return true;
-  return /^!?\[[^\]]*:[^\]]*\]/.test(token);
+  const utility = utilityOf(token);
+  if (/-\[[^\]]*\]/.test(utility)) return true;
+  return /^!?\[[^\]]*:[^\]]*\]/.test(utility);
 }
 
 /** @param {string} text @returns {string[]} the arbitrary tokens found */
@@ -83,6 +105,20 @@ export function findComponentHookViolations(text) {
 }
 
 /**
+ * Logic hooks that count against a component file. A file of 40 non-blank lines or fewer with at most
+ * two of them counts none. A file without a component counts none.
+ * @param {string} text @returns {number}
+ */
+export function componentHookCount(text) {
+  if (findMultipleComponents(text).length === 0) return 0;
+  const hooks = findComponentHookViolations(text).length;
+  const lines = text.split('\n').filter((line) => line.trim() !== '').length;
+  return lines <= SMALL_COMPONENT_LINES && hooks <= SMALL_COMPONENT_HOOKS
+    ? 0
+    : hooks;
+}
+
+/**
  * Compare per-file counts with the baseline.
  * @param {Record<string, number>} current
  * @param {Record<string, number>} baseline
@@ -123,10 +159,8 @@ export function scan(root) {
       const components = findMultipleComponents(text);
       if (components.length > 1)
         counts.multipleComponents[file] = components.length - 1;
-      if (components.length >= 1) {
-        const hooks = findComponentHookViolations(text).length;
-        if (hooks) counts.componentHooks[file] = hooks;
-      }
+      const hooks = componentHookCount(text);
+      if (hooks) counts.componentHooks[file] = hooks;
     }
   }
   return counts;
