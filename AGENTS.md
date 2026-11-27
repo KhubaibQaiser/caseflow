@@ -15,6 +15,9 @@ Read `docs/SPEC.md`, `docs/PLAN.md` and `docs/adr/README.md`. Before writing rou
 - No `any`, no `@ts-ignore`. Validate with Zod at every trust boundary (form, Server Action, RPC response).
 - No colour literals outside `app/globals.css`. Design tokens only; light and dark via tokens, System default.
 - Layering is `app -> features -> components -> lib -> utils`; nothing imports upward. `lib/data`, `lib/supabase` and `lib/auth/viewer.ts` start with `import 'server-only'`.
+- Front-end structure. One React component per file, named after the component. A component file holds UI only. Business logic and effects go in a `use-*.ts` hook beside the feature (or in `components/` when shared). A component file may keep plain state (`useState`, `useId`, `useContext`, `useRef`) and may call hooks imported from a `use-*` module. `pnpm lint` enforces this with `scripts/check-frontend-structure.mjs`.
+- Tailwind: native classes and the theme's scale and tokens only. No arbitrary values or properties (`text-[11px]`, `[content-visibility:auto]`). Add a token or use a scale step instead. The same guard enforces this.
+- The guard records existing violations in `scripts/frontend-structure-baseline.json`. A file may not exceed its recorded count, and a new file with a violation fails. When you fix one, run `node scripts/check-frontend-structure.mjs --write-baseline` to lower the count.
 - Terminology: "contact", "matter", "follow-up", "Lead / Active / Closed". Never "deal" or "customer". Voice is crisp power-tool (PRODUCT.md).
 - Dates cross browser/server only as `'YYYY-MM-DD'` strings. Never `toISOString()` for date-only values.
 - Page sizes `[25, 50, 100, 250, 500]`, default `250`. Pipeline columns load `50` per request.

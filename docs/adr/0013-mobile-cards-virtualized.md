@@ -6,7 +6,7 @@ Virtualize the contact card list below 768px, as the desktop table is, with the 
 
 ## Status
 
-`proposed`. Only Khubaib moves this to `accepted`.
+`accepted` (Khubaib, 2026-11-27), with the decisions in §3 of the spec as recommended.
 
 ## Date
 
@@ -44,7 +44,7 @@ The spec is `docs/specs/mobile-virtualized-cards.md`.
 
 ## Decision
 
-Option 1, proposed. Measure on a mid-range Android before accepting, if Khubaib wants the number first. The decisions and their recommendations are in §3 of the spec.
+Option 1, accepted. The decisions and their recommendations are in §3 of the spec. The reload gap (D6) is measured on a mid-range Android before release.
 
 ## Consequences
 

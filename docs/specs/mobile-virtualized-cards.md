@@ -1,6 +1,6 @@
 # Spec: virtualize the phone contact cards
 
-- **Status:** proposed. Khubaib confirms the decisions in §3 and accepts [ADR-0013](../adr/0013-mobile-cards-virtualized.md).
+- **Status:** accepted (Khubaib, 2026-11-27). D1 to D6 in §3 are accepted as recommended. See [ADR-0013](../adr/0013-mobile-cards-virtualized.md).
 - **Date:** 2026-11-27
 - **Scope:** the contact card list below 768px on `/contacts`.
 - **Out of scope:** the desktop table (already virtualized), pagination, sort, search, filters, the pipeline.
@@ -96,7 +96,7 @@ The jsdom environment has no layout or page height. The tests give the list a po
 
 ## 9. Documents that change with this
 
-- `docs/adr/0013-mobile-cards-virtualized.md` (new, proposed), and its row in `docs/adr/README.md`
+- `docs/adr/0013-mobile-cards-virtualized.md` (accepted), and its row in `docs/adr/README.md`
 - `docs/adr/0006-list-pagination-virtualization.md` gains a pointer to ADR-0013
 - `docs/DECISIONS.md` gains row 35
 - `docs/SPEC.md` (narrow viewports) describes the virtualized card list
