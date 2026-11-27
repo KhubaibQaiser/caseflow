@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   compareWithBaseline,
+  componentHookCount,
   findArbitraryClasses,
   findComponentHookViolations,
   findMultipleComponents,
@@ -34,6 +35,25 @@ describe('findArbitraryClasses', () => {
       ),
     ).toEqual([]);
     expect(findArbitraryClasses('const first = items[0];')).toEqual([]);
+  });
+});
+
+describe('arbitrary variants', () => {
+  it('passes arbitrary variants and still checks the utility after them', () => {
+    expect(
+      findArbitraryClasses(
+        '"data-[state=open]:border-accent aria-[current=page]:text-accent has-[[aria-invalid=true]]:border-overdue min-[400px]:p-2"',
+      ),
+    ).toEqual([]);
+    expect(
+      findArbitraryClasses(
+        '"forced-colors:text-[HighlightText] data-[state=open]:w-[1px] max-md:[transform:none]"',
+      ),
+    ).toEqual([
+      'forced-colors:text-[HighlightText]',
+      'data-[state=open]:w-[1px]',
+      'max-md:[transform:none]',
+    ]);
   });
 });
 
@@ -81,6 +101,43 @@ describe('findComponentHookViolations', () => {
     const src =
       "import { useThing } from './things';\nexport function Card() { useThing(); return null; }\n";
     expect(findComponentHookViolations(src)).toEqual(['useThing']);
+  });
+});
+
+/** A component file with `hooks` logic hook calls, padded to `lines` non-blank lines. */
+function component(hooks: number, lines: number) {
+  const head = [
+    "import { usePathname, useRouter, useSearchParams } from 'next/navigation';",
+    'export function Nav() {',
+  ];
+  const calls = [
+    '  const router = useRouter();',
+    '  const path = usePathname();',
+    '  const query = useSearchParams();',
+  ].slice(0, hooks);
+  const tail = ['  return <nav />;', '}'];
+  const pad = Array.from(
+    { length: lines - head.length - calls.length - tail.length },
+    (_, i) => `  // line ${i}`,
+  );
+  return [...head, ...calls, ...pad, ...tail, ''].join('\n');
+}
+
+describe('componentHookCount', () => {
+  it('lets a component of 40 non-blank lines or fewer call up to two logic hooks', () => {
+    expect(componentHookCount(component(2, 40))).toBe(0);
+    expect(componentHookCount(component(2, 40).replace(/\n/g, '\n\n'))).toBe(0);
+  });
+
+  it('counts every hook once the file has a third hook or a 41st line', () => {
+    expect(componentHookCount(component(3, 40))).toBe(3);
+    expect(componentHookCount(component(1, 41))).toBe(1);
+  });
+
+  it('counts nothing in a file without a component', () => {
+    expect(
+      componentHookCount('export function useNav() { useEffect(() => {}); }\n'),
+    ).toBe(0);
   });
 });
 
