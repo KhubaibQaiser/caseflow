@@ -1,5 +1,5 @@
 import { act, render, screen, within } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ContactCards } from './contact-cards';
 import { row, rows } from './test-utils';
@@ -8,7 +8,10 @@ import { row, rows } from './test-utils';
 const CARD = 72;
 const setScrollY = (y: number) => {
   Object.defineProperty(window, 'scrollY', { configurable: true, value: y });
-  Object.defineProperty(window, 'pageYOffset', { configurable: true, value: y });
+  Object.defineProperty(window, 'pageYOffset', {
+    configurable: true,
+    value: y,
+  });
   act(() => {
     window.dispatchEvent(new Event('scroll'));
   });
@@ -18,11 +21,42 @@ const cards = (props: Partial<Parameters<typeof ContactCards>[0]> = {}) => (
   <ContactCards rows={rows(3)} offset={0} matching={3} {...props} />
 );
 
-const rendered = () => within(screen.getByRole('list', { name: 'Contacts' })).queryAllByRole('listitem');
+const rendered = () =>
+  within(screen.getByRole('list', { name: 'Contacts' })).queryAllByRole(
+    'listitem',
+  );
 
 describe('ContactCards (below 768px, virtualized)', () => {
-  beforeEach(() => setScrollY(0));
-  afterEach(() => setScrollY(0));
+  // jsdom reports no page height, so every offset looks past the end and the virtualizer ignores it.
+  // Give the page the height a real 250-card list would have, so the scroll is treated as it would be in a browser.
+  // The list sits at the top of the page, so as the window scrolls its viewport top moves up by the same amount.
+  // jsdom reports 0 for every box, which would put the list at the scroll position and break the offset.
+  beforeEach(() => {
+    Object.defineProperty(document.documentElement, 'scrollHeight', {
+      configurable: true,
+      value: 20000,
+    });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          top: -window.scrollY,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          width: 0,
+          height: 0,
+          x: 0,
+          y: -window.scrollY,
+          toJSON: () => ({}),
+        }) as DOMRect,
+    );
+    setScrollY(0);
+  });
+  afterEach(() => {
+    setScrollY(0);
+    vi.restoreAllMocks();
+    Reflect.deleteProperty(document.documentElement, 'scrollHeight');
+  });
 
   it('renders a window of cards, not every card on the page', () => {
     render(cards({ rows: rows(250), matching: 250 }));
@@ -47,10 +81,13 @@ describe('ContactCards (below 768px, virtualized)', () => {
     });
   });
 
-  it('brings later cards in and takes earlier ones out as the window scrolls', () => {
+  it('brings later cards in and takes earlier ones out as the window scrolls', async () => {
     render(cards({ rows: rows(250), matching: 250 }));
     setScrollY(200 * CARD);
-    expect(screen.getByRole('link', { name: 'Person 200' })).toBeInTheDocument();
+    // The virtualizer reads the scroll on the next frame, so wait for it rather than assert at once.
+    expect(
+      await screen.findByRole('link', { name: 'Person 200' }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Person 0' })).toBeNull();
   });
 
@@ -67,8 +104,13 @@ describe('ContactCards (below 768px, virtualized)', () => {
         matching: 2,
       }),
     );
-    expect(screen.getByRole('link', { name: 'Person 0' })).toHaveAttribute('href', '/contacts/c-0');
-    expect(screen.getByRole('link', { name: '(512) 555-0148' })).toHaveAttribute('href', 'tel:+15125550148');
+    expect(screen.getByRole('link', { name: 'Person 0' })).toHaveAttribute(
+      'href',
+      '/contacts/c-0',
+    );
+    expect(
+      screen.getByRole('link', { name: '(512) 555-0148' }),
+    ).toHaveAttribute('href', 'tel:+15125550148');
   });
 
   it('renders an empty list for an empty page', () => {
