@@ -87,7 +87,7 @@ The demo is tuned for a few reviewers at once. Here is what holds today and what
 
 ## 8. Run it locally
 
-Node 24, pnpm 10, Docker and the Supabase CLI. Full steps in [RUNBOOK.md](RUNBOOK.md); the short version:
+Node 26, pnpm 10, Docker and the Supabase CLI. Full steps in [RUNBOOK.md](RUNBOOK.md); the short version:
 
 ```sh
 pnpm install

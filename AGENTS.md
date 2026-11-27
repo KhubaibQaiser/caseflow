@@ -30,7 +30,7 @@ Read `docs/SPEC.md`, `docs/PLAN.md` and `docs/adr/README.md`. Before writing rou
 
 ## Commands
 
-Use Node 24 and pnpm 10.
+Use Node 26 and pnpm 10.
 
 - `pnpm dev` / `pnpm build` / `pnpm start`
 - `pnpm typecheck`, `pnpm lint` (eslint + colour-literal check)
