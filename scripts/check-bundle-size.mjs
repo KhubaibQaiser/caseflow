@@ -5,7 +5,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 
-const LIMIT_BYTES = 220_000;
+// Raised from 220 kB to 250 kB by Khubaib, 2026-11-27 (DECISIONS row 37).
+export const LIMIT_BYTES = 250_000;
 
 /** @param {{ rootFiles: string[], entryJSFiles: Record<string, string[]> }} input */
 export function firstLoadFiles({ rootFiles, entryJSFiles }) {

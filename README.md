@@ -68,4 +68,4 @@ A client-intake CRM for a law firm. Each prospective client is a **contact** wit
 
 Claude Code wrote the code; I made every product and design decision and can explain every line. An interview produced the spec, ADRs and a task plan before any code. Subagents in separate git worktrees built one small PR per task, failing tests first. Every PR got a fresh code review, and every visual change went to a mockup for my approval before it was coded.
 
-**Quality:** WCAG 2.2 AA with axe in e2e · 220 kB JS budget enforced in CI · 600+ unit and 120+ e2e tests · an e2e test checks every skeleton against the loaded page to within 1px, including while the form's code is still downloading. Setup and operations: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).
+**Quality:** WCAG 2.2 AA with axe in e2e · 250 kB JS budget enforced in CI · 600+ unit and 120+ e2e tests · an e2e test checks every skeleton against the loaded page to within 1px, including while the form's code is still downloading. Setup and operations: [`docs/RUNBOOK.md`](docs/RUNBOOK.md).

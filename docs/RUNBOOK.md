@@ -73,7 +73,7 @@ Layering is `app -> features -> components -> lib -> utils`. Nothing imports upw
 
 - `checks`: format check, typecheck, lint (including the colour-literal check), unit tests, build.
 - `integration-e2e`: local Supabase (CLI 3.2), `db reset`, seed when `scripts/seed.ts` exists, integration tests, and e2e when `tests/e2e` exists.
-- `checks` also runs `pnpm size` after the build: gzipped first-load JS per route (root chunks plus the chunks in each route's client-reference manifest) must stay at or under 220 kB. `/dev/*` is exempt. Shell routes are about 179 kB, `/contacts` about 215 kB, `/` about 169 kB; the Next runtime alone is about 131 kB. Anything heavy that isn't needed on first paint is lazy (every tooltip, the mobile Account sheet).
+- `checks` also runs `pnpm size` after the build: gzipped first-load JS per route (root chunks plus the chunks in each route's client-reference manifest) must stay at or under 250 kB. `/dev/*` is exempt. Shell routes are about 181 kB, `/contacts` about 220 kB, `/` about 169 kB; the Next runtime alone is about 131 kB. Anything heavy that isn't needed on first paint is lazy (every tooltip, the mobile Account sheet).
 - `gitleaks`: secret scan of each PR's or push's commits.
 
 Actions are pinned by commit SHA. Dependabot opens weekly grouped minor and patch updates for npm and GitHub Actions. PRs use `.github/pull_request_template.md`; `.github/CODEOWNERS` assigns review.
@@ -196,7 +196,7 @@ Postgres triggers stamp `created_by`, `created_at`, `updated_by` and `updated_at
 ## Contact form (T17)
 
 - `features/contacts/form/contact-form.tsx` serves `/contacts/new` and `/contacts/[id]/edit`. The pages pass the T10 actions in as props (`updateContactAction.bind(null, id)`).
-- The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 220 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
+- The form is loaded with `next/dynamic` and `ssr: false`: RHF, zod and the calendar stay out of the route's first load (about 176 kB gzipped, budget 250 kB), and nothing server-rendered can be submitted natively before hydration. A form-shaped skeleton fills the gap.
 - Validation: blur after first touch, everything on submit. The error summary shows the errors of the last failed submit while they stay unfixed and takes focus on every failed attempt (RHF's own focus-first-error is off). Email and phone share one error under the pair.
 - Save: a ref guard makes a double-click send one request. `updatedAt` goes back to the action verbatim. A failed or thrown save keeps the input and offers Retry.
 - Conflict: the banner triggers `router.refresh()`; Reload latest resets the form to the refreshed record (the user re-applies their edits). There is no Overwrite. Save keeps sending the `updatedAt` the form opened with, even after the refresh hands it a newer record; only Reload latest moves the stamp.

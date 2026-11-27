@@ -65,7 +65,7 @@ Each has a recommendation. Khubaib picks.
 | Desktop | The hidden list keeps a window mounted and listens for resize | Hidden list draws only a window (D4) | Desktop run in the browser check |
 | Resize | Position stale after rotating or resizing | Re-read on resize | Browser check: rotate and resize across 768px |
 | Filter or sort while scrolled | The window stays where it was | Unchanged from today | Noted, not changed |
-| Bundle size | `/contacts` over 220 kB gzipped | No new library | `pnpm size` (not run here, needs a build) |
+| Bundle size | `/contacts` over the JS budget (220 kB gzipped then, 250 kB since DECISIONS row 37) | No new library | `pnpm size` (not run here, needs a build) |
 | Reload or Back at a deep scroll | The server HTML holds only the first window, so the list can look empty until the page hydrates | Decision D6. Measured on a phone before release. | Server HTML test (RTL); browser measurement, not yet run |
 | Page scroll and sticky elements | The toolbar and sheet overlap cards | Unchanged positioning | Existing tests and the browser check |
 

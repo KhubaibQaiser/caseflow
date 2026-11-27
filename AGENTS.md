@@ -23,7 +23,7 @@ Read `docs/SPEC.md`, `docs/PLAN.md` and `docs/adr/README.md`. Before writing rou
 - Page sizes `[25, 50, 100, 250, 500]`, default `250`. Pipeline columns load `50` per request.
 - Urgency order: overdue, due today, soonest follow-up, no follow-up; ties by `updated_at desc`. Closed dated rows sort after open dated rows. Only Lead and Active can be overdue or due today.
 - Accessibility: WCAG 2.2 AA (contrast 4.5:1, targets 24px, visible focus, no colour-only meaning, menu alternative to dragging).
-- Performance: Lighthouse Performance >= 90 and Accessibility >= 95 on `/contacts` (mobile). CLS < 0.05. `/contacts` JS < 220kB gzipped. Import icons one at a time.
+- Performance: Lighthouse Performance >= 90 and Accessibility >= 95 on `/contacts` (mobile). CLS < 0.05. `/contacts` JS < 250kB gzipped. Import icons one at a time.
 - Commits are small and imperative, failing test first. PRs merge with merge commits. End each commit message with `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`.
 - Secrets never appear in code, logs, chat or commits.
 - Secrets go in with `gh secret set` / `vercel env add` from piped values only.
