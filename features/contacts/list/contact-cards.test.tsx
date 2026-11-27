@@ -1,4 +1,4 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ContactCards } from './contact-cards';
@@ -111,6 +111,40 @@ describe('ContactCards (below 768px, virtualized)', () => {
     expect(
       screen.getByRole('link', { name: '(512) 555-0148' }),
     ).toHaveAttribute('href', 'tel:+15125550148');
+  });
+
+  it('gives a card that is taller than the estimate its measured height, so the cards after it move down', async () => {
+    // The first card wraps to three lines (120px). Every other card keeps the 72px estimate.
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      function (this: HTMLElement) {
+        const height = this.dataset.index === '0' ? 120 : 0;
+        return {
+          top: -window.scrollY,
+          bottom: 0,
+          left: 0,
+          right: 0,
+          width: 0,
+          height,
+          x: 0,
+          y: -window.scrollY,
+          toJSON: () => ({}),
+        } as DOMRect;
+      },
+    );
+    render(cards({ rows: rows(250), matching: 250 }));
+    await waitFor(() =>
+      expect(screen.getByRole('list', { name: 'Contacts' })).toHaveStyle({
+        height: `${120 + 249 * CARD}px`,
+      }),
+    );
+  });
+
+  it('shrinks the list when the rows change to a shorter page', () => {
+    const { rerender } = render(cards({ rows: rows(250), matching: 250 }));
+    rerender(cards({ rows: rows(10), matching: 10 }));
+    expect(screen.getByRole('list', { name: 'Contacts' })).toHaveStyle({
+      height: `${10 * CARD}px`,
+    });
   });
 
   it('renders an empty list for an empty page', () => {
