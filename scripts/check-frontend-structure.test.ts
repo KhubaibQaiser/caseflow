@@ -57,6 +57,29 @@ describe('arbitrary variants', () => {
   });
 });
 
+describe('class tokens and comments', () => {
+  it('keeps a child-selector variant whole, so the utility after it is still checked', () => {
+    expect(
+      findArbitraryClasses(
+        '<div className="[&>svg]:text-[11px] [&>*]:p-[3px] [&>svg]:[transform:none] [&>p]:mt-2">',
+      ),
+    ).toEqual([
+      '[&>svg]:text-[11px]',
+      '[&>*]:p-[3px]',
+      '[&>svg]:[transform:none]',
+    ]);
+  });
+
+  it('ignores empty brackets and classes inside comments', () => {
+    expect(findArbitraryClasses('"items-[]"')).toEqual([]);
+    expect(
+      findArbitraryClasses(
+        '// was text-[11px]\n/* w-[1px] */ const url = "https://x.dev"; const c = "h-[2px]";',
+      ),
+    ).toEqual(['h-[2px]']);
+  });
+});
+
 describe('findMultipleComponents', () => {
   it('flags a file with two components', () => {
     const src =
@@ -122,6 +145,29 @@ function component(hooks: number, lines: number) {
   );
   return [...head, ...calls, ...pad, ...tail, ''].join('\n');
 }
+
+describe('hook counting matches the global guard', () => {
+  it('ignores hook names in comments and counts React.useX', () => {
+    const src =
+      'export function A() {\n  // useEffect( runs on mount\n  React.useMemo(() => 1, []);\n  return null;\n}\n';
+    expect(findComponentHookViolations(src)).toEqual(['useMemo']);
+  });
+
+  it('allows default and aliased imports from a use- module', () => {
+    const src = [
+      "import useFoo from './use-foo';",
+      "import { useBar as useBaz } from './use-bar';",
+      'export function A() { useFoo(); useBaz(); return null; }',
+    ].join('\n');
+    expect(findComponentHookViolations(src)).toEqual([]);
+  });
+
+  it('counts a hook written and called in the component file, not its declaration', () => {
+    const src =
+      'function useTicker() { return 1; }\nexport function A() { const t = useTicker(); return t; }\n';
+    expect(findComponentHookViolations(src)).toEqual(['useTicker']);
+  });
+});
 
 describe('componentHookCount', () => {
   it('lets a component of 40 non-blank lines or fewer call up to two logic hooks', () => {
