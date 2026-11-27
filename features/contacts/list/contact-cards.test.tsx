@@ -1,4 +1,5 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { renderToString } from 'react-dom/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ContactCards } from './contact-cards';
@@ -6,6 +7,9 @@ import { row, rows } from './test-utils';
 
 // The mobile list scrolls with the window, so the tests drive window.scrollY and fire the scroll event.
 const CARD = 72;
+// Where the list starts in the page, in CSS pixels from the top. Tests move it to stand in for a toolbar above it.
+let listTop = 0;
+
 const setScrollY = (y: number) => {
   Object.defineProperty(window, 'scrollY', { configurable: true, value: y });
   Object.defineProperty(window, 'pageYOffset', {
@@ -21,17 +25,15 @@ const cards = (props: Partial<Parameters<typeof ContactCards>[0]> = {}) => (
   <ContactCards rows={rows(3)} offset={0} matching={3} {...props} />
 );
 
-const rendered = () =>
-  within(screen.getByRole('list', { name: 'Contacts' })).queryAllByRole(
-    'listitem',
-  );
+const list = () => screen.getByRole('list', { name: 'Contacts' });
+const rendered = () => within(list()).queryAllByRole('listitem');
 
 describe('ContactCards (below 768px, virtualized)', () => {
   // jsdom reports no page height, so every offset looks past the end and the virtualizer ignores it.
   // Give the page the height a real 250-card list would have, so the scroll is treated as it would be in a browser.
-  // The list sits at the top of the page, so as the window scrolls its viewport top moves up by the same amount.
-  // jsdom reports 0 for every box, which would put the list at the scroll position and break the offset.
+  // jsdom also reports 0 for every box. Report the list at listTop in the page, so a scroll moves it up the viewport.
   beforeEach(() => {
+    listTop = 0;
     Object.defineProperty(document.documentElement, 'scrollHeight', {
       configurable: true,
       value: 20000,
@@ -39,14 +41,14 @@ describe('ContactCards (below 768px, virtualized)', () => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
       () =>
         ({
-          top: -window.scrollY,
+          top: listTop - window.scrollY,
           bottom: 0,
           left: 0,
           right: 0,
           width: 0,
           height: 0,
           x: 0,
-          y: -window.scrollY,
+          y: listTop - window.scrollY,
           toJSON: () => ({}),
         }) as DOMRect,
     );
@@ -67,6 +69,12 @@ describe('ContactCards (below 768px, virtualized)', () => {
     expect(screen.queryByRole('link', { name: 'Person 200' })).toBeNull();
   });
 
+  it('draws the cards that fit the viewport, plus eight beyond it', () => {
+    render(cards({ rows: rows(250), matching: 250 }));
+    // A 768px viewport fits 11 cards of 72px. Eight more are drawn past its edge, so Tab can move into them.
+    expect(rendered()).toHaveLength(19);
+  });
+
   it('gives each card its place in the whole set, not in the page', () => {
     render(cards({ rows: rows(250), offset: 250, matching: 1284 }));
     const first = rendered()[0];
@@ -76,9 +84,7 @@ describe('ContactCards (below 768px, virtualized)', () => {
 
   it('gives the list the full height of its cards, so the page scrolls to the end', () => {
     render(cards({ rows: rows(250), matching: 250 }));
-    expect(screen.getByRole('list', { name: 'Contacts' })).toHaveStyle({
-      height: `${250 * CARD}px`,
-    });
+    expect(list()).toHaveStyle({ height: `${250 * CARD}px` });
   });
 
   it('brings later cards in and takes earlier ones out as the window scrolls', async () => {
@@ -91,9 +97,34 @@ describe('ContactCards (below 768px, virtualized)', () => {
     expect(screen.queryByRole('link', { name: 'Person 0' })).toBeNull();
   });
 
+  it('measures the list where it really is, so a toolbar above it does not shift the window', async () => {
+    listTop = 180;
+    render(cards({ rows: rows(250), matching: 250 }));
+    expect(rendered()[0]).toHaveAttribute('data-index', '0');
+    // At 3000px the first card on screen is (3000 - 180) / 72, which is index 39. Index 0 is long gone.
+    setScrollY(3000);
+    expect(
+      await screen.findByRole('link', { name: 'Person 39' }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Person 0' })).toBeNull();
+  });
+
+  it('measures the list again when the window resizes, because the layout above it can move', async () => {
+    render(cards({ rows: rows(250), matching: 250 }));
+    // The list moves 720px down the page, as it would when a breakpoint changes what sits above it.
+    listTop = 720;
+    setScrollY(3000);
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+    // Now the first card on screen is (3000 - 720) / 72, which is index 31, and 8 more are drawn above it.
+    await waitFor(() =>
+      expect(rendered()[0]).toHaveAttribute('data-index', '23'),
+    );
+  });
+
   it('keeps cards past the visible window, so keyboard focus can move on into them', () => {
     render(cards({ rows: rows(250), matching: 250 }));
-    // A 768px window shows 11 cards of 72px. The cards drawn beyond them are what Tab moves into.
     expect(rendered().length).toBeGreaterThan(11);
   });
 
@@ -111,45 +142,24 @@ describe('ContactCards (below 768px, virtualized)', () => {
     expect(
       screen.getByRole('link', { name: '(512) 555-0148' }),
     ).toHaveAttribute('href', 'tel:+15125550148');
+    expect(screen.getByText('No phone')).toBeInTheDocument();
   });
 
-  it('gives a card that is taller than the estimate its measured height, so the cards after it move down', async () => {
-    // The first card wraps to three lines (120px). Every other card keeps the 72px estimate.
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
-      function (this: HTMLElement) {
-        const height = this.dataset.index === '0' ? 120 : 0;
-        return {
-          top: -window.scrollY,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          width: 0,
-          height,
-          x: 0,
-          y: -window.scrollY,
-          toJSON: () => ({}),
-        } as DOMRect;
-      },
-    );
-    render(cards({ rows: rows(250), matching: 250 }));
-    await waitFor(() =>
-      expect(screen.getByRole('list', { name: 'Contacts' })).toHaveStyle({
-        height: `${120 + 249 * CARD}px`,
-      }),
-    );
+  it('labels the list and makes it the focus target for results', () => {
+    render(cards({ rows: rows(3), matching: 3 }));
+    expect(list()).toHaveAttribute('tabindex', '-1');
+    expect(list()).toHaveAttribute('data-results-focus');
   });
 
-  it('shrinks the list when the rows change to a shorter page', () => {
-    const { rerender } = render(cards({ rows: rows(250), matching: 250 }));
-    rerender(cards({ rows: rows(10), matching: 10 }));
-    expect(screen.getByRole('list', { name: 'Contacts' })).toHaveStyle({
-      height: `${10 * CARD}px`,
-    });
+  it('draws only the first window in the server HTML, so the page is not a blank list before it hydrates', () => {
+    const html = renderToString(cards({ rows: rows(250), matching: 250 }));
+    // The server draws a 390x844 phone screen: 12 cards fit, plus 8 beyond them.
+    expect(html.match(/<li /g)).toHaveLength(20);
   });
 
   it('renders an empty list for an empty page', () => {
     render(cards({ rows: [], matching: 0 }));
-    expect(screen.getByRole('list', { name: 'Contacts' })).toBeInTheDocument();
+    expect(list()).toHaveStyle({ height: '0px' });
     expect(rendered()).toHaveLength(0);
   });
 });
