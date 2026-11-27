@@ -7,7 +7,7 @@
 **Architecture:** Next.js App Router. Server Components read through `lib/data` (Supabase, user JWT, RLS); Server Actions write (`requirePermission`, then Zod, then Supabase). List and facets come from two Postgres RPCs that share one predicate. RBAC has four layers: proxy (signed in?), server `requirePermission`, Postgres RLS (trusted), and client `usePermission`. Contracts in `lib/contracts` are frozen in M0, so the FE, BE and OPS tracks can run in parallel worktrees.
 
 **Tech Stack:**
-- Next.js 16.x (latest via create-next-app), React 19, TypeScript strict, pnpm 10, Node 24.
+- Next.js 16.x (latest via create-next-app), React 19, TypeScript strict, pnpm 10, Node 26 (24 until DECISIONS row 38).
 - UI: Tailwind CSS 4 tokens, Radix primitives, lucide-react, sonner.
 - Data and forms: TanStack Table + Virtual, React Hook Form + Zod, nuqs, date-fns, react-day-picker.
 - Backend: Supabase (Postgres, Auth, RLS) via `@supabase/ssr`.
@@ -105,7 +105,7 @@ vitest.config.mts (projects: unit = jsdom, integration = node), playwright.confi
 - Produces these scripts: `dev`, `build`, `start`, `typecheck` (`tsc --noEmit`), `lint` (`eslint . && node scripts/check-no-color-literals.mjs`), `test` (`vitest run --project unit`), `test:integration` (`vitest run --project integration`), `e2e` (`playwright test --trace off`), `format`, `format:check`, `seed` (`tsx scripts/seed.ts`), `db:types` (`supabase gen types typescript --local > lib/supabase/database.types.ts`).
 
 - [ ] **Step 1: Commit the existing docs first.** `git add docs PRODUCT.md design .gitignore && git commit -m "Add brief, spec, ADRs, product brief and approved mockups"`.
-- [ ] **Step 2: Scaffold.** `pnpm create next-app@latest . --ts --eslint --tailwind --app --no-src-dir --import-alias "@/*" --use-pnpm`. Keep the existing files. Set `"engines": {"node": "24.x"}` and `packageManager` to the pinned pnpm version.
+- [ ] **Step 2: Scaffold.** `pnpm create next-app@latest . --ts --eslint --tailwind --app --no-src-dir --import-alias "@/*" --use-pnpm`. Keep the existing files. Set `"engines": {"node": "24.x"}` (26.x since DECISIONS row 38) and `packageManager` to the pinned pnpm version.
 - [ ] **Step 3: Install dev tooling.** Vitest, `@vitejs/plugin-react`, `vite-tsconfig-paths`, jsdom, `@testing-library/react`, `@testing-library/user-event`, `@testing-library/jest-dom`, `@playwright/test`, `@axe-core/playwright`, Prettier with `prettier-plugin-tailwindcss`, `eslint-plugin-jsx-a11y`, `eslint-config-prettier`, `tsx`, `server-only`. Pin exact versions.
 - [ ] **Step 4: Configure.**
   - `tsconfig.json`: `"strict": true` and `"noUncheckedIndexedAccess": true`.

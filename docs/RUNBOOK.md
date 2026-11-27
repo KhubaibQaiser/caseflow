@@ -8,8 +8,8 @@ Next.js 16 (App Router, Server Components and Server Actions), React 19, TypeScr
 
 ## Prerequisites
 
-- Node 24 (`.nvmrc`)
-- pnpm 10 via `corepack enable`
+- Node 26 (`.nvmrc`)
+- pnpm 10 via Corepack. Node 25 and later no longer bundle it, so run `npm install -g corepack` once, then `corepack enable`
 - Supabase CLI 3.2 or later
 - Docker, for the local Supabase stack
 

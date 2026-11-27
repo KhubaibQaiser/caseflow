@@ -97,7 +97,7 @@ Browser ──HTTPS──► Next.js on Vercel (Node runtime)
 GitHub Actions: CI on PR · migrate+deploy on main · seed (manual) · keep-alive cron
 ```
 
-- **Next.js version:** use the version pinned by `create-next-app@latest` at scaffold time (16.x), with Node 24 LTS and pnpm 10. Before writing route, proxy or caching code, read the bundled docs in `node_modules/next/dist/docs/`. Next 16 renamed `middleware` to `proxy`.
+- **Next.js version:** use the version pinned by `create-next-app@latest` at scaffold time (16.x), with Node 26 LTS and pnpm 10 (24 until DECISIONS row 38). Before writing route, proxy or caching code, read the bundled docs in `node_modules/next/dist/docs/`. Next 16 renamed `middleware` to `proxy`.
 - **Folder layout and dependency direction:** `app → features → components → lib → utils`. Nothing imports upward.
   - `app/`: routes, layouts, `loading.tsx`, `error.tsx`, `not-found.tsx`.
   - `features/contacts/`, `features/pipeline/`, `features/auth/`: feature components, Server Actions, hooks.
