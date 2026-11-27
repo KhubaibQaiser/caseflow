@@ -374,7 +374,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
 ### 8.12 Performance budget
 - **Lighthouse:** Performance at least 90 and Accessibility at least 95 on `/contacts` (mobile preset).
 - **Layout shift:** CLS below 0.05. `next/font` with Figtree is self-hosted and subset.
-- **JavaScript:** route JS for `/contacts` under 220kB gzipped. Icons are imported per icon.
+- **JavaScript:** route JS for `/contacts` under 250kB gzipped (raised from 220kB, DECISIONS row 37). Icons are imported per icon.
 - **Rendering:** RSC streaming with Suspense around the data regions. Virtualized rows.
 - **Server:** the RPCs return in under 50ms at about 2.5k rows (the indexes make this possible).
 - **Lighthouse CI:** runs against production as a non-blocking check in the stretch milestone.

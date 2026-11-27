@@ -41,7 +41,7 @@ All ADRs list at least three options considered: [docs/adr](adr/README.md).
 - **Where to start reading:** [`features/contacts/list`](../features/contacts/list) (list, filters, URL state), [`features/pipeline`](../features/pipeline) (optimistic moves), [`features/contacts/form`](../features/contacts/form) (one Zod schema for client and server), [`components/ui`](../components/ui) (primitives).
 - **Design system:** Tailwind 4 with tokens only in [`app/globals.css`](../app/globals.css); a lint check rejects colour literals anywhere else. Light and dark are two token sets.
 - **Accessibility:** WCAG 2.2 AA. Radix handles focus and menus, axe runs on every route in e2e, 24px minimum targets, visible focus, and nothing is conveyed by colour alone.
-- **Performance:** first-load JS for `/contacts` is held under 220 kB in CI. Heavy pieces (rich-text editor, phone metadata, menus) load on demand.
+- **Performance:** first-load JS for `/contacts` is held under 250 kB in CI. Heavy pieces (rich-text editor, phone metadata, menus) load on demand.
 - **Mobile:** cards instead of the table, a pinned pager, a header that slides away on scroll, pipeline as tabs.
 
 ## 5. Why no drag and drop (yet)
