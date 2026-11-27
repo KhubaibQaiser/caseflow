@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { firstLoadFiles, overBudget } from './check-bundle-size.mjs';
+import {
+  LIMIT_BYTES,
+  firstLoadFiles,
+  overBudget,
+} from './check-bundle-size.mjs';
 
 describe('firstLoadFiles', () => {
   it('unions root files with every entry, once each, skipping global-error', () => {
@@ -31,5 +35,11 @@ describe('overBudget', () => {
         180_000,
       ),
     ).toEqual([]);
+  });
+});
+
+describe('LIMIT_BYTES', () => {
+  it('is 250 kB gzipped per route (DECISIONS row 37)', () => {
+    expect(LIMIT_BYTES).toBe(250_000);
   });
 });
