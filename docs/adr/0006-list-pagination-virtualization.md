@@ -8,7 +8,7 @@ Use server offset pagination with an exact count, plus TanStack Virtual, with a 
 
 `accepted` (Khubaib, 2026-11-17)
 
-- **Amended for phones:** [ADR-0013](0013-mobile-cards-virtualized.md) (proposed) virtualizes the phone card list too. Until it is accepted, the phone list is not virtualized.
+- **Amended for phones:** [ADR-0013](0013-mobile-cards-virtualized.md) (proposed) would virtualize the phone card list too.
 
 ## Date
 

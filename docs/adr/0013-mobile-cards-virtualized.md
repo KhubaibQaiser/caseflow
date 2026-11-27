@@ -49,7 +49,7 @@ Option 1, proposed. Measure on a mid-range Android before accepting, if Khubaib 
 ## Consequences
 
 - **Positive:** Phones draw the same small window as desktop. The page scroll, the header and the footer keep their behaviour. No new library.
-- **Negative:** More positioning code than the table. Off-screen cards are not in the page, the trade-off ADR-0006 records for the table. Search and filters already cover finding contacts.
+- **Negative:** The server HTML holds only the first window. On a reload or Back at a deep scroll, the list can look empty until the page hydrates. This is decision D6 in the spec, to be measured on a phone. More positioning code than the table. Off-screen cards are not in the page, the trade-off ADR-0006 records for the table. Search and filters already cover finding contacts.
 - **Follow-up:** the spec's manual checks (screen reader on a phone, rotation, long names) must pass before merge.
 
 ## Rejected and why
