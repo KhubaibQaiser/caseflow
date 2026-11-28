@@ -1008,15 +1008,17 @@ Everything in this plan's Global Constraints applies. In addition:
 **Files:**
 - Create: `design/mockups/screens-v3.html` on branch `design/pipeline-drag-drop`, reusing `screens-v2.html`'s CSS and the tokens in `app/globals.css`.
 
-- [ ] **Step 1: Mock every state, in light and dark:**
+Done 2026-11-28 (PR #67). Khubaib approved the recommended options, and DECISIONS row 40 holds the exact class lists. The mock renders the real components and compiles the app's CSS instead of reusing screens-v2's stale CSS.
+
+- [x] **Step 1: Mock every state, in light and dark:**
   1. 1440px, idle, with one card's Drag button showing because it has keyboard focus
   2. 1440px mid-drag: the copy over Active, the source card dimmed in Lead, Active highlighted
   3. 1440px over the card's own column: no highlight
   4. 768px mid-drag (touch)
   5. A Viewer's board: no Drag button
   6. 390px: unchanged, no Drag button
-- [ ] **Step 2: Screenshot** at 1440, 768 and 390px, light and dark. Push the branch, open a PR, and send Khubaib the screenshots.
-- [ ] **Step 3: Stop until Khubaib approves.** Edit no component or style file before then. Put the approved class lists in the PR body:
+- [x] **Step 2: Screenshot** at 1440, 768 and 390px, light and dark. Push the branch, open a PR, and send Khubaib the screenshots.
+- [x] **Step 3: Stop until Khubaib approves.** Edit no component or style file before then. Put the approved class lists in the PR body:
   - the highlight (`data-[drop-target]:…`)
   - the dimming (`data-[dragging]:…`)
   - the copy's shadow
