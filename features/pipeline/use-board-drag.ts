@@ -38,6 +38,18 @@ export function dropStatus(
   return canceled || to === from ? null : to;
 }
 
+/**
+ * dnd-kit won't start a drag on a link or button. A card's name link covers the whole card, so that one may;
+ * the phone link and Move to… keep their own click.
+ */
+export function blocksDrag(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return false;
+  const control = target.closest(
+    'a[href], button, input, select, textarea, [contenteditable]',
+  );
+  return control !== null && !control.hasAttribute('data-card-link');
+}
+
 /** One keyboard step: the distance between the first two columns' left edges. */
 export function columnPitch(lefts: number[]): number {
   const [first, second] = lefts;
