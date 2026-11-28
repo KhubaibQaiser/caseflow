@@ -30,7 +30,7 @@ Deadline: 24h from receipt of the brief. Functional deliverables come before pol
 - G11 Strong CI/CD: checks on every PR (including integration and e2e tests against a local Supabase), and an ordered migrate → deploy → smoke test pipeline on `main`.
 
 **Non-goals (documented in the README as future work)**
-- Drag and drop on the pipeline in v1. It's planned after v1 on top of the menu, which WCAG 2.5.7 requires anyway (ADR-0014, proposed).
+- Drag and drop on the pipeline in v1. It's planned after v1 on top of the menu, which WCAG 2.5.7 requires anyway (ADR-0014).
 - Global search (an icon in the header that opens a modal searching every object).
 - Keyboard shortcuts (a command palette, j/k to move through rows, quick status changes), after the BRIEF requirements are fully met.
 - Undo for pipeline moves (for later review).
@@ -66,7 +66,7 @@ Every row was decided by Khubaib in the spec interview, unless it is marked *(Cl
 | 3 | Auth and RBAC | **Pre-seeded accounts, one per role** (Admin, Viewer), created by an idempotent seed script through the admin API. **Email and password form only.** Sign-ups are disabled in Supabase. Everyone works in **one shared firm workspace**. Roles and permissions live in the database (`profiles`, `role_permissions`), and `has_permission()` drives RLS. There's no intro modal; the limitations are in the README. | Email-only login with HMAC-derived passwords and private workspaces (no real RBAC); anonymous sign-in; magic link | 0003 |
 | 4 | Abuse limits | With no sign-ups, the only public surface is sign-in. Supabase's per-IP sign-in limits apply **with the client IP forwarded** (`Sb-Forwarded-For` plus a secret key), so each reviewer is limited individually, not the Vercel server. | Vercel WAF rule (nothing left to protect); a Postgres limiter; Upstash | 0004 |
 | 5 | Broken data or account | Operator re-runs the `seed` workflow (idempotent: it re-creates the accounts and resets firm data to the seed). Documented in the README. There's no in-app reset button and no nightly reset. | Admin "Reset demo data" button; nightly reset cron | 0003 |
-| 6 | Pipeline moves | **A "Move to…" menu only** in v1. Drag and drop on top of the menu, from 768px, is planned after v1 (DECISIONS row 39, PLAN T18b–T18e). | DnD plus menu (+1.5h); DnD only (fails WCAG 2.5.7) | 0005, 0014 (proposed) |
+| 6 | Pipeline moves | **A "Move to…" menu only** in v1. Drag and drop on top of the menu, from 768px, is planned after v1 (DECISIONS row 39, PLAN T18b–T18e). | DnD plus menu (+1.5h); DnD only (fails WCAG 2.5.7) | 0005, 0014 |
 | 7 | Board order | **Urgency:** overdue first, then due today, then soonest follow-up, then no follow-up. Ties go to the most recently updated. No manual ordering, so there is no `position` column. *(Claude's call, not objected to.)* | Manual ordering (needs a rank column and DnD) | 0005 |
 | 8 | List at volume | **Server offset pagination with an exact count, plus TanStack Virtual.** Default page size 250. The accessibility cost (Ctrl+F only finds rendered rows) is stated in the README and mitigated by the advanced filters. | Pagination only at 50 (no virtualization needed); infinite scroll | 0006 |
 | 9 | Query layer | **Two Postgres RPCs, `search_contacts` and `contact_facets`, sharing one SQL predicate,** so the list and the counts cannot disagree. Run as SECURITY INVOKER, so RLS still applies. | PostgREST builder plus separate count queries (logic duplicated in two places); filtering in the browser (doesn't work at volume) | 0007 |
@@ -312,7 +312,7 @@ Each one calls `requirePermission(...)` first (contacts.write or notes.write; Po
   - A toast says "Marisol Ortega moved to Active." (about 6s). Undo is future work.
   - **On failure** the card returns to its column and an error toast offers Retry.
 - **Mobile:** tabs for each status with counts, showing one column at a time.
-- **Drag and drop (planned after v1, ADR-0014, proposed):** from 768px, any pointer drags a whole card to another column, and a keyboard user drags from a Drag button shown on focus. A drop is the same move as the menu. The menu stays on every card. Below 768px and for Viewers, cards don't drag.
+- **Drag and drop (planned after v1, ADR-0014):** from 768px, any pointer drags a whole card to another column, and a keyboard user drags from a Drag button shown on focus. A drop is the same move as the menu. The menu stays on every card. Below 768px and for Viewers, cards don't drag.
 
 ### 8.7 Dates and time zones
 - **Storage:** follow-ups are a SQL `date`. Moving them between the browser and the server always uses `'YYYY-MM-DD'` strings, formatted with date-fns `format` and **never `toISOString()`**.

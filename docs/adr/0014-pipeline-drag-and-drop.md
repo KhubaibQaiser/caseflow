@@ -6,7 +6,7 @@ Add drag and drop between pipeline columns from 768px with dnd-kit, keeping the 
 
 ## Status
 
-`proposed`
+`accepted`. Khubaib accepted it on 2026-11-28 as written, including Claude's two proposals (Tab cancels a keyboard drag, and the announcement copy).
 
 ## Date
 

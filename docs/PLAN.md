@@ -1236,7 +1236,7 @@ test('the Drag button names the contact and is a real button', () => {
   Record anything off as a fix, or ask Khubaib.
 - [ ] **Step 3: Run the full gate:** `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm test:integration && pnpm e2e && pnpm build && pnpm size`. Expected: all pass, and `/pipeline` ≤ 250 kB.
 - [ ] **Step 4: Screenshots** at 1440, 768 and 390px, light and dark, mid-drag and with the Drag button focused. Commit them to the `screenshots` branch and link them in the PR.
-- [ ] **Step 5: Open the PR** for T18c–T18e. A fresh reviewer (Sonnet) gets the diff and ADR-0014. Fix what it finds, merge with a merge commit once CI is green, and confirm main's CI and deploy.
+- [ ] **Step 5: Open the PR** for T18c–T18e. A fresh reviewer (Sonnet) gets the diff and ADR-0014. Fix what it finds, then stop: Khubaib reviews the PR and approves the merge (his call, 2026-11-28). After his yes, merge with a merge commit once CI is green, and confirm main's CI and deploy.
 
 ### Task 26: Hygiene audit (last task)
 
