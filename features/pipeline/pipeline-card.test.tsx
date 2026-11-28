@@ -44,4 +44,40 @@ describe('PipelineCard', () => {
     expect(screen.queryByRole('menu')).toBeNull();
     expect(onMove).not.toHaveBeenCalled();
   });
+
+  it('a dragged card is marked so it can dim in place', () => {
+    const { rerender } = render(
+      <ul>
+        <PipelineCard
+          row={pipelineRow('a', 'lead')}
+          onMove={vi.fn()}
+          dragging
+        />
+      </ul>,
+    );
+    expect(screen.getByRole('listitem')).toHaveAttribute('data-dragging');
+    rerender(
+      <ul>
+        <PipelineCard row={pipelineRow('a', 'lead')} onMove={vi.fn()} />
+      </ul>,
+    );
+    expect(screen.getByRole('listitem')).not.toHaveAttribute('data-dragging');
+  });
+
+  it('puts the drag handle after the Move menu', () => {
+    render(
+      <ul>
+        <PipelineCard
+          row={pipelineRow('a', 'lead')}
+          onMove={vi.fn()}
+          dragHandle={<button type="button">Drag Person a</button>}
+        />
+      </ul>,
+    );
+    const buttons = screen.getAllByRole('button');
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      'Move to…',
+      'Drag Person a',
+    ]);
+  });
 });
