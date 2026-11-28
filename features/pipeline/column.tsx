@@ -21,7 +21,7 @@ import { PAGE_SIZE } from './rows';
 import { SortControl } from './sort-control';
 import type { PipelineRow } from './rows';
 
-type ColumnProps = {
+export type ColumnProps = {
   status: Status;
   rows: PipelineRow[];
   matching: number;
@@ -38,6 +38,10 @@ type ColumnProps = {
   /** This column's rows are being replaced (its sort or the filters changed). Cards give way to a skeleton after 300ms. */
   reloading?: boolean;
   className?: string;
+  /** Where a dragged card can drop (ADR-0014). */
+  sectionRef?: (el: Element | null) => void;
+  /** A card from another column is over this one. */
+  dropTarget?: boolean;
 };
 
 const fmt = (n: number) => n.toLocaleString('en-US');
@@ -55,6 +59,8 @@ export function Column({
   disabledReason,
   reloading = false,
   className,
+  sectionRef,
+  dropTarget = false,
 }: ColumnProps) {
   const skeleton = useDelayedFlag(reloading);
   const label = STATUS_LABEL[status];
@@ -96,10 +102,15 @@ export function Column({
 
   return (
     <section
+      ref={sectionRef}
       aria-labelledby={`column-${status}`}
+      data-drop-column={status}
+      data-drop-target={dropTarget || undefined}
       className={cn(
         // The track frame is for the three-up board; on a phone the tabs name the column and the cards sit on the page.
         'md:bg-track md:rounded-surface flex min-h-0 min-w-0 flex-col gap-2 md:overflow-hidden md:p-2.5',
+        // A drop target: the dashed outline is the cue that isn't colour alone, and it survives forced colours.
+        'data-drop-target:bg-accent-soft data-drop-target:outline-accent data-drop-target:outline-2 data-drop-target:-outline-offset-2 data-drop-target:outline-dashed',
         className,
       )}
     >
