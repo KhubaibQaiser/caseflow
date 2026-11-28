@@ -18,6 +18,7 @@ Index of every ADR in this repo. One row per record, newest at the bottom. Each 
 | 0011 | [Handle concurrent edits with version checks and a server change feed](0011-concurrent-edits-and-change-feed.md) | accepted (deferred past v1) | 2026-11-17 |
 | 0012 | [Theme: System default, per-device cookie, server-rendered data-theme](0012-theme-system-default-cookie.md) | accepted | 2026-11-17 |
 | 0013 | [Virtualize the phone contact cards, with the window as the scroll element](0013-mobile-cards-virtualized.md) | accepted | 2026-11-27 |
+| 0014 | [Drag pipeline cards between columns from 768px, on top of the Move menu](0014-pipeline-drag-and-drop.md) | accepted | 2026-11-28 |
 
 ## Conventions
 
