@@ -49,7 +49,7 @@ then in parallel worktrees:
   BE:  T5 → T6 → T7 → T8 → T9 → T10
   FE:  T11 → T12 → T12b → T13 → {T14 → T15} ∥ T16 ∥ T17 ∥ T18 ∥ T19
   OPS: T20 → T21
-then: T22a (auth go-live, done) → T22b (real data layer and e2e) → T22c (security headers) → T22d (concurrency, ADR-0011: deferred past v1) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission) → T26 (hygiene audit, recommend only)
+then: T22a (auth go-live, done) → T22b (real data layer and e2e) → T22c (security headers) → T22d (concurrency, ADR-0011: deferred past v1) → T23 (production deploy) → T24 (hardening and audit) → T25 (README and submission) → T18b → T18c → T18d → T18e (pipeline drag and drop after v1, ADR-0014) → T26 (hygiene audit, recommend only)
 stretch: S1 dark mode · S2 Attorney role + staging previews
 ```
 
@@ -970,6 +970,273 @@ Needs ADR-0011 accepted by Khubaib. Read it first. Spec: §7.5, §8.9, §8.14.
   - The history is meaningful (`git log --oneline | wc -l` is more than 30, with no squashes).
   - The ADR statuses have been reviewed by Khubaib.
 - [ ] **Step 4: Commit** `"Add README"`. Push. Hand the live URL and repo URL to Khubaib.
+
+## After v1: pipeline drag and drop (ADR-0014)
+
+**Goal:** Drag a pipeline card to another column, by pointer (mouse, pen, touch) or keyboard, from 768px. The "Move to…" menu stays on every card.
+
+**Architecture:** dnd-kit's `DragDropProvider` wraps the board grid in a new `BoardDrag` component. Thin wrappers make each card draggable (`DraggableCard`) and each column droppable (`DroppableColumn`). A drop calls the board's existing `moveAndKeepFocus`, so it is the menu's optimistic move. All dnd-kit configuration (sensors, announcements, the width gate) lives in `use-board-drag.ts`, so `board.tsx` and `column.tsx` gain props but no hooks.
+
+**Tech Stack:** `@dnd-kit/react` 0.5.3 and `@dnd-kit/dom` 0.5.3 (exact), React 19, Tailwind 4 tokens, Vitest and Testing Library, Playwright.
+
+**Spec:** [ADR-0014](adr/0014-pipeline-drag-and-drop.md) (the decision and every exact value), DECISIONS row 39, SPEC §8.6 and §8.11.
+
+**Order and PRs:** T18b ships alone on `design/pipeline-drag-drop` and blocks the rest. T18c–T18e are one branch, `feature/pipeline-drag-drop`, and one PR.
+
+### Global Constraints (drag and drop)
+
+Everything in this plan's Global Constraints applies. In addition:
+- **Versions.** `@dnd-kit/react` and `@dnd-kit/dom` are exactly `0.5.3` in `package.json`, with no `^`.
+- **Dependencies.** Khubaib adds them. The dependency guard blocks agents.
+- **Structure ratchet.** `features/pipeline/board.tsx` and `features/pipeline/column.tsx` gain no logic hooks, because `scripts/frontend-structure-baseline.json` may only shrink. dnd-kit hooks go in the new files below.
+- **Styling.** Tokens and native Tailwind steps only. State styling uses `data-[…]:` variants on `data-drop-target` and `data-dragging` (DECISIONS row 36). The highlight and the dimming are the approved mock's, and the highlight is not colour alone.
+- **Bundle.** `/pipeline` first-load JS ≤ 250 kB gzipped (`pnpm size`). It was 200.4 kB before this work.
+- **Accessibility.** Targets are at least 24px, focus is visible, and the Move menu stays on every card at every width.
+- **Motion.** The drop animation is `{ duration: 150, easing: 'ease-out' }`, or `null` under `prefers-reduced-motion`.
+- **Icons.** Imported one at a time (`lucide-react/icons/grip-vertical`).
+
+### Review Focus (drag and drop)
+
+1. **A click on a card, its phone link or its Move button** must do what it does today (open the contact, call, open the menu), never start a drag. Test: T18c e2e "a click still opens the contact and the Move menu still opens".
+2. **Two drags in quick succession, or a drag right after a menu move,** must leave the card in the last column it was dropped on, with correct counts after a reload. Test: T18c e2e "two quick drags end in the second column after a reload".
+3. **A 120-character name** must truncate in the dragged copy, which is no wider than the card it came from. Test: T18c e2e "a 120-character name stays inside the dragged copy".
+4. **Crossing 768px** (resizing a window, rotating a tablet) must turn dragging on or off without a reload. Tests: T18c unit "useMedia follows matchMedia changes" and e2e "after resizing below 768px, cards don't drag".
+5. **Tab or Escape during a keyboard drag** must cancel it and leave the card where it was. Test: T18d e2e "Escape and Tab cancel a keyboard drag".
+
+### Task 18b: Drag-and-drop mockup (approval gate)
+
+**Files:**
+- Create: `design/mockups/screens-v3.html` on branch `design/pipeline-drag-drop`, reusing `screens-v2.html`'s CSS and the tokens in `app/globals.css`.
+
+- [ ] **Step 1: Mock every state, in light and dark:**
+  1. 1440px, idle, with one card's Drag button showing because it has keyboard focus
+  2. 1440px mid-drag: the copy over Active, the source card dimmed in Lead, Active highlighted
+  3. 1440px over the card's own column: no highlight
+  4. 768px mid-drag (touch)
+  5. A Viewer's board: no Drag button
+  6. 390px: unchanged, no Drag button
+- [ ] **Step 2: Screenshot** at 1440, 768 and 390px, light and dark. Push the branch, open a PR, and send Khubaib the screenshots.
+- [ ] **Step 3: Stop until Khubaib approves.** Edit no component or style file before then. Put the approved class lists in the PR body:
+  - the highlight (`data-[drop-target]:…`)
+  - the dimming (`data-[dragging]:…`)
+  - the copy's shadow
+  - the Drag button: hidden, focused, and where it sits in the card
+
+  T18c and T18d use exactly those.
+
+### Task 18c: Pointer drag between columns (mouse, pen, touch)
+
+**Files:**
+- Modify: `package.json`, `pnpm-lock.yaml`
+- Create: `features/pipeline/use-board-drag.ts`, `features/pipeline/drag-enabled.ts`, `features/pipeline/board-drag.tsx`, `features/pipeline/draggable-card.tsx`, `features/pipeline/droppable-column.tsx`
+- Modify: `features/pipeline/pipeline-card.tsx`, `features/pipeline/column.tsx`, `features/pipeline/board.tsx`
+- Test: `features/pipeline/use-board-drag.test.ts`, `features/pipeline/pipeline-card.test.tsx`, `features/pipeline/column.test.tsx`, `tests/e2e/pipeline-drag.spec.ts`
+
+**Interfaces:**
+- **Consumes:**
+  - `Board`'s `moveAndKeepFocus(id: string, to: Status): Promise<Result<ContactRow>>`
+  - `usePermission('contacts.write')`
+  - `PipelineRow`, `STATUSES`, `Status`, `STATUS_LABEL`
+  - `newContact`, `storage`, `settleAnimations` from `tests/e2e/data.ts` and `tests/e2e/helpers.ts`
+- **Produces:**
+  - **`use-board-drag.ts`:**
+    - `WIDE_BOARD = '(min-width: 768px)'` and `REDUCED_MOTION = '(prefers-reduced-motion: reduce)'`
+    - `useMedia(query: string): boolean`: `useSyncExternalStore` on `matchMedia`, with server snapshot `false`, following `useIsDesktop` in `features/contacts/filters/use-filters-panel.ts`
+    - `type CardData = { row: PipelineRow }`
+    - `asStatus(id: string | number | null | undefined): Status | null` returns `id` when it is one of `STATUSES`, otherwise `null`.
+    - `dropStatus(from: Status, target: string | number | null | undefined, canceled: boolean): Status | null` returns `asStatus(target)` only when that differs from `from` and the drag wasn't cancelled. Otherwise it returns `null`.
+    - `useBoardDrag(input: { canMove: boolean; onMove(id: string, to: Status): Promise<Result<ContactRow>> })` returns `{ enabled: boolean; reducedMotion: boolean; providerProps: Pick<ComponentProps<typeof DragDropProvider>, 'sensors' | 'onDragEnd'> }`.
+      - `enabled` is `canMove && useMedia(WIDE_BOARD)`.
+      - `sensors` replaces the default `PointerSensor` with `PointerSensor.configure({ activationConstraints })`: `Delay({ value: 250, tolerance: 5 })` when `event.pointerType === 'touch'`, otherwise `Distance({ value: 5 })`.
+      - `onDragEnd` calls `onMove(source.id, to)` when `dropStatus(source.data.row.status, target?.id, canceled)` returns a status.
+  - **`drag-enabled.ts`:** `DragEnabled = createContext(false)`.
+  - **`BoardDrag({ canMove, onMove, className, children })`:**
+    - It renders `DragEnabled.Provider`, then `DragDropProvider {...providerProps}`, then `<div className={className}>{children}</div>`.
+    - When `enabled`, it also renders `createPortal(<DragOverlay dropAnimation={reducedMotion ? null : { duration: 150, easing: 'ease-out' }}>…</DragOverlay>, document.body)`.
+    - The overlay renders `<ul inert className="m-0 list-none p-0"><PipelineCard row={source.data.row} onMove={onMove} /></ul>`.
+  - **`DraggableCard(props: PipelineCardProps)`:** `useDraggable<CardData>({ id: row.id, data: { row }, disabled: !useContext(DragEnabled) })`, rendering `<PipelineCard {...props} cardRef={ref} dragging={isDragSource} />`.
+  - **`DroppableColumn(props: ColumnProps)`:** `useDroppable({ id: props.status })` and `useDragOperation<CardData>()`, rendering `<Column {...props} sectionRef={ref} dropTarget={isDropTarget && source?.data.row.status !== props.status} />`.
+  - **`PipelineCard`** exports `PipelineCardProps` and gains the optional props `cardRef?: (el: Element | null) => void`, `dragging?: boolean` (it sets `data-dragging`) and `dragHandle?: ReactNode` (filled in T18d).
+  - **`Column`** exports `ColumnProps`, gains `sectionRef?: (el: Element | null) => void` and `dropTarget?: boolean`, sets `data-drop-column={status}` and, when `dropTarget`, `data-drop-target` on its `section`, and renders `DraggableCard` instead of `PipelineCard`.
+  - **`Board`:**
+    - The grid `div` becomes `<BoardDrag canMove={canMove} onMove={moveAndKeepFocus} className="grid min-h-0 flex-1 grid-cols-1 gap-3.5 md:grid-cols-3">`.
+    - Each `Column` becomes `DroppableColumn`.
+
+- [ ] **Step 1: Khubaib adds the dependencies.**
+  - Run: `pnpm add -E @dnd-kit/react@0.5.3 @dnd-kit/dom@0.5.3`
+  - Expected: `package.json` lists both as `"0.5.3"`.
+- [ ] **Step 2: Write the failing unit tests.**
+
+```ts
+// features/pipeline/use-board-drag.test.ts
+test('dropStatus moves only to another column, and never on cancel', () => {
+  expect(dropStatus('lead', 'active', false)).toBe('active');
+  expect(dropStatus('lead', 'lead', false)).toBeNull();
+  expect(dropStatus('lead', null, false)).toBeNull();
+  expect(dropStatus('lead', 'board', false)).toBeNull();
+  expect(dropStatus('lead', 'active', true)).toBeNull();
+});
+test('asStatus accepts only a column id', () => {
+  expect(asStatus('closed')).toBe('closed');
+  expect(asStatus('board')).toBeNull();
+  expect(asStatus(undefined)).toBeNull();
+});
+test('useMedia follows matchMedia changes', () => {
+  let matches = false;
+  let onChange = () => {};
+  vi.stubGlobal('matchMedia', () => ({
+    get matches() { return matches; },
+    addEventListener: (_: string, l: () => void) => { onChange = l; },
+    removeEventListener: () => {},
+  }));
+  const { result } = renderHook(() => useMedia(WIDE_BOARD));
+  expect(result.current).toBe(false);
+  act(() => { matches = true; onChange(); });
+  expect(result.current).toBe(true);
+});
+// features/pipeline/pipeline-card.test.tsx
+test('a dragged card is marked so it can dim in place', () => {
+  render(<ul><PipelineCard row={row} onMove={vi.fn()} dragging /></ul>);
+  expect(screen.getByRole('listitem')).toHaveAttribute('data-dragging');
+});
+// features/pipeline/column.test.tsx
+test('a drop target column is marked, and other columns are not', () => {
+  const { rerender } = render(<Column {...props} status="active" dropTarget />);
+  expect(screen.getByRole('region', { name: /Active/ })).toHaveAttribute('data-drop-target');
+  rerender(<Column {...props} status="active" />);
+  expect(screen.getByRole('region', { name: /Active/ })).not.toHaveAttribute('data-drop-target');
+});
+```
+
+- [ ] **Step 3: Write the failing e2e tests** in `tests/e2e/pipeline-drag.spec.ts` (desktop project at 1440px, seeded Admin, one `newContact` per test). Use one helper:
+
+```ts
+async function dragCard(page: Page, name: string, to: 'Lead' | 'Active' | 'Closed') {
+  const card = page.locator('[data-card]', { hasText: name });
+  const target = page.getByRole('region', { name: new RegExp(`^${to}`) });
+  const from = await card.boundingBox();
+  const end = await target.boundingBox();
+  await page.mouse.move(from!.x + 20, from!.y + 10);
+  await page.mouse.down();
+  await page.mouse.move(end!.x + end!.width / 2, end!.y + 80, { steps: 12 });
+  await page.mouse.up();
+}
+```
+
+  Tests, each asserting what its name says:
+  - "a mouse drag moves the card to Active, updates the counts, toasts and persists". The toast reads `${name} moved to Active.`, and after `page.reload()` the card is in Active.
+  - "a click still opens the contact and the Move menu still opens" (Review Focus 1).
+  - "dropping on its own column or outside the board does nothing".
+    - Mid-drag over Lead, its `section` has no `data-drop-target`. Over Active, it does.
+    - After each drop, the counts are unchanged, no toast appears, and no request carries a `next-action` header.
+  - "two quick drags end in the second column after a reload" (Review Focus 2). Drag to Active, then at once to Closed.
+  - "a 120-character name stays inside the dragged copy" (Review Focus 3). Mid-drag, the copy's bounding box width is at most the source card's width plus 1.
+  - "a touch hold drags on a 1024px tablet, and a quick swipe scrolls instead". Use `setViewportSize({ width: 1024, height: 768 })` and `locator.dispatchEvent('pointerdown' | 'pointermove' | 'pointerup', { pointerType: 'touch', … })`. The hold is 300ms before moving, and the swipe moves at once.
+  - "after resizing below 768px, cards don't drag" (Review Focus 4). Load at 1440px, `setViewportSize({ width: 700, height: 900 })`, then drag. The card stays put.
+  - "as a viewer, dragging a card does nothing" (`storage.viewer`).
+  - "@mobile holding and moving a card doesn't move it" (mobile project).
+
+- [ ] **Step 4: Run** `pnpm test features/pipeline` and `pnpm e2e tests/e2e/pipeline-drag.spec.ts` on a seeded local stack (RUNBOOK: `supabase db reset`, `pnpm seed`). Expected: FAIL, because `dropStatus` and the drag behaviour don't exist yet.
+- [ ] **Step 5: Implement** the interfaces above, with the class lists approved in T18b.
+- [ ] **Step 6: Run** the same two commands, plus the existing `tests/e2e/pipeline.spec.ts`. Expected: PASS.
+- [ ] **Step 7: Run the gate:** `pnpm typecheck && pnpm lint && pnpm format:check && pnpm build && pnpm size`.
+  - `/pipeline` must be ≤ 250 kB. Record the new figure for the PR.
+  - `pnpm lint` passes with no baseline increase.
+- [ ] **Step 8: Commit:** first the tests, then `"Drag pipeline cards between columns with a pointer"`.
+
+### Task 18d: Keyboard drag with announcements
+
+**Files:**
+- Create: `features/pipeline/drag-handle.tsx`, `features/pipeline/drag-announcements.ts`
+- Modify: `features/pipeline/use-board-drag.ts`, `features/pipeline/board-drag.tsx`, `features/pipeline/draggable-card.tsx`
+- Test: `features/pipeline/drag-announcements.test.ts`, `features/pipeline/use-board-drag.test.ts`, `features/pipeline/drag-handle.test.tsx`, `tests/e2e/pipeline-drag.spec.ts`
+
+**Interfaces:**
+- **Consumes:** T18c's `useBoardDrag`, `CardData`, `asStatus`, `DragEnabled`, `BoardDrag` and `DraggableCard`, plus `data-drop-column` on each column `section`.
+- **Produces:**
+  - **`drag-announcements.ts`:** `DRAG_INSTRUCTIONS`, `startText(name: string, from: Status): string`, `overText(name: string, over: Status | null): string` and `endText(name: string, from: Status, to: Status | null, canceled: boolean): string | undefined`. The exact copy is in the Step 1 test.
+  - **`use-board-drag.ts`** adds `columnPitch(lefts: number[]): number`, which is `lefts[1] - lefts[0]`, or `0` with fewer than two.
+    - `useBoardDrag`'s input gains `grid: RefObject<HTMLElement | null>`. It measures the `left` of each `[data-drop-column]` inside `grid` with a `ResizeObserver` on `grid`.
+    - `providerProps` gains `'plugins'`.
+    - **Sensors:**
+      - `PointerSensor` also gets `activatorElements: (source) => [source.element]`, so the whole card stays the pointer target when a handle is set.
+      - Add `KeyboardSensor.configure({ offset: { x: pitch, y: 0 }, keyboardCodes: { start: ['Space', 'Enter'], cancel: ['Escape', 'Tab'], end: ['Space', 'Enter'], up: [], down: [], left: ['ArrowLeft'], right: ['ArrowRight'] } })`.
+    - **Plugins:** `(defaults) => [...defaults.filter((p) => p !== Accessibility), Accessibility.configure({ announcements, screenReaderInstructions: { draggable: DRAG_INSTRUCTIONS } })]`. Each announcement reads `source.data.row`:
+      - `dragstart` gives `startText(row.fullName, row.status)`
+      - `dragover` gives `overText(row.fullName, asStatus(target?.id))`
+      - `dragend` gives `endText(row.fullName, row.status, asStatus(target?.id), canceled)`
+  - **`DragHandle({ name, handleRef }: { name: string; handleRef: (el: Element | null) => void })`:**
+    - `<button type="button" ref={handleRef} data-drag-handle aria-label={`Drag ${name}`}>` with the `GripVertical` icon.
+    - It's hidden until `:focus-visible` (T18b classes), carries `max-md:hidden`, and is at least 24 by 24px.
+    - It comes after the Move menu in the card's DOM order, so Tab follows the reading order.
+  - **`DraggableCard`** passes `dragHandle={enabled ? <DragHandle name={row.fullName} handleRef={handleRef} /> : null}`.
+  - **`BoardDrag`** keeps `const grid = useRef<HTMLDivElement>(null)` on its grid `div` and passes it to `useBoardDrag`.
+
+- [ ] **Step 1: Write the failing unit tests.**
+
+```ts
+// features/pipeline/drag-announcements.test.ts
+test('announcements say where the card is, and leave a completed move to the toast', () => {
+  expect(DRAG_INSTRUCTIONS).toBe(
+    'Press Space to pick up this contact. Use the Left and Right arrow keys to choose a column, Space to drop, Escape to cancel.',
+  );
+  expect(startText('Marisol Ortega', 'lead')).toBe('Picked up Marisol Ortega from Lead.');
+  expect(overText('Marisol Ortega', 'active')).toBe('Marisol Ortega is over Active.');
+  expect(overText('Marisol Ortega', null)).toBe('Marisol Ortega is not over a column.');
+  expect(endText('Marisol Ortega', 'lead', 'active', true)).toBe('Marisol Ortega was not moved.');
+  expect(endText('Marisol Ortega', 'lead', 'lead', false)).toBe('Marisol Ortega stays in Lead.');
+  expect(endText('Marisol Ortega', 'lead', null, false)).toBe('Marisol Ortega stays in Lead.');
+  expect(endText('Marisol Ortega', 'lead', 'active', false)).toBeUndefined();
+});
+// features/pipeline/use-board-drag.test.ts
+test('columnPitch is the distance between the first two columns', () => {
+  expect(columnPitch([16, 330, 644])).toBe(314);
+  expect(columnPitch([16])).toBe(0);
+});
+// features/pipeline/drag-handle.test.tsx
+test('the Drag button names the contact and is a real button', () => {
+  render(<DragHandle name="Marisol Ortega" handleRef={() => {}} />);
+  expect(screen.getByRole('button', { name: 'Drag Marisol Ortega' })).toHaveAttribute('type', 'button');
+});
+```
+
+- [ ] **Step 2: Write the failing e2e tests** in `tests/e2e/pipeline-drag.spec.ts`. Focus the button with `page.getByRole('button', { name: `Drag ${name}` }).focus()`, then:
+  - "Space, ArrowRight, Space moves a card to Active by keyboard"
+    - The live region shows `Picked up ${name} from Lead.`, then `${name} is over Active.`.
+    - The card ends in Active, and the toast reads `${name} moved to Active.`.
+    - Focus is on the next card's `[data-card-link]` in Lead, or on the Lead heading when the card was alone.
+  - "ArrowRight twice reaches Closed, and ArrowDown does nothing". After ArrowDown, the live region still says the card is over Lead.
+  - "Escape and Tab cancel a keyboard drag" (Review Focus 5). The card stays in Lead, and the live region shows `${name} was not moved.`.
+  - "the Drag button shows only on focus, and Viewers and phones have none". It is in the DOM but not visible before focus, and visible after. With `storage.viewer`, there's no Drag button. The `@mobile` case has none either.
+  - "axe passes while a card is picked up". Run the spec's `axe(page)` between Space and Escape.
+- [ ] **Step 3: Run** `pnpm test features/pipeline` and `pnpm e2e tests/e2e/pipeline-drag.spec.ts`. Expected: FAIL.
+- [ ] **Step 4: Implement** the interfaces above.
+- [ ] **Step 5: Run** the same commands, the whole `tests/e2e/pipeline.spec.ts` and the gate from T18c Step 7. Expected: PASS, `/pipeline` ≤ 250 kB, and no baseline increase.
+- [ ] **Step 6: Commit:** first the tests, then `"Drag pipeline cards by keyboard with announcements"`.
+
+### Task 18e: Ship drag and drop
+
+**Files:**
+- Modify:
+  - `README.md`: rewrite "A Move menu instead of drag and drop" as drag and drop on top of the menu, keeping the length, and remove drag and drop from future work.
+  - `docs/REVIEWER-GUIDE.md`: §5, and item 1 of the future-work list.
+  - `docs/RUNBOOK.md`: the `/pipeline` "Not here" line, and "Why no drag and drop".
+  - `docs/SPEC.md`: §2 non-goals, §4 row 6, §8.6 (the final behaviour) and §8.11 (keyboard drag).
+  - `docs/PLAN.md`: tick T18b–T18e.
+
+- [ ] **Step 1: Update the docs above** so none says drag and drop is missing, and none contradicts ADR-0014.
+- [ ] **Step 2: Manual pass:**
+  - mouse drag in Chrome, Safari and Firefox at 1440px
+  - touch hold against swipe on an iPad, or the iPad Simulator in Safari
+  - VoiceOver on macOS: a keyboard drag reads the instructions and announcements
+  - `forced-colors`: the drop highlight is still visible
+  - `prefers-reduced-motion`: no drop animation
+  - dark theme
+
+  Record anything off as a fix, or ask Khubaib.
+- [ ] **Step 3: Run the full gate:** `pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm test:integration && pnpm e2e && pnpm build && pnpm size`. Expected: all pass, and `/pipeline` ≤ 250 kB.
+- [ ] **Step 4: Screenshots** at 1440, 768 and 390px, light and dark, mid-drag and with the Drag button focused. Commit them to the `screenshots` branch and link them in the PR.
+- [ ] **Step 5: Open the PR** for T18c–T18e. A fresh reviewer (Sonnet) gets the diff and ADR-0014. Fix what it finds, merge with a merge commit once CI is green, and confirm main's CI and deploy.
 
 ### Task 26: Hygiene audit (last task)
 
