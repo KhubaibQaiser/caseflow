@@ -1,6 +1,11 @@
+import { existsSync } from 'node:fs';
+
 import { defineConfig, devices } from '@playwright/test';
 
 import { storage } from './tests/e2e/helpers';
+
+// Locally the suite reads the same env file as `pnpm dev`, without overriding the shell. CI has no file and sets the variables itself.
+if (existsSync('.env.local')) process.loadEnvFile('.env.local');
 
 // BASE_URL points the suite at an already-running deployment (the post-deploy smoke test).
 // E2E_PORT moves the local server off 3000.
