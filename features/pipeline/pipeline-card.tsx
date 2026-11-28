@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 
 import { PhoneLink } from '@/components/ui/phone-link';
 import { UrgencyPill } from '@/components/ui/pill';
@@ -11,11 +12,17 @@ import { MoveMenu } from '../contacts/detail/move-menu';
 import { followUpOf } from './rows';
 import type { PipelineRow } from './rows';
 
-type PipelineCardProps = {
+export type PipelineCardProps = {
   row: PipelineRow;
   onMove(id: string, to: Status): Promise<Result<ContactRow>>;
   /** Blocks Move to… (still focusable) and says why. */
   disabledReason?: string;
+  /** Where dragging attaches (ADR-0014). */
+  cardRef?: (el: Element | null) => void;
+  /** Lifted by a drag: the card stays as an outlined slot while its copy moves. */
+  dragging?: boolean;
+  /** The keyboard Drag button, after the Move menu in tab order. */
+  dragHandle?: ReactNode;
 };
 
 /** Name link, urgency, "matter · phone" and the Move to… menu. The whole card opens the contact; the menu and phone sit above it. */
@@ -23,12 +30,17 @@ export function PipelineCard({
   row,
   onMove,
   disabledReason,
+  cardRef,
+  dragging = false,
+  dragHandle,
 }: PipelineCardProps) {
   const { tone, text } = followUpOf(row);
   return (
     <li
+      ref={cardRef}
       data-card={row.id}
-      className="border-line bg-surface hover:border-lead-border relative flex flex-col gap-1 rounded-lg border px-3 py-2.5"
+      data-dragging={dragging || undefined}
+      className="border-line bg-surface hover:border-lead-border data-dragging:border-lead-border data-dragging:bg-track relative flex flex-col gap-1 rounded-lg border px-3 py-2.5 data-dragging:border-dashed"
     >
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
         <Link
@@ -58,6 +70,7 @@ export function PipelineCard({
         align="start"
         className="relative z-1 mt-1 h-7 self-start px-2 text-xs max-md:h-9"
       />
+      {dragHandle}
     </li>
   );
 }

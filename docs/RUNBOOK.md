@@ -31,7 +31,7 @@ Sign-in is enforced by default, so `pnpm dev` needs `supabase start`, the local 
 - `pnpm lint`: ESLint plus the colour-literal check
 - `pnpm test`: unit tests
 - `pnpm test:integration`: RBAC suite against the local stack (needs `supabase start`; refuses non-local URLs)
-- `pnpm e2e`: Playwright end-to-end tests. Needs the local stack seeded (`pnpm seed`) and `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and `SEED_*_PASSWORD` in the environment (specs create their own contacts as Admin). `BASE_URL` points it at a deployment; `smoke.spec.ts` is the read-only check for that. Global setup signs in Admin and Viewer once (sessions saved under `tests/e2e/.auth/`); specs run as Admin, and opt in to `storage.viewer` or `storage.signedOut` from `tests/e2e/helpers.ts`. `E2E_PORT` moves the local server off 3000
+- `pnpm e2e`: Playwright end-to-end tests. Needs the local stack seeded (`pnpm seed`) and `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY` and `SEED_*_PASSWORD` in the environment, or in `.env.local`, which the Playwright config loads when it exists without overriding the shell (specs create their own contacts as Admin). `BASE_URL` points it at a deployment; `smoke.spec.ts` is the read-only check for that. Global setup signs in Admin and Viewer once (sessions saved under `tests/e2e/.auth/`); specs run as Admin, and opt in to `storage.viewer` or `storage.signedOut` from `tests/e2e/helpers.ts`. `E2E_PORT` moves the local server off 3000
 - `pnpm format`, `pnpm format:check`: Prettier
 - `pnpm seed`: create the role accounts and reset the firm data (see Seeding below)
 - `pnpm db:types`: regenerate Supabase types from the local stack

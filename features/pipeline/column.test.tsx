@@ -79,6 +79,18 @@ describe('Column layout', () => {
     ).not.toBeNull();
   });
 
+  it('a drop target column is marked, and other columns are not', () => {
+    const { rerender } = render(
+      <Column {...props} status="active" dropTarget />,
+    );
+    const region = () => screen.getByRole('region', { name: /Active/ });
+    expect(region()).toHaveAttribute('data-drop-target');
+    expect(region()).toHaveAttribute('data-drop-column', 'active');
+    rerender(<Column {...props} status="active" />);
+    expect(region()).not.toHaveAttribute('data-drop-target');
+    expect(region()).toHaveAttribute('data-drop-column', 'active');
+  });
+
   it('keeps the heading for the tabs on a phone: named, but only read out', () => {
     render(<Column {...props} />);
     const h = screen.getByRole('heading', { name: /Lead/ });
