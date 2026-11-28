@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   WIDE_BOARD,
   asStatus,
+  blocksDrag,
   columnPitch,
   dropStatus,
   useMedia,
@@ -29,6 +30,22 @@ describe('asStatus', () => {
     expect(asStatus('board')).toBeNull();
     expect(asStatus(undefined)).toBeNull();
     expect(asStatus(3)).toBeNull();
+  });
+});
+
+describe('blocksDrag', () => {
+  it('lets the card link start a drag, but not the phone link or a button', () => {
+    document.body.innerHTML = `<li>
+      <a href="/contacts/a" data-card-link>Marisol Ortega</a>
+      <p>Family · <a href="tel:+15125550148">(512) 555-0148</a></p>
+      <button type="button">Move to… <svg></svg></button>
+    </li>`;
+    const [cardLink, phone] = document.querySelectorAll('a');
+    expect(blocksDrag(cardLink ?? null)).toBe(false);
+    expect(blocksDrag(document.querySelector('p'))).toBe(false);
+    expect(blocksDrag(phone ?? null)).toBe(true);
+    expect(blocksDrag(document.querySelector('svg'))).toBe(true);
+    expect(blocksDrag(null)).toBe(false);
   });
 });
 
